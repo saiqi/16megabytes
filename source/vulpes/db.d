@@ -10,11 +10,11 @@ import std.datetime : Date, DateTime;
 import std.exception : enforce;
 import std.range : isInputRange, ElementType;
 
-/**
-Dedicated module `Exception`
-*/
+
+///Dedicated module `Exception`
 class DatastoreException : Exception
 {
+@safe:
     ///ditto
     this(string msg, string file = __FILE__, size_t line = __LINE__)
     {
@@ -22,9 +22,8 @@ class DatastoreException : Exception
     }
 }
 
-/**
-An enum that contains all supported SQL types
-*/
+
+///Contain all supported SQL types
 enum SqlType : string
 {
     INTEGER = "INTEGER",
@@ -36,20 +35,7 @@ enum SqlType : string
     TEXT = "TEXT"
 }
 
-/**
-A struct that represents a SQL table metadata.
-`MetaDataDefinition` constructor.
-    Params:
-        name = name of the column
-        type = type of the column
-        nullable = a `std.typecons.Flag` flag to indicate whether the column could be declared as nullable
-        unique = a `std.typecons.Flag` flag to indicate whether the column could be declared as unique
-        length = the length of the fields if needed (ex: VARCHAR)
-    Examples:
-    -------------------------------------------------------------------------------------
-    auto m = MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15); // myfield VARCHAR(15) NOT NULL
-    -------------------------------------------------------------------------------------
-*/
+/// An SQL table representation
 struct MetaDataDefinition
 {
 private:
@@ -60,10 +46,21 @@ private:
     Flag!"unique" fieldUnique;
 
 public:
-    ///ditto
-    this(const string name, const SqlType type, const Flag!"nullable" nullable,
-            const Flag!"unique" unique, const uint length = 0,) pure
+    /**
+    `MetaDataDefinition` constructor.
+        Params:
+            name = name of the column
+            type = type of the column
+            nullable = a `std.typecons.Flag` flag to indicate whether the column could be declared as nullable
+            unique = a `std.typecons.Flag` flag to indicate whether the column could be declared as unique
+            length = the length of the fields if needed (ex: VARCHAR)
+    */
+    @safe this(const string name, const SqlType type, const Flag!"nullable" nullable,
+            const Flag!"unique" unique, const uint length = 0,)
     {
+        enforce!DatastoreException(
+            (type == SqlType.VARCHAR && length > 0) || type != SqlType.VARCHAR,
+            "VARCHAR must have a length greater than 0");
         fieldName = name;
         fieldType = type;
         fieldLength = length.to!string;
@@ -71,22 +68,23 @@ public:
         fieldUnique = unique;
     }
 
-    /**
-        Returns the name of the field
-        */
-    string name() pure const
+    ///
+    @safe unittest
+    {
+        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15);
+        import std.exception : assertThrown;
+        assertThrown!DatastoreException(
+            MetaDataDefinition("foo", SqlType.VARCHAR, No.nullable, No.unique));
+    }
+
+    ///Return the name of the field
+    @safe string name() pure nothrow const
     {
         return fieldName;
     }
 
-    /**
-        Returns the SQL field definition sub statement
-        Examples:
-        ---------
-        MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15).toSQL; // returns "myfield VARCHAR(15) NOT NULL"
-        ---------
-        */
-    string toSQL() pure const
+    ///Return the SQL field definition statement
+    @safe string toSQL() pure nothrow const
     {
         auto sqlStatement = fieldName ~ " " ~ fieldType;
         if (fieldType == SqlType.VARCHAR)
@@ -103,16 +101,20 @@ public:
         }
         return sqlStatement;
     }
-}
 
-unittest
-{
-    assert(MetaDataDefinition("myfield", SqlType.VARCHAR, Yes.nullable,
+    ///
+    @safe unittest
+    {
+        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15);
+        assert(m.toSQL == "myfield VARCHAR(15) NOT NULL");
+
+        assert(MetaDataDefinition("myfield", SqlType.VARCHAR, Yes.nullable,
             No.unique, 15).toSQL == "myfield VARCHAR(15)");
-    assert(MetaDataDefinition("myfield", SqlType.DATE, No.nullable, No.unique)
-            .toSQL == "myfield DATE NOT NULL");
-    assert(MetaDataDefinition("myfield", SqlType.INTEGER, No.nullable,
-            Yes.unique).toSQL == "myfield INTEGER NOT NULL UNIQUE");
+        assert(MetaDataDefinition("myfield", SqlType.DATE, No.nullable, No.unique)
+                .toSQL == "myfield DATE NOT NULL");
+        assert(MetaDataDefinition("myfield", SqlType.INTEGER, No.nullable,
+                Yes.unique).toSQL == "myfield INTEGER NOT NULL UNIQUE");
+    }
 }
 
 alias MetaData = immutable(MetaDataDefinition)[];
@@ -140,12 +142,13 @@ unittest
 }
 
 /**
-Runs a `CREATE TABLE` statement
+Run a `CREATE TABLE` statement
 Params:
     conn        = a `monetdb.MonetDb` connection instance
     tableName   = the name of the table
     metaDefs    = an immutable list of `MetaDataDefinition`
     ifNotExists = a `std.typecons.Flag` to indicate whether a `IF NOT EXISTS` statement should be added
+Throws: monetdb.MonetDbException on failure
 */
 void createTable(MonetDb conn, const string tableName, const MetaData metaDefs,
         const Flag!"ifNotExists" ifNotExists)
@@ -155,11 +158,12 @@ void createTable(MonetDb conn, const string tableName, const MetaData metaDefs,
 }
 
 /**
-Runs a `DROP TABLE` statement
+Run a `DROP TABLE` statement
 Params:
     conn        = a `monetdb.MonetDb` connection instance
     tableName   = the name of the table
     ifExists    = a `std.typecons.Flag` to indicate whether a `IF EXISTS` statement should be added
+Throws: monetdb.MonetDbException on failure
 */
 void dropTable(scope MonetDb conn, const string tableName, const Flag!"ifExists" ifExists)
 {
@@ -171,10 +175,11 @@ void dropTable(scope MonetDb conn, const string tableName, const Flag!"ifExists"
 }
 
 /**
-Runs a `TRUNCATE TABLE` statement
+Run a `TRUNCATE TABLE` statement
 Params:
     conn        = a `monetdb.MonetDb` connection instance
     tableName   = the name of the table
+Throws: monetdb.MonetDbException on failure
 */
 void truncateTable(scope MonetDb conn, const string tableName)
 {
@@ -182,12 +187,14 @@ void truncateTable(scope MonetDb conn, const string tableName)
 }
 
 /**
-Creates a table and append it to a merge table. See https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning for more informations.
+Create a table and append it to a merge table
+See_Also: https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the merge table
     partitionName = the name of the underlying table
     metaDefs      = an immutable list of `MetaDataDefinition`
+Throws: monetdb.MonetDbException on failure
 */
 void addPartition(MonetDb conn, const string tableName, const string partitionName,
         const MetaData metaDefs)
@@ -200,11 +207,13 @@ void addPartition(MonetDb conn, const string tableName, const string partitionNa
 }
 
 /**
-Drop a table and remove it from a merge table. See https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning for more informations.
+Drop a table and remove it from a merge table
+See_Also: https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the merge table
     partitionName = the name of the underlying table
+Throws: monetdb.MonetDbException on failure
 */
 void deletePartition(scope MonetDb conn, const string tableName, const string partitionName)
 {
@@ -250,33 +259,15 @@ private string getSQLValue(Record r)
 }
 
 /**
-From a given set of records, performs an insert for not existing once otherwise update.
-This runs some `MERGE INTO` statements. See https://www.monetdb.org/blog/sql2003_merge_statements_now_supported for more informations.
+Upsert records on top of `MERGE INTO` statements
+See_Also: https://www.monetdb.org/blog/sql2003_merge_statements_now_supported
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the table
     metaDefs      = an immutable list of `MetaDataDefinition`
     records       = a lisranget of records
     upsertKeys    = the list of the columns that are used to check whether the current record exists
-Examples:
------------
-MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
-const string tableName = "upserttable";
-scope(exit) {
-    conn.close();
-}
-
-const MetaData metaDefs = [
-    MetaDataDefinition("id", SqlType.INTEGER, No.nullable, No.unique),
-    MetaDataDefinition("tenant", SqlType.VARCHAR, No.nullable, No.unique, 5),
-    MetaDataDefinition("value", SqlType.INTEGER, Yes.nullable, No.unique)
-];
-const string[] upsertKeys = ["id", "tenant"];
-Record[string][] records = [
-    ["id": Record(0), "value": Record(3), "tenant": Record("a")],
-    ["id": Record(1), "value": Record(-1), "tenant": Record("a")]
-];
-upsertRecords(conn, tableName, metaDefs, records, upsertKeys);
+Throws: monetdb.MonetDbException on failure, DatastoreException on unsupported operation
 -----------
 */
 void upsertRecords(R)(scope MonetDb conn, const string tableName,
@@ -321,6 +312,7 @@ if (isInputRange!R && is(ElementType!R == Record[string]))
     conn.exec(statements);
 }
 
+///
 unittest
 {
     MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
@@ -345,6 +337,7 @@ unittest
     upsertRecords(conn, tableName, metaDefs, records, upsertKeys);
 
     auto res = conn.query("SELECT * FROM " ~ tableName ~ " ORDER BY ID;");
+    assert(!res.empty);
     assert(res.front["id"].get!int == 0);
     assert(res.front["value"].get!int == 3);
 
@@ -379,20 +372,12 @@ unittest
 }
 
 /**
-Runs a `DELETE FROM` statement that could have a `WHERE` clause or not.
+Run a `DELETE FROM` statement that might have a `WHERE` clause or not.
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the table
     deleteKeys    = optional parameter that defines the delete condition. If this parameter is missing all the rows will be deleted.
-Examples:
-------------
-MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
-const string tableName = "deletetable";
-scope(exit) {
-    conn.close();
-}
-deleteRecords(conn, tableName, ["id": Record(0), "tenant": Record('a')]);
-------------
+Throws: monetdb.MonetDbException on failure
 */
 void deleteRecords(scope MonetDb conn, const string tableName, const Record[string] deleteKeys = null)
 {
@@ -407,6 +392,7 @@ void deleteRecords(scope MonetDb conn, const string tableName, const Record[stri
     conn.exec(stmt);
 }
 
+///
 unittest
 {
     MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
@@ -432,33 +418,15 @@ unittest
 }
 
 /**
-Runs a `COPY INTO` statement that is built from a given set of records. See https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData for more informations.
+Bulk insert on top of `COPY INTO` statements
+See_Also: https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the table
     metaDefs      = an immutable list of `MetaDataDefinition`
     records       = a range of records
     chunkSize     = size of the chunk (default 1000)
-Examples:
-------------
-MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
-const string tableName = "bulkinserttable";
-scope(exit) {
-    conn.close();
-}
-const MetaData metaDefs = [
-    MetaDataDefinition("id", SqlType.INTEGER, No.nullable, No.unique),
-    MetaDataDefinition("tenant", SqlType.VARCHAR, No.nullable, No.unique, 5),
-    MetaDataDefinition("value", SqlType.INTEGER, Yes.nullable, No.unique),
-    MetaDataDefinition("creation_date", SqlType.DATE, Yes.nullable, No.unique)
-];
-Record[string][] records = [
-    ["id": Record(0), "tenant": Record("a"), "value": Record(1052), "creation_date": Record(Date(2019, 11, 2))],
-    ["id": Record(1), "tenant": Record("a"), "creation_date": Record(null), "value": Record(205)],
-    ["id": Record(2), "value": Record(null), "tenant": Record("b"), "creation_date": Record(null)]
-];
-bulkInsertRecords(conn, tableName, metaDefs, records);
-------------
+Throws: monetdb.MonetDbException on failure
 */
 void bulkInsertRecords(R)(scope MonetDb conn, const string tableName,
         const MetaData metaDefs, R records, const size_t chunkSize = 1_000)
@@ -491,6 +459,7 @@ if (isInputRange!R && is(ElementType!R == Record[string]))
     }
 }
 
+///
 unittest
 {
     MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");

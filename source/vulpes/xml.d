@@ -7,46 +7,129 @@ import std.traits : isSomeChar, isArray;
 import std.typecons : Nullable, Flag;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
 
-struct XMLRoot
+/// Specify the root XML node to be deserialized
+struct xmlRoot
 {
+    ///
     string tagName;
 }
 
-struct XMLElement
+///
+@safe nothrow unittest
 {
+    @xmlRoot("root")
+    static struct Root {}
+}
+
+/// Specify the XML node of a nested struct to be deserialized
+struct xmlElement
+{
+    ///
     string tagName;
 }
 
-struct XMLElementList
+///
+@safe nothrow unittest
 {
+    @xmlRoot("bar")
+    static struct Bar {}
+
+    @xmlRoot("foo")
+    static struct Foo
+    {
+        @xmlElement("bar")
+        Bar bar;
+    }
+}
+
+/// Specify the XML node of an array of nested structs to be deserialized
+struct xmlElementList
+{
+    ///
     string tagName;
 }
 
-struct Attr
+///
+@safe nothrow unittest
 {
+    @xmlRoot("bar")
+    static struct Bar {}
+
+    @xmlRoot("foo")
+    static struct Foo
+    {
+        @xmlElementList("bar")
+        Bar[] bar;
+    }
+}
+
+
+/// Control that value must be deserialized from an attribute
+struct attr
+{
+    ///
     string attrName;
 }
 
-enum Text;
+///
+@safe nothrow unittest
+{
+    @xmlRoot("foo")
+    static struct Foo
+    {
+        @attr("bar")
+        Nullable!string bar;
+    }
+}
 
-enum Ignore;
+/// Control that value must be deserialized from an attribute
+enum text;
+
+///
+@safe nothrow unittest
+{
+    @xmlRoot("foo")
+    static struct Foo
+    {
+        @text
+        Nullable!string bar;
+    }
+}
+
+/// Control that a field must not be deserialized if `ignoreItems` is set to `Yes`
+enum ignore;
+
+///
+@safe nothrow unittest
+{
+    @xmlRoot("bar")
+    static struct Bar {}
+
+    @xmlRoot("foo")
+    static struct Foo
+    {
+        @xmlElementList("bar")
+        @ignore
+        Bar[] bar;
+    }
+}
 
 alias IgnoreItems = Flag!"ignoreItems";
 
 private template getRootName(T)
 {
     static if(!isArray!T)
-        enum getRootName = getUDAs!(T, XMLRoot)[0].tagName;
+        enum getRootName = getUDAs!(T, xmlRoot)[0].tagName;
     else
-        enum getRootName = getUDAs!(ElementType!T, XMLRoot)[0].tagName;
+        enum getRootName = getUDAs!(ElementType!T, xmlRoot)[0].tagName;
 }
 
 private template getElementName(alias v)
 {
-    static if(hasUDA!(v, XMLElement))
-        enum getElementName = getUDAs!(v, XMLElement)[0].tagName;
-    else static if(hasUDA!(v, XMLElementList))
-        enum getElementName = getUDAs!(v, XMLElementList)[0].tagName;
+    static if(hasUDA!(v, xmlElement))
+        enum getElementName = getUDAs!(v, xmlElement)[0].tagName;
+    else static if(hasUDA!(v, xmlElementList))
+        enum getElementName = getUDAs!(v, xmlElementList)[0].tagName;
 }
 
 private template shouldIgnore(alias v, IgnoreItems ignoreItems)
@@ -55,13 +138,14 @@ private template shouldIgnore(alias v, IgnoreItems ignoreItems)
         enum shouldIgnore = false;
     else
     {
-        static if(hasUDA!(v, Ignore))
+        static if(hasUDA!(v, ignore))
             enum shouldIgnore = true;
         else
             enum shouldIgnore = false;
     }
 }
 
+/// Check wether a range is a `ForwardRange` of characters
 template isForwardRangeOfChar(R)
 {
     enum isForwardRangeOfChar = isForwardRange!R && isSomeChar!(ElementType!R);
@@ -94,7 +178,7 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
     }
 }
 
-private void setLeafValue(S, Entity, R)(ref S source, Entity entity, R text)
+private void setLeafValue(S, Entity, R)(ref S source, Entity entity, R text_)
 if(isForwardRangeOfChar!R)
 {
     import std.algorithm : find;
@@ -103,23 +187,23 @@ if(isForwardRangeOfChar!R)
 
     static foreach (m; __traits(allMembers, S))
     {
-        static if (hasUDA!(__traits(getMember, S, m), Attr))
+        static if (hasUDA!(__traits(getMember, S, m), attr))
         {
             convertValue(__traits(getMember, source, m),
                 entity
                     .attributes
-                    .find!(a => a.name.cleanNs == getUDAs!(__traits(getMember, S, m), Attr)[0].attrName));
+                    .find!(a => a.name.cleanNs == getUDAs!(__traits(getMember, S, m), attr)[0].attrName));
         }
-        else static if (hasUDA!(__traits(getMember, S, m), Text))
+        else static if (hasUDA!(__traits(getMember, S, m), text))
         {
-            if(text.length > 0)
-                convertValue(__traits(getMember, source, m), text);
+            if(text_.length > 0)
+                convertValue(__traits(getMember, source, m), text_);
         }
     }
 }
 
 private void setValue(S, Entity, R, IgnoreItems ignoreItems)
-(ref S source, R[] path, Entity entity, R text)
+(ref S source, R[] path, Entity entity, R text_)
 if(isForwardRangeOfChar!R)
 {
     assert(path.length > 0);
@@ -133,7 +217,7 @@ if(isForwardRangeOfChar!R)
             if(path.length == 1)
             {
                 auto item = ET();
-                setValue!(ET, Entity, R, ignoreItems)(item, path, entity, text);
+                setValue!(ET, Entity, R, ignoreItems)(item, path, entity, text_);
                 source ~= item;
             }
             else
@@ -142,13 +226,13 @@ if(isForwardRangeOfChar!R)
                 static foreach (m; __traits(allMembers, ET))
                 {
                     static if (
-                        hasUDA!(__traits(getMember, ET, m), XMLElement)
-                        || (hasUDA!(__traits(getMember, ET, m), XMLElementList)
+                        hasUDA!(__traits(getMember, ET, m), xmlElement)
+                        || (hasUDA!(__traits(getMember, ET, m), xmlElementList)
                             && !shouldIgnore!(__traits(getMember, ET, m), ignoreItems)))
                     {
                         if (getElementName!(__traits(getMember, ET, m)) == next)
                             setValue!(typeof(__traits(getMember, source[$ - 1], m)), Entity, R, ignoreItems)
-                                (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text);
+                                (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
                     }
                 }
             }
@@ -157,7 +241,7 @@ if(isForwardRangeOfChar!R)
         {
             if (path.length == 1)
             {
-                setLeafValue(source, entity, text);
+                setLeafValue(source, entity, text_);
             }
             else
             {
@@ -165,13 +249,13 @@ if(isForwardRangeOfChar!R)
                 static foreach (m; __traits(allMembers, S))
                 {
                     static if (
-                        hasUDA!(__traits(getMember, S, m), XMLElement)
-                        || (hasUDA!(__traits(getMember, S, m), XMLElementList)
+                        hasUDA!(__traits(getMember, S, m), xmlElement)
+                        || (hasUDA!(__traits(getMember, S, m), xmlElementList)
                             && !shouldIgnore!(__traits(getMember, S, m), ignoreItems)))
                     {
                         if (getElementName!(__traits(getMember, S, m)) == next)
                             setValue!(typeof(__traits(getMember, source, m)), Entity, R, ignoreItems)
-                                (__traits(getMember, source, m), path[1 .. $], entity, text);
+                                (__traits(getMember, source, m), path[1 .. $], entity, text_);
                     }
                 }
             }
@@ -202,13 +286,15 @@ unittest
     assert(r.front.type == EntityType.elementStart);
 }
 
+/// An `InputRange` of `T` resulting from the deserialization of a `ForwardRange` of `char`
 struct DeserializationResult(R, T, IgnoreItems ignoreItems)
-if (hasUDA!(T, XMLRoot) && isForwardRangeOfChar!R)
+if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
 {
     private EntityRange!(simpleXML, R) _entityRange;
     private T _current;
     private bool _primed;
 
+    ///ditto
     this(EntityRange!(simpleXML, R) entityRange)
     {
         _entityRange = entityRange;
@@ -263,12 +349,14 @@ if (hasUDA!(T, XMLRoot) && isForwardRangeOfChar!R)
         }
     }
 
+    ///ditto
     bool empty()
     {
         prime();
         return _entityRange.empty;
     }
 
+    ///ditto
     T front()
     {
         prime();
@@ -277,6 +365,7 @@ if (hasUDA!(T, XMLRoot) && isForwardRangeOfChar!R)
         return _current;
     }
 
+    ///ditto
     void popFront()
     {
         prime();
@@ -292,6 +381,14 @@ if (hasUDA!(T, XMLRoot) && isForwardRangeOfChar!R)
     }
 }
 
+/**
+Return a `DeserializationResult` of `T` resulting from the deserialization of a `ForwardRange` of `char`
+Params:
+    T           = the type of deserialized result
+    R           = the type of input
+    ignoreItems = should we ignore the @ignore fields
+    xmlStr = the serialized input
+*/
 auto deserializeAsRangeOf(T, R, IgnoreItems ignoreItems)(R xmlStr)
 if(isForwardRangeOfChar!R)
 {
@@ -303,88 +400,88 @@ if(isForwardRangeOfChar!R)
 version (unittest)
 {
 
-    @XMLRoot("name")
+    @xmlRoot("name")
     struct Name
     {
-        @Attr("lang")
+        @attr("lang")
         Nullable!string lang;
 
-        @Text
+        @text
         Nullable!string label;
     }
 
-    @XMLRoot("ref")
+    @xmlRoot("ref")
     struct Bar
     {
-        @Attr("status")
+        @attr("status")
         Nullable!string status;
 
-        @Text
+        @text
         Nullable!string value;
     }
 
-    @XMLRoot("current")
+    @xmlRoot("current")
     struct Current
     {
-        @Attr("year")
+        @attr("year")
         Nullable!uint year;
     }
 
-    @XMLRoot("previous")
+    @xmlRoot("previous")
     struct Previous
     {
-        @Attr("year")
+        @attr("year")
         Nullable!uint year;
     }
 
-    @XMLRoot("other")
+    @xmlRoot("other")
     struct Other
     {
-        @XMLElement("ref")
+        @xmlElement("ref")
         Bar ref_;
     }
 
-    @XMLRoot("description")
+    @xmlRoot("description")
     struct Description
     {
-        @Text
+        @text
         Nullable!string content;
 
-        @XMLElement("current")
+        @xmlElement("current")
         Current current;
 
-        @XMLElement("previous")
+        @xmlElement("previous")
         Previous previous;
 
-        @XMLElement("other")
+        @xmlElement("other")
         Other other;
     }
 
-    @XMLRoot("foo")
+    @xmlRoot("foo")
     struct Foo
     {
-        @Attr("id")
+        @attr("id")
         Nullable!uint id;
 
-        @Attr("category")
+        @attr("category")
         Nullable!string category;
 
-        @XMLElement("description")
+        @xmlElement("description")
         Description desc;
 
-        @XMLElement("ref")
+        @xmlElement("ref")
         Bar ref_;
 
-        @XMLElementList("name")
+        @xmlElementList("name")
         Name[] names;
 
     }
 
-    @XMLRoot("foos")
+    @xmlRoot("foos")
     struct Foos
     {
-        @XMLElementList("foo")
-        @Ignore
+        @xmlElementList("foo")
+        @ignore
         Foo[] foos;
     }
 }
@@ -497,17 +594,17 @@ unittest
 {
     immutable xml = "<root><node>text</node></root>";
 
-    @XMLRoot("node")
+    @xmlRoot("node")
     static struct Node
     {
-        @Text
+        @text
         Nullable!string value;
     }
 
-    @XMLRoot("root")
+    @xmlRoot("root")
     static struct Root
     {
-        @XMLElement("node")
+        @xmlElement("node")
         Node node;
     }
 
