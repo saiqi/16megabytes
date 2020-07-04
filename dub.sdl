@@ -1,0 +1,7 @@
+name "vulpes"
+description "A data journalism tool suite"
+authors "saiqi"
+copyright "Copyright © 2019, saiqi"
+license "GPL-3.0"
+dependency "monetdb-d" version="0.0.1"
+dependency "dxml" version="~>0.4.1"
