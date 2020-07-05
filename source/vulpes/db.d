@@ -268,7 +268,6 @@ Params:
     records       = a lisranget of records
     upsertKeys    = the list of the columns that are used to check whether the current record exists
 Throws: monetdb.MonetDbException on failure, DatastoreException on unsupported operation
------------
 */
 void upsertRecords(R)(scope MonetDb conn, const string tableName,
         const MetaData metaDefs, R records, const string[] upsertKeys)
