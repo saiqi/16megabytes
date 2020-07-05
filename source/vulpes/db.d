@@ -35,6 +35,9 @@ enum SqlType : string
     TEXT = "TEXT"
 }
 
+alias IsUnique = Flag!"unique";
+alias IsNullable = Flag!"nullable";
+
 /// An SQL table representation
 struct MetaDataDefinition
 {
@@ -55,8 +58,8 @@ public:
             unique = a `std.typecons.Flag` flag to indicate whether the column could be declared as unique
             length = the length of the fields if needed (ex: VARCHAR)
     */
-    @safe this(const string name, const SqlType type, const Flag!"nullable" nullable,
-            const Flag!"unique" unique, const uint length = 0,)
+    @safe this(const string name, const SqlType type, const IsNullable nullable,
+            const IsUnique unique, const uint length = 0,)
     {
         enforce!DatastoreException(
             (type == SqlType.VARCHAR && length > 0) || type != SqlType.VARCHAR,
@@ -71,10 +74,10 @@ public:
     ///
     @safe unittest
     {
-        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15);
+        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, IsNullable.no, IsUnique.no, 15);
         import std.exception : assertThrown;
         assertThrown!DatastoreException(
-            MetaDataDefinition("foo", SqlType.VARCHAR, No.nullable, No.unique));
+            MetaDataDefinition("foo", SqlType.VARCHAR, IsNullable.no, IsUnique.no));
     }
 
     ///Return the name of the field
@@ -105,15 +108,15 @@ public:
     ///
     @safe unittest
     {
-        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, No.nullable, No.unique, 15);
+        immutable m = MetaDataDefinition("myfield", SqlType.VARCHAR, IsNullable.no, IsUnique.no, 15);
         assert(m.toSQL == "myfield VARCHAR(15) NOT NULL");
 
-        assert(MetaDataDefinition("myfield", SqlType.VARCHAR, Yes.nullable,
-            No.unique, 15).toSQL == "myfield VARCHAR(15)");
-        assert(MetaDataDefinition("myfield", SqlType.DATE, No.nullable, No.unique)
+        assert(MetaDataDefinition("myfield", SqlType.VARCHAR, IsNullable.yes,
+            IsUnique.no, 15).toSQL == "myfield VARCHAR(15)");
+        assert(MetaDataDefinition("myfield", SqlType.DATE, IsNullable.no, IsUnique.no)
                 .toSQL == "myfield DATE NOT NULL");
-        assert(MetaDataDefinition("myfield", SqlType.INTEGER, No.nullable,
-                Yes.unique).toSQL == "myfield INTEGER NOT NULL UNIQUE");
+        assert(MetaDataDefinition("myfield", SqlType.INTEGER, IsNullable.no,
+                IsUnique.yes).toSQL == "myfield INTEGER NOT NULL UNIQUE");
     }
 }
 
@@ -133,9 +136,9 @@ private string createTableStmt(const string tableName, const MetaData metaDefs,
 unittest
 {
     const MetaData meta = [
-        MetaDataDefinition("value", SqlType.VARCHAR, Yes.nullable, No.unique,
+        MetaDataDefinition("value", SqlType.VARCHAR, IsNullable.yes, IsUnique.no,
                 15),
-        MetaDataDefinition("id", SqlType.INTEGER, Yes.nullable, No.unique)
+        MetaDataDefinition("id", SqlType.INTEGER, IsNullable.yes, IsUnique.no)
     ];
     assert(createTableStmt("mytable", meta, No.ifNotExists,
             No.merge) == "CREATE TABLE mytable(value VARCHAR(15),id INTEGER);");
@@ -233,7 +236,7 @@ unittest
     string mergeTableName = "mymergetable";
     string partitionName = "mypartition";
     MetaData metas = [
-        MetaDataDefinition("myfield", SqlType.INTEGER, No.nullable, Yes.unique)
+        MetaDataDefinition("myfield", SqlType.INTEGER, IsNullable.no, IsUnique.yes)
     ];
     createTable(conn, tableName, metas, Yes.ifNotExists);
 
@@ -323,10 +326,10 @@ unittest
     }
 
     const MetaData metaDefs = [
-        MetaDataDefinition("id", SqlType.INTEGER, No.nullable, No.unique),
-        MetaDataDefinition("tenant", SqlType.VARCHAR, No.nullable, No.unique,
+        MetaDataDefinition("id", SqlType.INTEGER, IsNullable.no, IsUnique.no),
+        MetaDataDefinition("tenant", SqlType.VARCHAR, IsNullable.no, IsUnique.no,
                 5),
-        MetaDataDefinition("value", SqlType.INTEGER, Yes.nullable, No.unique)
+        MetaDataDefinition("value", SqlType.INTEGER, IsNullable.yes, IsUnique.no)
     ];
     const string[] upsertKeys = ["id", "tenant"];
     Record[string][] records = [
@@ -363,7 +366,7 @@ unittest
         conn.close();
     }
     const MetaData metaDefs = [
-        MetaDataDefinition("v", SqlType.INTEGER, No.nullable, No.unique)
+        MetaDataDefinition("v", SqlType.INTEGER, IsNullable.no, IsUnique.no)
     ];
     const string[] upsertKeys = ["v"];
     Record[string][] records = iota(10).map!((int a) => ["v": Record(a)]).array;
@@ -469,12 +472,12 @@ unittest
         conn.close();
     }
     const MetaData metaDefs = [
-        MetaDataDefinition("id", SqlType.INTEGER, No.nullable, No.unique),
-        MetaDataDefinition("tenant", SqlType.VARCHAR, No.nullable, No.unique,
+        MetaDataDefinition("id", SqlType.INTEGER, IsNullable.no, IsUnique.no),
+        MetaDataDefinition("tenant", SqlType.VARCHAR, IsNullable.no, IsUnique.no,
                 5),
-        MetaDataDefinition("value", SqlType.INTEGER, Yes.nullable, No.unique),
-        MetaDataDefinition("creation_date", SqlType.DATE, Yes.nullable, No.unique),
-        MetaDataDefinition("sysdate", SqlType.TIMESTAMP, Yes.nullable, No.unique)
+        MetaDataDefinition("value", SqlType.INTEGER, IsNullable.yes, IsUnique.no),
+        MetaDataDefinition("creation_date", SqlType.DATE, IsNullable.yes, IsUnique.no),
+        MetaDataDefinition("sysdate", SqlType.TIMESTAMP, IsNullable.yes, IsUnique.no)
     ];
     auto refDt = DateTime(1970, 1, 1, 0, 0, 0);
     Record[string][] records = [
