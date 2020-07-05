@@ -23,6 +23,7 @@ before_install:
   - sudo -u monetdb monetdb create 16megabytes
   - sudo -u monetdb monetdb set embedpy=true 16megabytes
   - sudo -u monetdb monetdb release 16megabytes
+  - echo $(monetdb --version)
 
 script:
   - dub test -b unittest-cov --compiler=${DC}
