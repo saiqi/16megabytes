@@ -228,7 +228,7 @@ unittest
 {
     import std.exception : assertNotThrown, assertThrown;
 
-    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
+    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "vulpes-test");
     scope (exit)
         conn.close();
 
@@ -281,30 +281,22 @@ if (isInputRange!R && is(ElementType!R == Record[string]))
         enforce!DatastoreException(r.keys.length > 1,
                 "Upsert does not support single column records!");
 
-        alias makeOnCondition = (string k) {
-            return "T." ~ k ~ " = " ~ r[k].getSQLValue;
-        };
+        auto stmt = "MERGE INTO "
+            ~ tableName
+            ~ " T USING (VALUES ("
+            ~ upsertKeys.map!(k => r[k].getSQLValue).joiner(",").to!string ~ ")) F ("
+            ~ upsertKeys.map!(k => k).joiner(",").to!string
+            ~ ") ON "
+            ~ upsertKeys.map!(k => "T." ~ k ~ " = F." ~ k).joiner(" AND ").to!string
+            ~ " WHEN MATCHED THEN UPDATE SET "
+            ~ metaDefs
+                .filter!(m => countUntil(upsertKeys, m.name) == -1)
+                .map!(m => m.name ~ " = " ~ r[m.name].getSQLValue).joiner(", ").to!string
+            ~ " WHEN NOT MATCHED THEN INSERT ("
+            ~ metaDefs.map!(m => m.name).joiner(", ").to!string
+            ~ ") VALUES ("
+            ~ metaDefs.map!(m => r[m.name].getSQLValue).joiner(", ").to!string ~ ")";
 
-        alias makeUpdateStmt = (immutable(MetaDataDefinition) m) {
-            return m.name ~ " = " ~ r[m.name].getSQLValue;
-        };
-
-        alias isNotAnUpsertKey = (immutable(MetaDataDefinition) m) {
-            return countUntil(upsertKeys, m.name) == -1;
-        };
-
-        alias makeInsertStmt = (immutable(MetaDataDefinition) m) {
-            return r[m.name].getSQLValue;
-        };
-
-        alias columnNames = (immutable(MetaDataDefinition) m) => m.name;
-
-        auto stmt = "MERGE INTO " ~ tableName ~ " T USING (SELECT 1 AS FAKE) F ON "
-            ~ upsertKeys.map!makeOnCondition.joiner(" AND ")
-            .to!string ~ " WHEN MATCHED THEN UPDATE SET " ~ metaDefs.filter!isNotAnUpsertKey
-            .map!makeUpdateStmt
-            .joiner(", ").to!string ~ " WHEN NOT MATCHED THEN INSERT (" ~ metaDefs.map!columnNames.joiner(", ")
-            .to!string ~ ") VALUES (" ~ metaDefs.map!makeInsertStmt.joiner(", ").to!string ~ ")";
         return stmt;
     };
 
@@ -317,7 +309,7 @@ if (isInputRange!R && is(ElementType!R == Record[string]))
 ///
 unittest
 {
-    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
+    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "vulpes-test");
     const string tableName = "upserttable";
     scope (exit)
     {
@@ -358,7 +350,7 @@ unittest
     import std.range : iota;
     import std.exception : assertThrown;
 
-    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
+    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "vulpes-test");
     const string tableName = "singleupserttable";
     scope (exit)
     {
@@ -397,7 +389,7 @@ void deleteRecords(scope MonetDb conn, const string tableName, const Record[stri
 ///
 unittest
 {
-    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
+    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "vulpes-test");
     const string tableName = "deletetable";
     scope (exit)
     {
@@ -464,7 +456,7 @@ if (isInputRange!R && is(ElementType!R == Record[string]))
 ///
 unittest
 {
-    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "16megabytes");
+    MonetDb conn = new MonetDb("localhost", 50_000, "monetdb", "monetdb", "sql", "vulpes-test");
     const string tableName = "bulkinserttable";
     scope (exit)
     {

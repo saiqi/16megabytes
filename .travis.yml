@@ -20,9 +20,9 @@ before_install:
   - sudo -u monetdb monetdbd start /var/lib/monetdb
   - sudo -u monetdb monetdbd set control=yes /var/lib/monetdb
   - sudo -u monetdb monetdbd set passphrase=testdb /var/lib/monetdb
-  - sudo -u monetdb monetdb create 16megabytes
-  - sudo -u monetdb monetdb set embedpy=true 16megabytes
-  - sudo -u monetdb monetdb release 16megabytes
+  - sudo -u monetdb monetdb create vulpes-test
+  - sudo -u monetdb monetdb set embedpy=true vulpes-test
+  - sudo -u monetdb monetdb release vulpes-test
   - echo $(monetdb --version)
 
 script:
