@@ -4,7 +4,7 @@ import std.exception : enforce;
 import std.traits : hasUDA, getUDAs, isArray;
 import std.range;
 import std.traits : isSomeChar, isArray;
-import std.typecons : Nullable, Flag;
+import std.typecons : Nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
 
 /// Specify the root XML node to be deserialized
@@ -82,7 +82,7 @@ struct attr
     }
 }
 
-/// Control that value must be deserialized from an attribute
+/// Control that value must be deserialized from text
 enum text;
 
 ///
@@ -96,9 +96,6 @@ enum text;
     }
 }
 
-/// Control that a field must not be deserialized if `ignoreItems` is set to `Yes`
-enum ignore;
-
 ///
 @safe nothrow unittest
 {
@@ -109,12 +106,9 @@ enum ignore;
     static struct Foo
     {
         @xmlElementList("bar")
-        @ignore
         Bar[] bar;
     }
 }
-
-alias IgnoreItems = Flag!"ignoreItems";
 
 private template getRootName(T)
 {
@@ -130,19 +124,6 @@ private template getElementName(alias v)
         enum getElementName = getUDAs!(v, xmlElement)[0].tagName;
     else static if(hasUDA!(v, xmlElementList))
         enum getElementName = getUDAs!(v, xmlElementList)[0].tagName;
-}
-
-private template shouldIgnore(alias v, IgnoreItems ignoreItems)
-{
-    static if(ignoreItems == IgnoreItems.no)
-        enum shouldIgnore = false;
-    else
-    {
-        static if(hasUDA!(v, ignore))
-            enum shouldIgnore = true;
-        else
-            enum shouldIgnore = false;
-    }
 }
 
 /// Check wether a range is a `ForwardRange` of characters
@@ -202,7 +183,7 @@ if(isForwardRangeOfChar!R)
     }
 }
 
-private void setValue(S, Entity, R, IgnoreItems ignoreItems)
+private void setValue(S, Entity, R)
 (ref S source, R[] path, Entity entity, R text_)
 if(isForwardRangeOfChar!R)
 {
@@ -217,7 +198,7 @@ if(isForwardRangeOfChar!R)
             if(path.length == 1)
             {
                 auto item = ET();
-                setValue!(ET, Entity, R, ignoreItems)(item, path, entity, text_);
+                setValue!(ET, Entity, R)(item, path, entity, text_);
                 source ~= item;
             }
             else
@@ -227,11 +208,10 @@ if(isForwardRangeOfChar!R)
                 {
                     static if (
                         hasUDA!(__traits(getMember, ET, m), xmlElement)
-                        || (hasUDA!(__traits(getMember, ET, m), xmlElementList)
-                            && !shouldIgnore!(__traits(getMember, ET, m), ignoreItems)))
+                        || hasUDA!(__traits(getMember, ET, m), xmlElementList))
                     {
                         if (getElementName!(__traits(getMember, ET, m)) == next)
-                            setValue!(typeof(__traits(getMember, source[$ - 1], m)), Entity, R, ignoreItems)
+                            setValue!(typeof(__traits(getMember, source[$ - 1], m)), Entity, R)
                                 (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
                     }
                 }
@@ -250,11 +230,10 @@ if(isForwardRangeOfChar!R)
                 {
                     static if (
                         hasUDA!(__traits(getMember, S, m), xmlElement)
-                        || (hasUDA!(__traits(getMember, S, m), xmlElementList)
-                            && !shouldIgnore!(__traits(getMember, S, m), ignoreItems)))
+                        || hasUDA!(__traits(getMember, S, m), xmlElementList))
                     {
                         if (getElementName!(__traits(getMember, S, m)) == next)
-                            setValue!(typeof(__traits(getMember, source, m)), Entity, R, ignoreItems)
+                            setValue!(typeof(__traits(getMember, source, m)), Entity, R)
                                 (__traits(getMember, source, m), path[1 .. $], entity, text_);
                     }
                 }
@@ -287,7 +266,7 @@ unittest
 }
 
 /// An `InputRange` of `T` resulting from the deserialization of a `ForwardRange` of `char`
-struct DeserializationResult(R, T, IgnoreItems ignoreItems)
+struct DeserializationResult(R, T)
 if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
 {
     private EntityRange!(simpleXML, R) _entityRange;
@@ -333,7 +312,7 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
             if (n.type == EntityType.elementStart)
             {
                 path ~= n.name.cleanNs();
-                setValue!(T, typeof(n), R, ignoreItems)(_current, path, n, _entityRange.getText());
+                setValue!(T, typeof(n), R)(_current, path, n, _entityRange.getText());
             }
 
             if (n.type == EntityType.elementEnd)
@@ -389,12 +368,12 @@ Params:
     ignoreItems = should we ignore the @ignore fields
     xmlStr = the serialized input
 */
-auto deserializeAsRangeOf(T, R, IgnoreItems ignoreItems)(R xmlStr)
+auto deserializeAsRangeOf(T, R)(R xmlStr)
 if(isForwardRangeOfChar!R)
 {
     import dxml.parser : parseXML;
     auto r = parseXML!(simpleXML, R)(xmlStr);
-    return DeserializationResult!(R, T, ignoreItems)(r);
+    return DeserializationResult!(R, T)(r);
 }
 
 version (unittest)
@@ -481,7 +460,6 @@ version (unittest)
     struct Foos
     {
         @xmlElementList("foo")
-        @ignore
         Foo[] foos;
     }
 }
@@ -512,7 +490,7 @@ unittest
     ~   "</level>\n"
     ~ "</root>";
 
-    auto results = deserializeAsRangeOf!(Foo, string, IgnoreItems.no)(xml);
+    auto results = deserializeAsRangeOf!(Foo, string)(xml);
     assert(!results.empty);
 
     results.popFront();
@@ -569,7 +547,7 @@ unittest
     ~   "</level>\n"
     ~ "</root>";
 
-    auto results = deserializeAsRangeOf!(Foos, string, IgnoreItems.no)(xml);
+    auto results = deserializeAsRangeOf!(Foos, string)(xml);
     assert(!results.empty);
 
     Foos fs = results.front;
@@ -577,16 +555,13 @@ unittest
     assert(fs.foos[0].id == 0);
     assert(fs.foos[0].desc.current.year == 2020);
     assert(fs.foos[0].desc.other.ref_.value == "XB12");
-
-    auto ignored = deserializeAsRangeOf!(Foos, string, IgnoreItems.yes)(xml);
-    assert(ignored.front.foos.length == 0);
 }
 
 unittest
 {
     immutable xml = "<root/>";
 
-    auto results = deserializeAsRangeOf!(Foo, string, IgnoreItems.no)(xml);
+    auto results = deserializeAsRangeOf!(Foo, string)(xml);
     assert(results.empty);
 }
 
@@ -608,7 +583,7 @@ unittest
         Node node;
     }
 
-    auto r = deserializeAsRangeOf!(Root, string, IgnoreItems.no)(xml);
+    auto r = deserializeAsRangeOf!(Root, string)(xml);
     assert(!r.empty);
     assert(r.front.node.value.get == "text");
 }
