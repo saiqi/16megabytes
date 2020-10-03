@@ -143,11 +143,12 @@ private void convertValue(S, R)(ref S field, R value)
 if(isAttrRange!R || isForwardRangeOfChar!R)
 {
     import std.conv : to;
+    import std.traits : TemplateOf;
 
     static if (isForwardRangeOfChar!R)
     {
         // Check whether field is Nullable
-        static if(__traits(hasMember, field, "get"))
+        static if(__traits(isSame, TemplateOf!S, Nullable))
             field = value.to!(typeof(field.get));
         else
             field = value.to!(typeof(field));
