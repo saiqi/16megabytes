@@ -37,6 +37,9 @@ enum SqlType : string
 
 alias IsUnique = Flag!"unique";
 alias IsNullable = Flag!"nullable";
+alias IfExists = Flag!"ifExists";
+alias IsMerge = Flag!"merge";
+alias IfNotExists = Flag!"ifNotExists";
 
 /// An SQL table representation
 struct MetaDataDefinition
@@ -45,8 +48,8 @@ private:
     string fieldName;
     SqlType fieldType;
     string fieldLength;
-    Flag!"nullable" fieldNullable;
-    Flag!"unique" fieldUnique;
+    IsNullable fieldNullable;
+    IsUnique fieldUnique;
 
 public:
     /**
@@ -123,7 +126,7 @@ public:
 alias MetaData = immutable(MetaDataDefinition)[];
 
 private string createTableStmt(const string tableName, const MetaData metaDefs,
-        const Flag!"ifNotExists" ifNotExists, const Flag!"merge" merge) pure
+        const IfNotExists ifNotExists, const IsMerge merge) pure
 {
     auto stmt = merge ? "CREATE MERGE TABLE " : "CREATE TABLE ";
     if (ifNotExists)
@@ -140,8 +143,8 @@ unittest
                 15),
         MetaDataDefinition("id", SqlType.INTEGER, IsNullable.yes, IsUnique.no)
     ];
-    assert(createTableStmt("mytable", meta, No.ifNotExists,
-            No.merge) == "CREATE TABLE mytable(value VARCHAR(15),id INTEGER);");
+    assert(createTableStmt("mytable", meta, IfNotExists.no,
+            IsMerge.no) == "CREATE TABLE mytable(value VARCHAR(15),id INTEGER);");
 }
 
 /**
@@ -154,9 +157,9 @@ Params:
 Throws: monetdb.MonetDbException on failure
 */
 void createTable(MonetDb conn, const string tableName, const MetaData metaDefs,
-        const Flag!"ifNotExists" ifNotExists)
+        const IfNotExists ifNotExists)
 {
-    auto stmt = createTableStmt(tableName, metaDefs, ifNotExists, No.merge);
+    auto stmt = createTableStmt(tableName, metaDefs, ifNotExists, IsMerge.no);
     conn.exec(stmt);
 }
 
@@ -168,7 +171,7 @@ Params:
     ifExists    = a `std.typecons.Flag` to indicate whether a `IF EXISTS` statement should be added
 Throws: monetdb.MonetDbException on failure
 */
-void dropTable(scope MonetDb conn, const string tableName, const Flag!"ifExists" ifExists)
+void dropTable(scope MonetDb conn, const string tableName, const IfExists ifExists)
 {
     auto stmt = "DROP TABLE ";
     if (ifExists)
@@ -202,9 +205,9 @@ Throws: monetdb.MonetDbException on failure
 void addPartition(MonetDb conn, const string tableName, const string partitionName,
         const MetaData metaDefs)
 {
-    auto mergeStmt = createTableStmt(tableName, metaDefs, Yes.ifNotExists, Yes.merge);
+    auto mergeStmt = createTableStmt(tableName, metaDefs, IfNotExists.yes, IsMerge.yes);
     conn.exec(mergeStmt);
-    auto partStmt = createTableStmt(partitionName, metaDefs, Yes.ifNotExists, No.merge);
+    auto partStmt = createTableStmt(partitionName, metaDefs, IfNotExists.yes, IsMerge.no);
     conn.exec(partStmt);
     conn.exec("ALTER TABLE " ~ tableName ~ " ADD TABLE " ~ partitionName ~ ";");
 }
@@ -238,18 +241,18 @@ unittest
     MetaData metas = [
         MetaDataDefinition("myfield", SqlType.INTEGER, IsNullable.no, IsUnique.yes)
     ];
-    createTable(conn, tableName, metas, Yes.ifNotExists);
+    createTable(conn, tableName, metas, IfNotExists.yes);
 
     assertNotThrown!MonetDbException(conn.query("SELECT * FROM MYTABLE;"));
     assertNotThrown!MonetDbException(truncateTable(conn, tableName));
-    assertNotThrown!MonetDbException(dropTable(conn, tableName, Yes.ifExists));
+    assertNotThrown!MonetDbException(dropTable(conn, tableName, IfExists.yes));
 
     addPartition(conn, mergeTableName, partitionName, metas);
     assertNotThrown!MonetDbException(conn.query("SELECT * FROM MYPARTITION;"));
     assertNotThrown!MonetDbException(conn.query("SELECT * FROM MYMERGETABLE;"));
     deletePartition(conn, mergeTableName, partitionName);
     assertThrown!MonetDbException(conn.query("SELECT * FROM MYPARTITION"));
-    dropTable(conn, mergeTableName, Yes.ifExists);
+    dropTable(conn, mergeTableName, IfExists.yes);
 }
 
 private string getSQLValue(Record r)
