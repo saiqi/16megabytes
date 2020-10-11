@@ -7,6 +7,17 @@ import std.traits : isSomeChar, isArray, TemplateOf, TemplateArgsOf;
 import std.typecons : Nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
 
+///Dedicated module `Exception`
+class DeserializationException : Exception
+{
+    @safe:
+    ///ditto
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
 /// Specify the root XML node to be deserialized
 struct xmlRoot
 {
@@ -170,16 +181,30 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
 
     static if (isForwardRangeOfChar!R)
     {
-        // Check whether field is Nullable
         static if(isNullable!S)
             field = value.to!(typeof(field.get));
         else
+        {
+            //TODO: improve error message by displaying the field name
+            enforce!DeserializationException(
+                value !is null, "Not nullable field cannot be null!");
             field = value.to!(typeof(field));
+        }
     }
     else
     {
-        if(!value.empty)
+        static if(isNullable!S)
+        {
+            if(!value.empty)
+                convertValue(field, value.front.value);
+        }
+        else
+        {
+            //TODO: improve error message by displaying the field name
+            enforce!DeserializationException(
+                !value.empty, "Not nullable field cannot be null!");
             convertValue(field, value.front.value);
+        }
     }
 }
 
@@ -276,8 +301,16 @@ if(isForwardRangeOfChar!R)
 
                         static if(isNullable!CT)
                         {
-                            if(__traits(getMember, source, m).isNull)
-                                __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]();
+                            static if(isNullable!S)
+                            {
+                                if(__traits(getMember, source.get, m).isNull)
+                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]();
+                            }
+                            else
+                            {
+                                if(__traits(getMember, source, m).isNull)
+                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]();
+                            }
                         }
 
                         // workaround compiler warning on Nullable.get_ being deprecated
@@ -512,7 +545,7 @@ version (unittest)
     struct Foo
     {
         @attr("id")
-        Nullable!uint id;
+        uint id;
 
         @attr("category")
         Nullable!string category;
@@ -565,6 +598,13 @@ unittest
     ~               "<name xml:lang='fr'>Baze</name>\n"
     ~               "<name xml:lang='en'>Baz</name>\n"
     ~           "</ns:foo>\n"
+    ~           "<ns:foo category='b'>\n"
+    ~               "<ref status='biz'>AF93</ref>\n"
+    ~               "<description>\n"
+    ~               "</description>\n"
+    ~               "<name xml:lang='fr'>Bize</name>\n"
+    ~               "<name xml:lang='en'>Biz</name>\n"
+    ~           "</ns:foo>\n"
     ~       "</foos>\n"
     ~   "</level>\n"
     ~ "</root>";
@@ -586,7 +626,7 @@ unittest
 
     Foo foo1 = results.front;
 
-    assert(foo1.id.get == 1);
+    assert(foo1.id == 1);
     assert(foo1.ref_.status.get == "baz");
     assert(foo1.ref_.value.get == "HB15");
     assert(foo1.names.length == 2);
@@ -600,9 +640,9 @@ unittest
     assert(!foo1.desc.previous.isNull);
     assert(foo1.desc.previous.get.year.get == 2019);
 
-    results.popFront();
+    import std.exception : assertThrown;
+    assertThrown!DeserializationException(results.popFront());
 
-    assert(results.empty);
 }
 
 unittest
