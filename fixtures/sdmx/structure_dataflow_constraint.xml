@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mes:Structure xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+    xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+    xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message https://registry.sdmx.org/schemas/v2_1/SDMXMessage.xsd">
+    <mes:Header>
+        <mes:ID>IREF944150</mes:ID>
+        <mes:Test>false</mes:Test>
+        <mes:Prepared>2020-12-26T14:53:30Z</mes:Prepared>
+        <mes:Sender id="IMF" />
+        <mes:Receiver id="not_supplied" />
+    </mes:Header>
+    <mes:Structures>
+        <str:Dataflows>
+            <str:Dataflow urn="urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=IMF:01R(1.0)" isExternalReference="false" agencyID="IMF" id="01R" isFinal="false" version="1.0">
+                <com:Name xml:lang="en">Exchange Rates and International Reserves (01R) for Collection</com:Name>
+                <com:Description xml:lang="en">Exchange Rates and International Reserves (01R) for Collection</com:Description>
+                <str:Structure>
+                    <Ref package="datastructure" agencyID="IMF" id="ECOFIN_DSD" version="1.0" class="DataStructure" />
+                </str:Structure>
+            </str:Dataflow>
+        </str:Dataflows>
+        <str:Constraints>
+            <str:ContentConstraint urn="urn:sdmx:org.sdmx.infomodel.registry.ContentConstraint=IMF:01R_CONSTRAINT(1.0)" isExternalReference="false" agencyID="IMF" id="01R_CONSTRAINT" isFinal="false" type="Allowed" version="1.0">
+                <com:Name xml:lang="en">01R_CONSTRAINT</com:Name>
+                <str:ConstraintAttachment>
+                    <str:Dataflow>
+                        <Ref package="datastructure" agencyID="IMF" id="01R" version="1.0" class="Dataflow" />
+                    </str:Dataflow>
+                </str:ConstraintAttachment>
+                <str:CubeRegion include="true">
+                    <com:KeyValue id="COUNTERPART_AREA">
+                        <com:Value>_Z</com:Value>
+                    </com:KeyValue>
+                    <com:KeyValue id="DATA_DOMAIN">
+                        <com:Value>01R</com:Value>
+                    </com:KeyValue>
+                    <com:KeyValue id="INDICATOR">
+                        <com:Value>ENEER_IX</com:Value>
+                        <com:Value>RAXG_USD</com:Value>
+                        <com:Value>RAFAIMF_USD</com:Value>
+                        <com:Value>ENSE_XDC_XDR_RATE</com:Value>
+                        <com:Value>RAXGNC_USD</com:Value>
+                        <com:Value>ENDA_XDC_USD_RATE</com:Value>
+                        <com:Value>RAXGO_USD</com:Value>
+                        <com:Value>EREER_IX</com:Value>
+                        <com:Value>ESNE_XDR_XDC_RATE</com:Value>
+                        <com:Value>ENDE_XDC_USD_RATE</com:Value>
+                        <com:Value>RAXGFXCB_USD</com:Value>
+                        <com:Value>ENOE_XDC_XDC_RATE</com:Value>
+                        <com:Value>RAXGFXFD_USD</com:Value>
+                        <com:Value>ESNA_XDR_XDC_RATE</com:Value>
+                        <com:Value>RAFASDR_USD</com:Value>
+                        <com:Value>RAFAGOLDV_OZT</com:Value>
+                        <com:Value>EDNA_USD_XDC_RATE</com:Value>
+                        <com:Value>RAXGEC_USD</com:Value>
+                        <com:Value>RAFAGOLDNV_USD</com:Value>
+                        <com:Value>RAXGFXCC_USD</com:Value>
+                        <com:Value>RAXGFX_USD</com:Value>
+                        <com:Value>RAXGFXGG_USD</com:Value>
+                        <com:Value>EDNE_USD_XDC_RATE</com:Value>
+                        <com:Value>ENSA_XDC_XDR_RATE</com:Value>
+                    </com:KeyValue>
+                    <com:KeyValue id="TIME_FORMAT">
+                        <com:Value>PT1M</com:Value>
+                        <com:Value>P6M</com:Value>
+                        <com:Value>P3M</com:Value>
+                        <com:Value>P1M</com:Value>
+                        <com:Value>P1Y</com:Value>
+                        <com:Value>P7D</com:Value>
+                        <com:Value>P1D</com:Value>
+                    </com:KeyValue>
+                </str:CubeRegion>
+            </str:ContentConstraint>
+        </str:Constraints>
+    </mes:Structures>
+</mes:Structure>

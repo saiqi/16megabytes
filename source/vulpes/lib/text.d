@@ -1,4 +1,4 @@
-module vulpes.text;
+module vulpes.lib.text;
 
 import std.range;
 

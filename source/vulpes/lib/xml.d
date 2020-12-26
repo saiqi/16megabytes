@@ -1,6 +1,7 @@
-module vulpes.xml;
+module vulpes.lib.xml;
 
 import std.exception : enforce;
+import std.format : format;
 import std.traits : hasUDA, getUDAs, isArray;
 import std.range;
 import std.traits : isSomeChar, isArray, TemplateOf, TemplateArgsOf;
@@ -146,10 +147,17 @@ private template getRootName(T)
 
 private template getElementName(S, string name)
 {
-    static if(hasUDA!(__traits(getMember, S, name), xmlElement))
-        enum getElementName = getUDAs!(__traits(getMember, S, name), xmlElement)[0].tagName;
-    else static if(hasUDA!(__traits(getMember, S, name), xmlElementList))
-        enum getElementName = getUDAs!(__traits(getMember, S, name), xmlElementList)[0].tagName;
+    alias member = __traits(getMember, S, name);
+    static if(hasUDA!(member, xmlElement))
+    {
+        static assert(!isArray!(typeof(member)));
+        enum getElementName = getUDAs!(member, xmlElement)[0].tagName;
+    }
+    else static if(hasUDA!(member, xmlElementList))
+    {
+        static assert(isArray!(typeof(member)));
+        enum getElementName = getUDAs!(member, xmlElementList)[0].tagName;
+    }
     else
         static assert(false);
 }
@@ -173,11 +181,14 @@ if(isArray!R)
     return tagName.split(":")[$ - 1];
 }
 
-private void convertValue(S, R)(ref S field, R value)
+private void convertValue(S, R)(ref S field, R value, string structName, string fieldName)
 if(isAttrRange!R || isForwardRangeOfChar!R)
 {
     import std.conv : to;
-    import std.traits : TemplateOf;
+
+    auto errMsg() {
+        return format!"Not nullable field %s.%s cannot be null!"(structName, fieldName);
+    }
 
     static if (isForwardRangeOfChar!R)
     {
@@ -185,9 +196,7 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
             field = value.to!(typeof(field.get));
         else
         {
-            //TODO: improve error message by displaying the field name
-            enforce!DeserializationException(
-                value !is null, "Not nullable field cannot be null!");
+            enforce!DeserializationException(value !is null, errMsg);
             field = value.to!(typeof(field));
         }
     }
@@ -196,14 +205,12 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
         static if(isNullable!S)
         {
             if(!value.empty)
-                convertValue(field, value.front.value);
+                convertValue(field, value.front.value, structName, fieldName);
         }
         else
         {
-            //TODO: improve error message by displaying the field name
-            enforce!DeserializationException(
-                !value.empty, "Not nullable field cannot be null!");
-            convertValue(field, value.front.value);
+            enforce!DeserializationException(!value.empty, errMsg);
+            convertValue(field, value.front.value, structName, fieldName);
         }
     }
 }
@@ -222,12 +229,14 @@ if(isForwardRangeOfChar!R)
             convertValue(__traits(getMember, source, m),
                 entity
                     .attributes
-                    .find!(a => a.name.cleanNs == getUDAs!(__traits(getMember, S, m), attr)[0].attrName));
+                    .find!(a => a.name.cleanNs == getUDAs!(__traits(getMember, S, m), attr)[0].attrName),
+                S.stringof,
+                m);
         }
         else static if (hasUDA!(__traits(getMember, S, m), text))
         {
             if(text_.length > 0)
-                convertValue(__traits(getMember, source, m), text_);
+                convertValue(__traits(getMember, source, m), text_, S.stringof, m);
         }
     }
 }
@@ -357,6 +366,7 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
     private EntityRange!(simpleXML, R) _entityRange;
     private T _current;
     private bool _primed;
+    private static Appender!(R[]) path;
 
     ///ditto
     this(EntityRange!(simpleXML, R) entityRange)
@@ -388,7 +398,7 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
         assert(isNextNodeReached(), "Seek range to first node");
 
         _current = T();
-        R[] path;
+        path.clear();
 
         while (!_entityRange.empty)
         {
@@ -397,12 +407,12 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
             if (n.type == EntityType.elementStart)
             {
                 path ~= n.name.cleanNs();
-                setValue!(T, typeof(n), R)(_current, path, n, _entityRange.getText());
+                setValue!(T, typeof(n), R)(_current, path.data, n, _entityRange.getText());
             }
 
             if (n.type == EntityType.elementEnd)
             {
-                path = path[0 .. $ - 1];
+                path = appender(path.data[0 .. ($ - 1)]);
                 if (n.name.cleanNs() == getRootName!T)
                 {
                     break;
@@ -450,7 +460,6 @@ Return a `DeserializationResult` of `T` resulting from the deserialization of a 
 Params:
     T           = the type of deserialized result
     R           = the type of input
-    ignoreItems = should we ignore the @ignore fields
     xmlStr = the serialized input
 */
 auto deserializeAsRangeOf(T, R)(R xmlStr)
@@ -459,6 +468,15 @@ if(isForwardRangeOfChar!R)
     import dxml.parser : parseXML;
     auto r = parseXML!(simpleXML, R)(xmlStr);
     return DeserializationResult!(R, T)(r);
+}
+
+auto deserializeAs(T, R)(R xmlStr)
+if(isForwardRangeOfChar!R)
+{
+    auto range = deserializeAsRangeOf!(T, R)(xmlStr);
+    enforce!DeserializationException(
+        !range.empty, format!"Cannot deserialize content as %s"(T.stringof));
+    return range.front;
 }
 
 version (unittest)
@@ -671,7 +689,6 @@ unittest
         Node node;
     }
 
-    auto r = deserializeAsRangeOf!(Root, string)(xml);
-    assert(!r.empty);
-    assert(r.front.node.value.get == "text");
+    auto r = deserializeAs!(Root, string)(xml);
+    assert(r.node.value.get == "text");
 }

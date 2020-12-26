@@ -369,7 +369,7 @@ unittest
 }
 
 /**
-Run a `DELETE FROM` statement that might have a `WHERE` clause or not.
+Run a `DELETE FROM` statement that could have a `WHERE` clause or not.
 Params:
     conn          = a `monetdb.MonetDb` connection instance
     tableName     = the name of the table

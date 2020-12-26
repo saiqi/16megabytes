@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Error xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message">
+    <mes:ErrorMessage code="140">
+        <com:Text xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">La syntaxe de la requête est invalide.</com:Text>
+    </mes:ErrorMessage>
+</mes:Error>

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure">
+  <mes:Header>
+    <mes:ID>categoryscheme_CLASSEMENT_DATAFLOWS_1609006033623</mes:ID>
+    <mes:Test>false</mes:Test>
+    <mes:Prepared>2020-12-26T19:07:13.623+01:00</mes:Prepared>
+    <mes:Sender id="FR1">
+      <com:Name xml:lang="fr">Institut national de la statistique et des études économiques</com:Name>
+    </mes:Sender>
+    <mes:Receiver id="unknown"/>
+    <mes:Source xml:lang="fr">Banque de données macro-économiques</mes:Source>
+  </mes:Header>
+  <mes:Structures>
+    <str:CategorySchemes>
+      <str:CategoryScheme id="CLASSEMENT_DATAFLOWS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.CategoryScheme=FR1:CLASSEMENT_DATAFLOWS(1.0)" agencyID="FR1" version="1.0">
+        <com:Name xml:lang="fr">Classement des dataflows</com:Name>
+        <com:Name xml:lang="en">Dataflows categorisation</com:Name>
+        <str:Category id="ECO" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO">
+          <com:Name xml:lang="fr">Économie – Conjoncture – Comptes nationaux</com:Name>
+          <com:Name xml:lang="en">Economy – Economic outlook – National accounts</com:Name>
+          <str:Category id="ECO_GENERALE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.ECO_GENERALE">
+            <com:Name xml:lang="fr">Économie générale (inflation, PIB, dette,...)</com:Name>
+            <com:Name xml:lang="en">General economy (inflation, GDP, debt,...)</com:Name>
+          </str:Category>
+          <str:Category id="CONJ" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.CONJ">
+            <com:Name xml:lang="fr">Conjoncture</com:Name>
+            <com:Name xml:lang="en">Economic outlook</com:Name>
+          </str:Category>
+          <str:Category id="CN_TRIM" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.CN_TRIM">
+            <com:Name xml:lang="fr">Comptes nationaux trimestriels</com:Name>
+            <com:Name xml:lang="en">Quaterly national accounts</com:Name>
+          </str:Category>
+          <str:Category id="CN_ANNUELS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.CN_ANNUELS">
+            <com:Name xml:lang="fr">Comptes nationaux annuels</com:Name>
+            <com:Name xml:lang="en">Annual national accounts</com:Name>
+          </str:Category>
+          <str:Category id="FI_PUB" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.FI_PUB">
+            <com:Name xml:lang="fr">Finances publiques</com:Name>
+            <com:Name xml:lang="en">Public finance</com:Name>
+          </str:Category>
+          <str:Category id="COMMERCE_EXT" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ECO.COMMERCE_EXT">
+            <com:Name xml:lang="fr">Commerce extérieur</com:Name>
+            <com:Name xml:lang="en">Foreign trade</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="DEMO" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO">
+          <com:Name xml:lang="fr">Démographie</com:Name>
+          <com:Name xml:lang="en">Demography</com:Name>
+          <str:Category id="EVO_STRU_POP" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO.EVO_STRU_POP">
+            <com:Name xml:lang="fr">Évolution et structure de la population</com:Name>
+            <com:Name xml:lang="en">Population change and structure</com:Name>
+          </str:Category>
+          <str:Category id="NAISSANCES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO.NAISSANCES">
+            <com:Name xml:lang="fr">Naissances – Fécondité</com:Name>
+            <com:Name xml:lang="en">Births – Fertility</com:Name>
+          </str:Category>
+          <str:Category id="DECES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO.DECES">
+            <com:Name xml:lang="fr">Décès – Mortalité – Espérance de vie</com:Name>
+            <com:Name xml:lang="en">Deaths – Mortality – Life expectancy</com:Name>
+          </str:Category>
+          <str:Category id="COUPLES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO.COUPLES">
+            <com:Name xml:lang="fr">Couples – Familles – Ménages</com:Name>
+            <com:Name xml:lang="en">Couples – Families – Households</com:Name>
+          </str:Category>
+          <str:Category id="IMMIG" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DEMO.IMMIG">
+            <com:Name xml:lang="fr">Étrangers – Immigrés</com:Name>
+            <com:Name xml:lang="en">Foreigners – Immigrants</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="REV_CONSO" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO">
+          <com:Name xml:lang="fr">Revenus – Pouvoir d'achat – Consommation</com:Name>
+          <com:Name xml:lang="en">Income – Purchasing power – Consumption</com:Name>
+          <str:Category id="REV_NIV_VIE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO.REV_NIV_VIE">
+            <com:Name xml:lang="fr">Revenus – Niveaux de vie – Pouvoir d'achat</com:Name>
+            <com:Name xml:lang="en">Income – Living standards – Purchasing power</com:Name>
+          </str:Category>
+          <str:Category id="RETRAITES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO.RETRAITES">
+            <com:Name xml:lang="fr">Protection sociale – Retraites</com:Name>
+            <com:Name xml:lang="en">Social protection – Pensions</com:Name>
+          </str:Category>
+          <str:Category id="PAUV_PREC" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO.PAUV_PREC">
+            <com:Name xml:lang="fr">Pauvreté – Précarité</com:Name>
+            <com:Name xml:lang="en">Poverty – precarity</com:Name>
+          </str:Category>
+          <str:Category id="PATRIMOINE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO.PATRIMOINE">
+            <com:Name xml:lang="fr">Patrimoine</com:Name>
+            <com:Name xml:lang="en">Estate</com:Name>
+          </str:Category>
+          <str:Category id="CONSO_EQUIP_MEN" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).REV_CONSO.CONSO_EQUIP_MEN">
+            <com:Name xml:lang="fr">Consommation et équipement des ménages</com:Name>
+            <com:Name xml:lang="en">Household consumption and ownership rates</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="SOCIETE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE">
+          <com:Name xml:lang="fr">Conditions de vie – Société</com:Name>
+          <com:Name xml:lang="en">Living standards – Society</com:Name>
+          <str:Category id="VIE_SOCIALE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.VIE_SOCIALE">
+            <com:Name xml:lang="fr">Société – Vie sociale – Élections</com:Name>
+            <com:Name xml:lang="en">Society – Social life – Elections</com:Name>
+          </str:Category>
+          <str:Category id="EDUC" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.EDUC">
+            <com:Name xml:lang="fr">Éducation – Formation – Compétences</com:Name>
+            <com:Name xml:lang="en">Education – Training – Skills</com:Name>
+          </str:Category>
+          <str:Category id="LOG" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.LOG">
+            <com:Name xml:lang="fr">Logement</com:Name>
+            <com:Name xml:lang="en">Housing</com:Name>
+          </str:Category>
+          <str:Category id="EGALITE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.EGALITE">
+            <com:Name xml:lang="fr">Égalité femmes-hommes</com:Name>
+            <com:Name xml:lang="en">Gender equality</com:Name>
+          </str:Category>
+          <str:Category id="SANTE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.SANTE">
+            <com:Name xml:lang="fr">Santé – Handicap – Dépendance</com:Name>
+            <com:Name xml:lang="en">Health – Handicap – dependency</com:Name>
+          </str:Category>
+          <str:Category id="JUSTICE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.JUSTICE">
+            <com:Name xml:lang="fr">Sécurité – Justice</com:Name>
+            <com:Name xml:lang="en">Safety – Justice</com:Name>
+          </str:Category>
+          <str:Category id="VACS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SOCIETE.VACS">
+            <com:Name xml:lang="fr">Loisirs – Culture</com:Name>
+            <com:Name xml:lang="en">Leisure – Culture</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="TRAVAIL" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).TRAVAIL">
+          <com:Name xml:lang="fr">Marché du travail – Salaires</com:Name>
+          <com:Name xml:lang="en">Labour market – Wages</com:Name>
+          <str:Category id="EMPLOI" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).TRAVAIL.EMPLOI">
+            <com:Name xml:lang="fr">Emploi – Population active</com:Name>
+            <com:Name xml:lang="en">Employment – Labour force</com:Name>
+          </str:Category>
+          <str:Category id="CHOMAGE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).TRAVAIL.CHOMAGE">
+            <com:Name xml:lang="fr">Chômage</com:Name>
+            <com:Name xml:lang="en">Unemployment</com:Name>
+          </str:Category>
+          <str:Category id="SALAIRES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).TRAVAIL.SALAIRES">
+            <com:Name xml:lang="fr">Salaires et revenus d'activité</com:Name>
+            <com:Name xml:lang="en">Wages and salaries</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="ENTRP" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ENTRP">
+          <com:Name xml:lang="fr">Entreprises</com:Name>
+          <com:Name xml:lang="en">Enterprises</com:Name>
+          <str:Category id="CREA_ENTRP" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ENTRP.CREA_ENTRP">
+            <com:Name xml:lang="fr">Démographie et créations des entreprises</com:Name>
+            <com:Name xml:lang="en">Business demography</com:Name>
+          </str:Category>
+          <str:Category id="CARAC_ENTRP" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ENTRP.CARAC_ENTRP">
+            <com:Name xml:lang="fr">Caractéristiques des entreprises</com:Name>
+            <com:Name xml:lang="en">Characteristics of enterprises</com:Name>
+          </str:Category>
+          <str:Category id="MONDIAL" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).ENTRP.MONDIAL">
+            <com:Name xml:lang="fr">Mondialisation, compétitivité et innovation</com:Name>
+            <com:Name xml:lang="en">Globalization, competitivity and innovation</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="SECT_ACT" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT">
+          <com:Name xml:lang="fr">Secteurs d'activité</com:Name>
+          <com:Name xml:lang="en">Business sector</com:Name>
+          <str:Category id="AGRI" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.AGRI">
+            <com:Name xml:lang="fr">Agriculture</com:Name>
+            <com:Name xml:lang="en">Agriculture</com:Name>
+          </str:Category>
+          <str:Category id="COMMERCE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.COMMERCE">
+            <com:Name xml:lang="fr">Commerce</com:Name>
+            <com:Name xml:lang="en">Wholesale and retail trade</com:Name>
+            <str:Category id="CARAC_COMMERCE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.COMMERCE.CARAC_COMMERCE">
+              <com:Name xml:lang="fr">Caractéristiques du commerce</com:Name>
+              <com:Name xml:lang="en">Characteristics of wholesale/retail trade</com:Name>
+            </str:Category>
+            <str:Category id="COMMERCE_DETAIL" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.COMMERCE.COMMERCE_DETAIL">
+              <com:Name xml:lang="fr">Commerce de détail</com:Name>
+              <com:Name xml:lang="en">Retailing</com:Name>
+            </str:Category>
+            <str:Category id="COMMERCE_GROS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.COMMERCE.COMMERCE_GROS">
+              <com:Name xml:lang="fr">Commerce de gros</com:Name>
+              <com:Name xml:lang="en">Wholesaling</com:Name>
+            </str:Category>
+          </str:Category>
+          <str:Category id="IND" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND">
+            <com:Name xml:lang="fr">Industrie (dont IAA)</com:Name>
+            <com:Name xml:lang="en">Industries (including food industries)</com:Name>
+            <str:Category id="CARAC_IND" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND.CARAC_IND">
+              <com:Name xml:lang="fr">Caractéristiques de l'industrie</com:Name>
+              <com:Name xml:lang="en">Characteristics of manufacturing</com:Name>
+            </str:Category>
+            <str:Category id="IND_MANUF" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND.IND_MANUF">
+              <com:Name xml:lang="fr">Industrie manufacturière</com:Name>
+              <com:Name xml:lang="en">Manufacturing industry</com:Name>
+            </str:Category>
+            <str:Category id="IAA" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND.IAA">
+              <com:Name xml:lang="fr">Industrie agro alimentaire</com:Name>
+              <com:Name xml:lang="en">Food industries</com:Name>
+            </str:Category>
+            <str:Category id="IND_AUTO" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND.IND_AUTO">
+              <com:Name xml:lang="fr">Industrie automobile</com:Name>
+              <com:Name xml:lang="en">Car industry</com:Name>
+            </str:Category>
+            <str:Category id="ENERGIE" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.IND.ENERGIE">
+              <com:Name xml:lang="fr">Énergie</com:Name>
+              <com:Name xml:lang="en">Energy</com:Name>
+            </str:Category>
+          </str:Category>
+          <str:Category id="CONSTR" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.CONSTR">
+            <com:Name xml:lang="fr">Construction</com:Name>
+            <com:Name xml:lang="en">Construction</com:Name>
+          </str:Category>
+          <str:Category id="SERVICES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.SERVICES">
+            <com:Name xml:lang="fr">Services</com:Name>
+            <com:Name xml:lang="en">Services</com:Name>
+            <str:Category id="CARAC_SERVICES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.SERVICES.CARAC_SERVICES">
+              <com:Name xml:lang="fr">Caractéristiques des services</com:Name>
+              <com:Name xml:lang="en">Characteristics of services</com:Name>
+            </str:Category>
+            <str:Category id="SERVICES_ACT" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.SERVICES.SERVICES_ACT">
+              <com:Name xml:lang="fr">Services par activités</com:Name>
+              <com:Name xml:lang="en">Services by activities</com:Name>
+            </str:Category>
+          </str:Category>
+          <str:Category id="TRANSPORTS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.TRANSPORTS">
+            <com:Name xml:lang="fr">Transports</com:Name>
+            <com:Name xml:lang="en">Transportation</com:Name>
+          </str:Category>
+          <str:Category id="TOURISME" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.TOURISME">
+            <com:Name xml:lang="fr">Tourisme</com:Name>
+            <com:Name xml:lang="en">Tourism</com:Name>
+          </str:Category>
+          <str:Category id="ESS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).SECT_ACT.ESS">
+            <com:Name xml:lang="fr">Économie sociale et solidaire</com:Name>
+            <com:Name xml:lang="en">Social and solidarity economy</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="AMNGT_TER" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AMNGT_TER">
+          <com:Name xml:lang="fr">Aménagement du territoire, villes et quartiers </com:Name>
+          <com:Name xml:lang="en">Town and country planning</com:Name>
+          <str:Category id="EQUIP_POP" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AMNGT_TER.EQUIP_POP">
+            <com:Name xml:lang="fr">Équipements et services à la population</com:Name>
+            <com:Name xml:lang="en">Population facilities and services</com:Name>
+          </str:Category>
+          <str:Category id="VILLES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AMNGT_TER.VILLES">
+            <com:Name xml:lang="fr">Villes et quartiers</com:Name>
+            <com:Name xml:lang="en">Municipalities and districts</com:Name>
+          </str:Category>
+          <str:Category id="DYN_TERR" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AMNGT_TER.DYN_TERR">
+            <com:Name xml:lang="fr">Dynamique des territoires</com:Name>
+            <com:Name xml:lang="en">Territory dynamics</com:Name>
+          </str:Category>
+          <str:Category id="MOBILITES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AMNGT_TER.MOBILITES">
+            <com:Name xml:lang="fr">Mobilités – Déplacements</com:Name>
+            <com:Name xml:lang="en">Mobility – trip</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="DD_ENV" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DD_ENV">
+          <com:Name xml:lang="fr">Développement durable – Environnement</com:Name>
+          <com:Name xml:lang="en">Sustainable development – Environment</com:Name>
+          <str:Category id="ENV" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DD_ENV.ENV">
+            <com:Name xml:lang="fr">Environnement</com:Name>
+            <com:Name xml:lang="en">Environment</com:Name>
+          </str:Category>
+          <str:Category id="DD" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).DD_ENV.DD">
+            <com:Name xml:lang="fr">Développement durable</com:Name>
+            <com:Name xml:lang="en">Sustainable development</com:Name>
+          </str:Category>
+        </str:Category>
+        <str:Category id="METHODES" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).METHODES">
+          <com:Name xml:lang="fr">Méthodes</com:Name>
+          <com:Name xml:lang="en">Méthodes</com:Name>
+        </str:Category>
+      </str:CategoryScheme>
+    </str:CategorySchemes>
+  </mes:Structures>
+</mes:Structure>
