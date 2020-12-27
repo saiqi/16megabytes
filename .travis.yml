@@ -17,11 +17,11 @@ before_install:
   - sudo usermod -a -G monetdb $USER
   - sudo sh -c "echo 'STARTUP=yes\nDBFARM=/var/lib/monetdb\n' > /etc/default/monetdb5-sql"
   - sudo service monetdb5-sql start
-  - sudo -u monetdb monetdbd set control=yes /var/lib/monetdb
-  - sudo -u monetdb monetdbd set passphrase=testdb /var/lib/monetdb
-  - sudo -u monetdb monetdb create vulpes-test
-  - sudo -u monetdb monetdb set embedpy=true vulpes-test
-  - sudo -u monetdb monetdb release vulpes-test
+  - sudo monetdbd set control=yes /var/lib/monetdb
+  - sudo monetdbd set passphrase=testdb /var/lib/monetdb
+  - sudo monetdb create vulpes-test
+  - sudo monetdb set embedpy=true vulpes-test
+  - sudo monetdb release vulpes-test
   - echo $(monetdb --version)
 
 script:
