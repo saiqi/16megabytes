@@ -86,7 +86,7 @@ auto getCubeDefinition(alias fetcher)(const string providerId, const string defi
         import std.range : enumerate, tee;
 
         const codelistIds = gatherCodelistIds(structures.dataStructures.get);
-        string[] bodies = new string[codelistIds.length];
+        Nullable!string[] bodies = new Nullable!string[codelistIds.length];
 
         auto taskList = codelistIds
             .enumerate
@@ -95,12 +95,20 @@ auto getCubeDefinition(alias fetcher)(const string providerId, const string defi
                 const provider = t[1][0];
                 const definition = t[1][1];
                 return runTask({
-                    bodies[i] = fetchStructure!fetcher(provider, StructureType.codelist, definition);
+                    try
+                    {
+                        bodies[i] = fetchStructure!fetcher(provider, StructureType.codelist, definition)
+                            .nullable;
+                    }
+                    catch(Exception e){}
                 });
             }).array;
+
         taskList.tee!(t => t.join).array;
+
         return bodies
-            .map!(b => b.deserializeAsRangeOf!SDMXCodelist)
+            .filter!(b => !b.isNull)
+            .map!(b => b.get.deserializeAsRangeOf!SDMXCodelist)
             .array
             .join;
     }
@@ -126,7 +134,11 @@ auto getCubeDefinition(alias fetcher)(const string providerId, const string defi
         });
 
         auto t2 = runTask({
-            concepts = getConcepts();
+            try
+            {
+                concepts = getConcepts();
+            }
+            catch(Exception e) {}
         });
 
         t1.join();
@@ -195,4 +207,26 @@ unittest
     assert(def2.dimensions[0].codes.length > 0);
     assert(!def2.attributes[0].concept.isNull);
     assert(def2.attributes[0].codes.length > 0);
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.typecons : tuple;
+    import std.algorithm : canFind, all, any;
+    import vibe.inet.url : URL;
+
+    auto mockFetcherDSD(const URL url, const string[string] headers)
+    {
+        if(url.toString.canFind("datastructure"))
+            return tuple(200, readText("./fixtures/sdmx/structure_dsd.xml"));
+        if(url.toString.canFind("conceptscheme"))
+            return tuple(200, readText("./fixtures/sdmx/structure_conceptscheme.xml"));
+        return tuple(500, readText("./fixtures/sdmx/error.xml"));
+    }
+
+    auto def = getCubeDefinition!mockFetcherDSD("FR1", "BALANCE-PAIEMENTS");
+    assert(def.id == "BALANCE-PAIEMENTS");
+    assert(def.dimensions.any!(d => !d.concept.isNull));
+    assert(def.dimensions.all!(d => d.codes.length == 0));
 }
