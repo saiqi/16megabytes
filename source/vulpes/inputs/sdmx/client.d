@@ -265,7 +265,7 @@ struct StructureRequest
     StructureReferences references;
 }
 
-auto fetch(alias fetcher = doRequest)(
+auto fetchStructure(alias fetcher = doRequest)(
     const string providerId,
     const StructureType type,
     const string resourceId = "all",
@@ -297,8 +297,8 @@ unittest
     }
 
     assertThrown!SDMXClientException(
-        fetch!mockerFetcher("Unknown", StructureType.dataflow));
+        fetchStructure!mockerFetcher("Unknown", StructureType.dataflow));
     assertNotThrown!SDMXClientException(
-        fetch!mockerFetcher(SDMXProvider.ECB.to!string, StructureType.dataflow));
+        fetchStructure!mockerFetcher(SDMXProvider.ECB.to!string, StructureType.dataflow));
 }
 

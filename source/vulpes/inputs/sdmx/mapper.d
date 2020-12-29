@@ -188,7 +188,7 @@ if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
         ? []
         : codelist.get.toCodes;
 
-    static if(is(T == SDMXDimension))
+    static if(is(T: SDMXDimension))
     {
         return Dimension(
             id,
@@ -198,14 +198,19 @@ if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
             concept
         );
     }
-    else {
+    else static if(is(T: SDMXTimeDimension))
+    {
         return Dimension(
-            id,
+            id.nullable,
             labels,
             true,
             codes,
             concept
         );
+    }
+    else
+    {
+        static assert(false);
     }
 }
 
@@ -243,9 +248,13 @@ CubeDefinition toDefinition(
     const(SDMXCodelist)[] codelists,
     const(SDMXConcept)[] concepts) pure nothrow @safe
 {
+    import std.range : chain;
     auto dimensions = structure.dataStructureComponents.dimensionList.dimensions
             .map!(d => d.toDimension(codelists, concepts))
-            .array;
+            .chain(
+                [structure.dataStructureComponents.dimensionList.timeDimension
+                    .toDimension(codelists, concepts)]
+            ).array;
 
     auto attrs = structure.dataStructureComponents.attributeList.attributes
         .map!(a => a.toAttribute(codelists, concepts))
@@ -272,13 +281,48 @@ unittest
     const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
+    const SDMXDataStructure dataStructure = structures.dataStructures.get.dataStructures[0];
+    const (const SDMXCodelist)[] codelists = structures.codelists.get.codelists;
+    const (const SDMXConcept)[] concepts = structures.concepts.get.conceptSchemes
+        .map!(cs => cs.concepts)
+        .array
+        .join;
+
     const CubeDefinition def = toDefinition(
-        structures.dataStructures.get.dataStructures[0],
-        structures.codelists.get.codelists,
-        structures.concepts.get.conceptSchemes
-            .map!(cs => cs.concepts)
-            .array
-            .join);
+        dataStructure,
+        codelists,
+        concepts);
+
+    assert(def.id == "DSD_nama_10_gdp");
+    assert(def.providerId == "ESTAT");
+    assert(def.measures.length == 1);
+    assert(def.measures[0].id == "OBS_VALUE");
+    assert(!def.measures[0].concept.isNull);
+    assert(def.measures[0].concept.get == Concept("OBS_VALUE", [Label(Language.en, "Observation value.")]));
+
+    assert(def.dimensions.length == 5);
+    assert(def.dimensions[0].id == "FREQ");
+    assert(!def.dimensions[0].isTimeDimension);
+    assert(def.dimensions[0].labels == [Label(Language.en, "FREQ")]);
+    assert(!def.dimensions[0].concept.isNull);
+    assert(def.dimensions[0].concept.get == Concept("FREQ", [Label(Language.en, "FREQ")]));
+    assert(def.dimensions[0].codes.length == 7);
+    assert(def.dimensions[0].codes[0].id == "D");
+    assert(def.dimensions[0].codes[0].labels == [Label(Language.en, "Daily")]);
+    assert(def.dimensions[4].id == "TIME_PERIOD");
+    assert(def.dimensions[4].labels == []);
+    assert(def.dimensions[4].isTimeDimension);
+    assert(!def.dimensions[4].concept.isNull);
+    assert(def.dimensions[4].concept.get == Concept("TIME", [Label(Language.en, "TIME")]));
+    assert(def.dimensions[4].codes.length == 0);
+
+    assert(def.attributes.length == 2);
+    assert(def.attributes[0].id == "OBS_FLAG");
+    assert(!def.attributes[0].concept.isNull);
+    assert(def.attributes[0].concept.get == Concept("OBS_FLAG", [Label(Language.en, "Observation flag.")]));
+    assert(def.attributes[0].codes.length == 12);
+    assert(def.attributes[0].codes[0] == Code("f", [Label(Language.en, "forecast")]));
+
 }
 
 Nullable!CubeDescription toDescription(const SDMXDataflow df) pure nothrow @safe
