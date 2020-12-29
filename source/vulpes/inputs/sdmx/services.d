@@ -81,7 +81,7 @@ auto getCubeDefinition(alias fetcher)(const string providerId, const string defi
 
     auto getCodelists()
     {
-        logInfo("Codelists not provided in the artefact, fetching them");
+        logDebug("Codelists not provided in the artefact, fetching them");
         import vibe.core.core : runTask;
         import std.range : enumerate, tee;
 
@@ -115,7 +115,7 @@ auto getCubeDefinition(alias fetcher)(const string providerId, const string defi
 
     auto getConcepts()
     {
-        logInfo("Concepts not provided in the artefact, fetching them");
+        logDebug("Concepts not provided in the artefact, fetching them");
         return fetchStructure!fetcher(providerId, StructureType.conceptscheme)
             .deserializeAsRangeOf!SDMXConcept
             .array;

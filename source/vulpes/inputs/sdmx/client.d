@@ -170,7 +170,7 @@ auto doStructureRequest(alias fetcher = doRequest)(const StructureRequest sReq)
 {
     auto url = sReq.toURL();
 
-    logInfo("Fetching from %s", url);
+    logDebug("Fetching from %s", url);
 
     auto response = fetcher(url, [
         "Accept":"application/vnd.sdmx.structure+xml;version=2.1",
