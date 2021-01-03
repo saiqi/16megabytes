@@ -50,7 +50,7 @@ URL getRoolURL(const SDMXProvider provider)
             return URL("https://sdmxcentral.imf.org/ws/public/sdmxapi/rest");
 
             case ILO:
-            return URL("http://www.ilo.org/ilostat/sdmx/ws/rest");
+            return URL("https://www.ilo.org/sdmx/rest");
 
             case WB:
             return URL("http://api.worldbank.org/v2/sdmx/rest");
@@ -74,30 +74,14 @@ URL toURL(const StructureRequest req)
     {
         final switch(req.type)
         {
-            case dataflow:
-            if(req.provider != SDMXProvider.WB && req.provider != SDMXProvider.ESTAT)
-                url.pathString([url.pathString, req.type, req.provider, req.version_, req.itemId].join("/"));
-            else
-                url.pathString([url.pathString, req.type, req.provider, req.version_].join("/"));
-            break;
-
-            case codelist, conceptscheme:
-            if(req.provider == SDMXProvider.UNSD || req.provider == SDMXProvider.IAEG || SDMXProvider.WB)
-                url.pathString(
-                    [url.pathString, req.type, req.provider, req.resourceId].join("/"));
-            else if(req.provider == SDMXProvider.ECB)
-                url.pathString(
-                    [url.pathString, req.type, req.provider, req.resourceId, req.version_].join("/"));
-            else
-                url.pathString(
-                    [url.pathString, req.type, req.provider, req.resourceId, req.version_, req.itemId].join("/"));
-            break;
-
-            case datastructure:
-            if(req.provider != SDMXProvider.WB)
-                url.pathString([url.pathString, req.type, req.provider, req.resourceId, req.version_].join("/"));
-            else
-                url.pathString([url.pathString, req.type, req.provider, "all"].join("/"));
+            case dataflow, codelist, conceptscheme, datastructure:
+            req.resourceId == "all"
+                ? url.pathString([url.pathString, req.type, req.provider].join("/"))
+                : url.pathString([url.pathString, req.type, req.provider, req.resourceId].join("/"));
+            // if(req.provider != SDMXProvider.WB && req.provider != SDMXProvider.ESTAT)
+            //     url.pathString([url.pathString, req.type, req.provider, req.version_, req.itemId].join("/"));
+            // else
+            //     url.pathString([url.pathString, req.type, req.provider, req.version_].join("/"));
             break;
         }
     }
@@ -166,16 +150,33 @@ auto doRequest(const URL url, string[string] headers)
     return tuple(resp.code, cast(string) resp.responseBody.data);
 }
 
+auto doVibedRequest(const URL url, string[string] headers)
+{
+    import vibe.http.client : requestHTTP;
+    import vibe.stream.operations : readAllUTF8;
+    auto resp = requestHTTP(url.toString, (scope req) {
+        foreach(i; headers.byKeyValue)
+        {
+            req.headers[i.key] = i.value;
+        }
+    });
+    scope(exit) resp.dropBody();
+
+    return tuple(resp.statusCode, resp.bodyReader.readAllUTF8);
+}
+
 auto doStructureRequest(alias fetcher = doRequest)(const StructureRequest sReq)
 {
     auto url = sReq.toURL();
 
-    logDebug("Fetching from %s", url);
+    logInfo("Fetching from %s", url);
 
     auto response = fetcher(url, [
         "Accept":"application/vnd.sdmx.structure+xml;version=2.1",
         "Accept-Encoding": "gzip,deflate"
     ]);
+
+    logInfo("Got response from %s", url);
 
     auto code = response[0];
     auto responseBody = response[1];

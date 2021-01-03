@@ -1,8 +1,10 @@
 module vulpes.inputs.sdmx.types;
 
-package:
-import std.typecons : Nullable;
+import std.typecons : Nullable, tuple, Tuple;
 import std.range : isInputRange, ElementType;
+import std.algorithm: map, filter, joiner;
+import std.range : chain;
+import std.array : array;
 import vulpes.lib.xml;
 
 enum SDMXProvider: string
@@ -158,7 +160,7 @@ struct SDMXLocalRepresentation
 struct SDMXTimeDimension
 {
     @attr("id")
-    string id;
+    Nullable!string id;
 
     @attr("urn")
     Nullable!string urn;
@@ -202,7 +204,7 @@ struct SDMXDimensionList
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElement("TimeDimension")
     SDMXTimeDimension timeDimension;
@@ -225,10 +227,10 @@ struct SDMXAttributeRelationship
 struct SDMXAttribute
 {
     @attr("id")
-    string id;
+    Nullable!string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("assignementStatus")
     Nullable!string assignementStatus;
@@ -250,7 +252,7 @@ struct SDMXAttributeList
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElementList("Attribute")
     SDMXAttribute[] attributes;
@@ -274,7 +276,7 @@ struct SDMXGroupDimension
 struct SDMXGroup
 {
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("id")
     string id;
@@ -303,7 +305,7 @@ struct SDMXMeasureList
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElement("PrimaryMeasure")
     SDMXPrimaryMeasure primaryMeasure;
@@ -332,7 +334,7 @@ struct SDMXDataStructure
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("agencyID")
     string agencyId;
@@ -354,7 +356,7 @@ struct SDMXCode
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElementList("Name")
     SDMXName[] names;
@@ -367,7 +369,7 @@ struct SDMXCodelist
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("agencyID")
     string agencyId;
@@ -389,7 +391,7 @@ struct SDMXConcept
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElementList("Name")
     SDMXName[] names;
@@ -402,7 +404,7 @@ struct SDMXConceptScheme
     string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("agencyID")
     string agencyId;
@@ -421,10 +423,10 @@ struct SDMXConceptScheme
 struct SDMXCategory
 {
     @attr("id")
-    string id;
+    Nullable!string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @xmlElementList("Name")
     SDMXName[] names;
@@ -434,16 +436,16 @@ struct SDMXCategory
 struct SDMXCategoryScheme
 {
     @attr("id")
-    string id;
+    Nullable!string id;
 
     @attr("urn")
-    string urn;
+    Nullable!string urn;
 
     @attr("agencyID")
-    string agencyId;
+    Nullable!string agencyId;
 
     @attr("version")
-    string version_;
+    Nullable!string version_;
 
     @xmlElementList("Name")
     SDMXName[] names;
@@ -653,13 +655,13 @@ unittest
 {
     import std.file : readText;
 
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dataflow_constraint.xml")
+    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
-    assert(structures.codelists.isNull);
-    assert(structures.concepts.isNull);
-    assert(structures.dataStructures.isNull);
+    assert(!structures.codelists.isNull);
+    assert(!structures.concepts.isNull);
+    assert(!structures.dataStructures.isNull);
     assert(!structures.dataflows.isNull);
     assert(!structures.constraints.isNull);
 
@@ -692,13 +694,13 @@ unittest
     assert(!contentConstraint.cubeRegion.isNull);
 
     const SDMXCubeRegion cubeRegion = contentConstraint.cubeRegion.get;
-    assert(cubeRegion.keyValues.length == 4);
+    assert(cubeRegion.keyValues.length == 2);
 
-    const SDMXKeyValue keyValue = cubeRegion.keyValues[2];
-    assert(keyValue.id == "INDICATOR");
-    assert(keyValue.values.length == 24);
+    const SDMXKeyValue keyValue = cubeRegion.keyValues[0];
+    assert(keyValue.id == "COUNTERPART_AREA");
+    assert(keyValue.values.length == 1);
     assert(!keyValue.values[0].content.isNull);
-    assert(keyValue.values[0].content.get == "ENEER_IX");
+    assert(keyValue.values[0].content.get == "_Z");
 }
 
 unittest
@@ -816,72 +818,84 @@ unittest
         .names[0] == SDMXName("fr", "Économie – Conjoncture – Comptes nationaux"));
 }
 
+alias ResourceRefPair = Tuple!(string, "resourceId", SDMXRef, "reference");
+alias AgencyReferencePair = Tuple!(string, "agencyId", string, "referenceId");
+
 private auto extractIdAndAgencyId(const SDMXRef ref_, const SDMXDataStructure structure)
 {
-    import std.typecons : tuple;
     return ref_.agencyId.isNull
-        ? tuple(structure.agencyId, ref_.id)
-        : tuple(ref_.agencyId.get, ref_.id);
+        ? AgencyReferencePair(structure.agencyId, ref_.id)
+        : AgencyReferencePair(ref_.agencyId.get, ref_.id);
+}
+
+private auto gatherResourceRefs(T)(T resources) pure nothrow @safe
+if(isInputRange!T && (is(ElementType!T: const(SDMXAttribute)) || is(ElementType!T: const(SDMXDimension))))
+{
+    return resources
+        .filter!(d =>
+            !d.localRepresentation.isNull
+            && !d.localRepresentation.get.enumeration.isNull
+            && !d.id.isNull)
+        .map!(d => ResourceRefPair(d.id.get, d.localRepresentation.get.enumeration.get.ref_));
+}
+
+private auto gatherResourceConcept(T)(T resources) pure nothrow @safe
+if(isInputRange!T &&
+    (
+        is(ElementType!T: const(SDMXAttribute))
+        || is(ElementType!T: const(SDMXDimension))
+        || is(ElementType!T: const(SDMXPrimaryMeasure))
+        || is(ElementType!T: const(SDMXTimeDimension))
+    )
+)
+{
+    return resources
+        .filter!(a => !a.id.isNull && !a.conceptIdentity.isNull)
+        .map!(a => ResourceRefPair(a.id.get, a.conceptIdentity.get.ref_));
+}
+
+private auto gatherEnumerationRefs(const SDMXDataStructure structure) pure nothrow @safe
+{
+    auto fromDimensions = structure
+        .dataStructureComponents.dimensionList.dimensions
+            .gatherResourceRefs;
+
+    auto fromAttributes = structure
+        .dataStructureComponents.attributeList.attributes
+            .gatherResourceRefs;
+
+    return chain(fromDimensions, fromAttributes);
 }
 
 auto gatherCodelistIds(const SDMXDataStructures structures) pure nothrow @safe
 {
-    import std.algorithm : map, filter, joiner;
-    import std.range : chain;
-    import std.array : array;
-
     return structures.dataStructures
-        .map!(ds =>
-            ds.dataStructureComponents.dimensionList.dimensions
-                .filter!(d =>
-                    !d.localRepresentation.isNull
-                    && !d.localRepresentation.get.enumeration.isNull
-                )
-                .map!(d => extractIdAndAgencyId(
-                    d.localRepresentation.get.enumeration.get.ref_,
-                    ds
-                ))
-                .chain(
-                    ds.dataStructureComponents.attributeList.attributes
-                        .filter!(a =>
-                            !a.localRepresentation.isNull
-                            && !a.localRepresentation.get.enumeration.isNull
-                        )
-                        .map!(a => extractIdAndAgencyId(
-                            a.localRepresentation.get.enumeration.get.ref_,
-                            ds
-                        ))
-                )
-        )
+        .map!(ds => gatherEnumerationRefs(ds).map!(r => extractIdAndAgencyId(r.reference, ds)))
         .joiner
         .array;
 }
 
 auto gatherConceptIds(const SDMXDataStructures structures) pure nothrow @safe
 {
-    import std.algorithm : map, filter, joiner;
-    import std.range : chain;
-    import std.array : array;
-
     return structures.dataStructures
         .map!(ds =>
             ds.dataStructureComponents.dimensionList.dimensions
-                .filter!(d => !d.conceptIdentity.isNull)
-                .map!(d => extractIdAndAgencyId(d.conceptIdentity.get.ref_, ds))
+                .gatherResourceConcept
+                .map!(d => extractIdAndAgencyId(d.reference, ds))
                 .chain(
                     ds.dataStructureComponents.attributeList.attributes
-                        .filter!(a => !a.conceptIdentity.isNull)
-                        .map!(a => extractIdAndAgencyId(a.conceptIdentity.get.ref_, ds))
+                        .gatherResourceConcept
+                        .map!(a => extractIdAndAgencyId(a.reference, ds))
                 )
                 .chain(
                     [ds.dataStructureComponents.measureList.primaryMeasure]
-                        .filter!(m => !m.conceptIdentity.isNull)
-                        .map!(m => extractIdAndAgencyId(m.conceptIdentity.get.ref_, ds))
+                        .gatherResourceConcept
+                        .map!(m => extractIdAndAgencyId(m.reference, ds))
                 )
                 .chain(
                     [ds.dataStructureComponents.dimensionList.timeDimension]
-                        .filter!(t => !t.conceptIdentity.isNull)
-                        .map!(t => extractIdAndAgencyId(t.conceptIdentity.get.ref_, ds))
+                        .gatherResourceConcept
+                        .map!(t => extractIdAndAgencyId(t.reference, ds))
                 )
         )
         .joiner
@@ -891,7 +905,6 @@ auto gatherConceptIds(const SDMXDataStructures structures) pure nothrow @safe
 unittest
 {
     import std.file : readText;
-    import std.typecons : tuple;
 
     const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
@@ -899,9 +912,9 @@ unittest
     const SDMXDataStructures dataStructures = structures.dataStructures.get;
     const conceptIds = gatherConceptIds(dataStructures);
     assert(conceptIds.length == 8);
-    assert(conceptIds[0] == tuple("ESTAT", "FREQ"));
+    assert(conceptIds[0] == AgencyReferencePair("ESTAT", "FREQ"));
 
     const codelistIds = gatherCodelistIds(dataStructures);
     assert(codelistIds.length == 6);
-    assert(codelistIds[0] == tuple("ESTAT", "CL_FREQ"));
+    assert(codelistIds[0] == AgencyReferencePair("ESTAT", "CL_FREQ"));
 }

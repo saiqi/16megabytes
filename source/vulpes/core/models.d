@@ -9,6 +9,11 @@ enum Language: string
     es = "es"
 }
 
+enum Warning: string
+{
+    no_code_constraint_provided = "No code constraint has been provided"
+}
+
 struct Label
 {
     Language language;
@@ -38,6 +43,7 @@ struct CubeDefinition
     Dimension[] dimensions;
     Attribute[] attributes;
     Measure[] measures;
+    Warning[] warnings;
 }
 
 struct Dimension

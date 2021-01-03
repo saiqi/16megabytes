@@ -74,8 +74,8 @@ if(hasMember!(T, Nullable!SDMXConceptIdentity, "conceptIdentity"))
 
     const r = SDMXResource(SDMXConceptIdentity(SDMXRef("concept")).nullable);
     const cs = [
-        const(SDMXConcept)("concept", "urn", [SDMXName("fr", "concept")]),
-        const(SDMXConcept)("other", "urn", [SDMXName("fr", "other")])
+        const(SDMXConcept)("concept", "urn".nullable, [SDMXName("fr", "concept")]),
+        const(SDMXConcept)("other", "urn".nullable, [SDMXName("fr", "other")])
     ];
     const sConcept = r.findSDMXConcept(cs);
     assert(!sConcept.isNull);
@@ -83,7 +83,7 @@ if(hasMember!(T, Nullable!SDMXConceptIdentity, "conceptIdentity"))
 
     assert(r.findSDMXConcept(
         [
-            const(SDMXConcept)("other", "urn", [SDMXName("fr", "other")])
+            const(SDMXConcept)("other", "urn".nullable, [SDMXName("fr", "other")])
         ]
     ).isNull);
     const nr = SDMXResource((Nullable!SDMXConceptIdentity).init);
@@ -97,7 +97,7 @@ Concept toConcept(const SDMXConcept concept) pure nothrow @safe
 
 @safe unittest
 {
-    const SDMXConcept concept = SDMXConcept("foo", "urn", [SDMXName("en", "foo")]);
+    const SDMXConcept concept = SDMXConcept("foo", "urn".nullable, [SDMXName("en", "foo")]);
     assert(concept.toConcept == Concept("foo", [Label(Language.en, "foo", (Nullable!string).init)]));
 }
 
@@ -129,29 +129,40 @@ if(hasMember!(T, Nullable!SDMXLocalRepresentation, "localRepresentation"))
         SDMXEnumeration(SDMXRef("codelist")).nullable).nullable);
 
     const cls = [
-        const(SDMXCodelist)("codelist", "urn", "agency", "1.0", [], [
-            const(SDMXCode)("code1", "urn", [SDMXName("fr", "code1")]),
-            const(SDMXCode)("code2", "urn", [SDMXName("fr", "code2")])
+        const(SDMXCodelist)("codelist", "urn".nullable, "agency", "1.0", [], [
+            const(SDMXCode)("code1", "urn".nullable, [SDMXName("fr", "code1")]),
+            const(SDMXCode)("code2", "urn".nullable, [SDMXName("fr", "code2")])
         ]),
-        const(SDMXCodelist)("other", "urn", "agency", "1.0", [], [
-            const(SDMXCode)("other1", "urn", [SDMXName("fr", "other1")]),
-            const(SDMXCode)("other2", "urn", [SDMXName("fr", "other2")])
+        const(SDMXCodelist)("other", "urn".nullable, "agency", "1.0", [], [
+            const(SDMXCode)("other1", "urn".nullable, [SDMXName("fr", "other1")]),
+            const(SDMXCode)("other2", "urn".nullable, [SDMXName("fr", "other2")])
         ])
     ];
 
     const codes = r.findSDMXCodelist(cls).get.codes;
     assert(codes.equal([
-            const(SDMXCode)("code1", "urn", [SDMXName("fr", "code1")]),
-            const(SDMXCode)("code2", "urn", [SDMXName("fr", "code2")])
+            const(SDMXCode)("code1", "urn".nullable, [SDMXName("fr", "code1")]),
+            const(SDMXCode)("code2", "urn".nullable, [SDMXName("fr", "code2")])
         ]));
     assert(r.findSDMXCodelist([
-        const(SDMXCodelist)("other", "urn", "agency", "1.0", [], [
-            const(SDMXCode)("other1", "urn", [SDMXName("fr", "other1")]),
-            const(SDMXCode)("other2", "urn", [SDMXName("fr", "other2")])
+        const(SDMXCodelist)("other", "urn".nullable, "agency", "1.0", [], [
+            const(SDMXCode)("other1", "urn".nullable, [SDMXName("fr", "other1")]),
+            const(SDMXCode)("other2", "urn".nullable, [SDMXName("fr", "other2")])
         ])
     ]).isNull);
 
     assert(findSDMXCodelist(SDMXResource((Nullable!SDMXLocalRepresentation).init), cls).isNull);
+}
+
+Nullable!(const(SDMXKeyValue)) findSDMXKeyValue(T)(T resource, const(SDMXKeyValue)[] keyValues) pure nothrow @safe
+if(is(T: const(SDMXDimension)) || is(T: const(SDMXTimeDimension)) || is(T: const(SDMXAttribute)))
+{
+    auto res = keyValues
+        .filter!(kv => !resource.id.isNull && kv.id == resource.id.get);
+
+    return res.empty
+        ? typeof(return).init
+        : res.front.nullable;
 }
 
 Code toCode(const SDMXCode code) pure nothrow @safe
@@ -161,8 +172,25 @@ Code toCode(const SDMXCode code) pure nothrow @safe
 
 @safe unittest
 {
-    assert(SDMXCode("foo", "urn", [SDMXName("en", "foo")]).toCode ==
+    assert(SDMXCode("foo", "urn".nullable, [SDMXName("en", "foo")]).toCode ==
         Code("foo", [Label(Language.en, "foo", (Nullable!string).init)]));
+}
+
+Code[] toCodes(const SDMXCodelist codelist, const SDMXKeyValue keyValue) pure nothrow @safe
+{
+    auto filterByConstraint(const SDMXCode code)
+    {
+        import std.algorithm : canFind;
+
+        return keyValue.values
+            .filter!(v => !v.content.isNull)
+            .map!(v => v.content.get)
+            .canFind(code.id);
+    }
+    return codelist.codes
+        .filter!filterByConstraint
+        .map!toCode
+        .array;
 }
 
 Code[] toCodes(const SDMXCodelist codelist) pure nothrow @safe
@@ -172,12 +200,26 @@ Code[] toCodes(const SDMXCodelist codelist) pure nothrow @safe
         .array;
 }
 
+auto flattenConstraints(const SDMXConstraints constraints) pure nothrow @safe
+{
+    import std.array : join;
+    return constraints.constraints
+        .filter!(c => !c.cubeRegion.isNull)
+        .map!(c => c.cubeRegion.get.keyValues)
+        .array
+        .join;
+}
+
 Dimension toDimension(T)(
-    T dimension, const(SDMXCodelist)[] codelists, const(SDMXConcept)[] concepts) pure nothrow @safe
+    T dimension,
+    const(SDMXCodelist)[] codelists,
+    const(SDMXConcept)[] concepts,
+    const (SDMXKeyValue)[] keyValues) pure nothrow @safe
 if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
 {
     const codelist = dimension.findSDMXCodelist(codelists);
     const sdmxConcept = dimension.findSDMXConcept(concepts);
+    const keyValue = dimension.findSDMXKeyValue(keyValues);
 
     auto labels = codelist.isNull ? [] : codelist.get.toLabels;
     auto id = dimension.id;
@@ -186,7 +228,9 @@ if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
         : sdmxConcept.get.toConcept.nullable;
     auto codes = codelist.isNull
         ? []
-        : codelist.get.toCodes;
+        : keyValue.isNull
+            ? codelist.get.toCodes
+            : codelist.get.toCodes(keyValue.get);
 
     static if(is(T: SDMXDimension))
     {
@@ -201,7 +245,7 @@ if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
     else static if(is(T: SDMXTimeDimension))
     {
         return Dimension(
-            id.nullable,
+            id,
             labels,
             true,
             codes,
@@ -215,15 +259,23 @@ if((is(T: SDMXDimension) || is(T: SDMXTimeDimension)))
 }
 
 Attribute toAttribute(
-    const SDMXAttribute attr, const(SDMXCodelist)[] codelists, const(SDMXConcept)[] concepts) pure nothrow @safe
+    const SDMXAttribute attr,
+    const(SDMXCodelist)[] codelists,
+    const(SDMXConcept)[] concepts,
+    const (SDMXKeyValue)[] keyValues) pure nothrow @safe
 {
     auto codelist = attr.findSDMXCodelist(codelists);
     auto concept = attr.findSDMXConcept(concepts);
+    const keyValue = attr.findSDMXKeyValue(keyValues);
 
     return Attribute(
-        attr.id.nullable,
+        attr.id,
         codelist.isNull ? [] : codelist.get.toLabels,
-        codelist.isNull ? [] : codelist.get.toCodes,
+        codelist.isNull
+            ? []
+            : keyValue.isNull
+                ? codelist.get.toCodes
+                : codelist.get.toCodes(keyValue.get),
         concept.isNull ? (Nullable!Concept).init : concept.get.toConcept.nullable);
 }
 
@@ -246,18 +298,24 @@ public:
 CubeDefinition toDefinition(
     const SDMXDataStructure structure,
     const(SDMXCodelist)[] codelists,
-    const(SDMXConcept)[] concepts) pure nothrow @safe
+    const(SDMXConcept)[] concepts,
+    const Nullable!SDMXConstraints constraints) pure nothrow @safe
 {
     import std.range : chain;
+
+    auto keyValues = constraints.isNull
+        ? []
+        : flattenConstraints(constraints.get);
+
     auto dimensions = structure.dataStructureComponents.dimensionList.dimensions
-            .map!(d => d.toDimension(codelists, concepts))
+            .map!(d => d.toDimension(codelists, concepts, keyValues))
             .chain(
                 [structure.dataStructureComponents.dimensionList.timeDimension
-                    .toDimension(codelists, concepts)]
+                    .toDimension(codelists, concepts, keyValues)]
             ).array;
 
     auto attrs = structure.dataStructureComponents.attributeList.attributes
-        .map!(a => a.toAttribute(codelists, concepts))
+        .map!(a => a.toAttribute(codelists, concepts, keyValues))
         .array;
 
     auto measure = structure.dataStructureComponents.measureList.primaryMeasure
@@ -268,7 +326,10 @@ CubeDefinition toDefinition(
         structure.id,
         dimensions,
         attrs,
-        [measure]
+        [measure],
+        constraints.isNull
+            ? [Warning.no_code_constraint_provided]
+            : []
     );
 }
 
@@ -278,22 +339,24 @@ unittest
     import vulpes.lib.xml : deserializeAs;
     import std.array : join;
 
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
+    const structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
-    const SDMXDataStructure dataStructure = structures.dataStructures.get.dataStructures[0];
-    const (const SDMXCodelist)[] codelists = structures.codelists.get.codelists;
-    const (const SDMXConcept)[] concepts = structures.concepts.get.conceptSchemes
+    auto dataStructure = structures.dataStructures.get.dataStructures[0];
+    auto codelists = structures.codelists.get.codelists;
+    auto concepts = structures.concepts.get.conceptSchemes
         .map!(cs => cs.concepts)
         .array
         .join;
 
-    const CubeDefinition def = toDefinition(
+    auto def = toDefinition(
         dataStructure,
         codelists,
-        concepts);
+        concepts,
+        structures.constraints);
 
     assert(def.id == "DSD_nama_10_gdp");
+    assert(def.warnings.length == 1);
     assert(def.providerId == "ESTAT");
     assert(def.measures.length == 1);
     assert(def.measures[0].id == "OBS_VALUE");
@@ -323,6 +386,34 @@ unittest
     assert(def.attributes[0].codes.length == 12);
     assert(def.attributes[0].codes[0] == Code("f", [Label(Language.en, "forecast")]));
 
+}
+
+unittest
+{
+    import std.file : readText;
+    import vulpes.lib.xml : deserializeAs;
+    import std.array : join;
+
+    auto structures = readText(
+        "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
+        .deserializeAs!SDMXStructures;
+
+    auto dataStructure = structures.dataStructures.get.dataStructures[0];
+    auto codelists = structures.codelists.get.codelists;
+    auto concepts = structures.concepts.get.conceptSchemes
+        .map!(cs => cs.concepts)
+        .array
+        .join;
+
+    auto def = toDefinition(
+        dataStructure,
+        codelists,
+        concepts,
+        structures.constraints);
+    assert(def.warnings.length == 0);
+    assert(def.dimensions.length == 4);
+    assert(def.dimensions[1].codes.length > 1);
+    assert(def.dimensions[2].codes.length == 1);
 }
 
 Nullable!CubeDescription toDescription(const SDMXDataflow df) pure nothrow @safe
