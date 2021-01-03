@@ -60,6 +60,7 @@ auto getCubeDefinition(alias fetcher)(
     const string definitionId)
 {
     import vibe.core.concurrency : async;
+    import vulpes.lib.futures : getResultOrFail;
 
     auto fetchDSDMessage = async({
         return fetchStructure!fetcher(
@@ -81,8 +82,8 @@ auto getCubeDefinition(alias fetcher)(
         ).deserializeAs!SDMXStructures;
     });
 
-    const dsdStructures = fetchDSDMessage.getResult;
-    const dataflowStructures = fetchDataflowMessages.getResult;
+    const dsdStructures = fetchDSDMessage.getResultOrFail!SDMXClientException;
+    const dataflowStructures = fetchDataflowMessages.getResultOrFail!SDMXClientException;
 
     enforce!SDMXServiceException(
         !dsdStructures.dataStructures.isNull,
@@ -149,15 +150,16 @@ auto getCubeDefinition(alias fetcher)(
         auto fetchConcepts_ = fetchConcepts();
         auto fetchCodelists_ = fetchCodelists();
         return toDefinition(
-            currentDataStructure, fetchCodelists_.map!(p => p.getResult).array.join,
-            fetchConcepts_.getResult, dataflowStructures.constraints);
+            currentDataStructure, fetchCodelists_.map!(p => p.getResultOrFail!SDMXClientException).array.join,
+            fetchConcepts_.getResultOrFail!SDMXClientException, dataflowStructures.constraints);
     } else if(!codelists) {
         return toDefinition(
-            currentDataStructure, fetchCodelists().map!(p => p.getResult).array.join,
+            currentDataStructure, fetchCodelists().map!(p => p.getResultOrFail!SDMXClientException).array.join,
             concepts, dataflowStructures.constraints);
     } else {
         return toDefinition(
-            currentDataStructure, codelists,fetchConcepts().getResult, dataflowStructures.constraints);
+            currentDataStructure, codelists,
+            fetchConcepts().getResultOrFail!SDMXClientException, dataflowStructures.constraints);
     }
 }
 
@@ -228,7 +230,8 @@ unittest
 {
     import std.file : readText;
     import std.typecons : tuple;
-    import std.algorithm : canFind, all, any;
+    import std.algorithm : canFind;
+    import std.exception : assertThrown;
     import vibe.inet.url : URL;
 
     auto mockFetcherDSD(const URL url, const string[string] headers)
@@ -240,5 +243,6 @@ unittest
         return tuple(500, readText("./fixtures/sdmx/error.xml"));
     }
 
-    // auto def = getCubeDefinition!mockFetcherDSD("FR1", "BALANCE-PAIEMENTS", "BALANCE-PAIEMENTS");
+    assertThrown!SDMXClientException(
+        getCubeDefinition!mockFetcherDSD("FR1", "BALANCE-PAIEMENTS", "BALANCE-PAIEMENTS"));
 }

@@ -224,6 +224,20 @@ unittest
 }
 
 public:
+enum SDMXProvider: string
+{
+    FR1 = "FR1",
+    ESTAT = "ESTAT",
+    ECB = "ECB",
+    UNSD = "UNSD",
+    IMF = "IMF",
+    ILO = "ILO",
+    WB = "WB",
+    WITS = "WITS",
+    IAEG = "IAEG",
+    SDMX = "SDMX"
+}
+
 enum StructureType: string
 {
     dataflow = "dataflow",

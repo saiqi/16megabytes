@@ -1,25 +1,7 @@
 module vulpes.inputs.sdmx.types;
 
-import std.typecons : Nullable, tuple, Tuple;
-import std.range : isInputRange, ElementType;
-import std.algorithm: map, filter, joiner;
-import std.range : chain;
-import std.array : array;
+import std.typecons : Nullable;
 import vulpes.lib.xml;
-
-enum SDMXProvider: string
-{
-    FR1 = "FR1",
-    ESTAT = "ESTAT",
-    ECB = "ECB",
-    UNSD = "UNSD",
-    IMF = "IMF",
-    ILO = "ILO",
-    WB = "WB",
-    WITS = "WITS",
-    IAEG = "IAEG",
-    SDMX = "SDMX"
-}
 
 @xmlRoot("Text")
 struct SDMXText
@@ -655,7 +637,7 @@ unittest
 {
     import std.file : readText;
 
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
+    const structures = readText("./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
@@ -665,10 +647,10 @@ unittest
     assert(!structures.dataflows.isNull);
     assert(!structures.constraints.isNull);
 
-    const SDMXDataflows dataflows = structures.dataflows.get;
+    const dataflows = structures.dataflows.get;
     assert(dataflows.dataflows.length == 1);
 
-    const SDMXDataflow dataflow = dataflows.dataflows[0];
+    const dataflow = dataflows.dataflows[0];
     assert(!dataflow.id.isNull);
     assert(dataflow.id.get == "01R");
     assert(!dataflow.agencyId.isNull);
@@ -680,10 +662,10 @@ unittest
     assert(dataflow.structure.get.ref_.id == "ECOFIN_DSD");
     assert(dataflow.structure.get.ref_.agencyId == "IMF");
 
-    const SDMXConstraints constraints = structures.constraints.get;
+    const constraints = structures.constraints.get;
     assert(constraints.constraints.length == 1);
 
-    const SDMXContentConstraint contentConstraint = constraints.constraints[0];
+    const contentConstraint = constraints.constraints[0];
     assert(!contentConstraint.id.isNull);
     assert(contentConstraint.id.get == "01R_CONSTRAINT");
     assert(contentConstraint.names.length == 1);
@@ -693,10 +675,10 @@ unittest
     assert(contentConstraint.constraintAttachment.get.dataflow.get.ref_.get.id == "01R");
     assert(!contentConstraint.cubeRegion.isNull);
 
-    const SDMXCubeRegion cubeRegion = contentConstraint.cubeRegion.get;
+    const cubeRegion = contentConstraint.cubeRegion.get;
     assert(cubeRegion.keyValues.length == 2);
 
-    const SDMXKeyValue keyValue = cubeRegion.keyValues[0];
+    const keyValue = cubeRegion.keyValues[0];
     assert(keyValue.id == "COUNTERPART_AREA");
     assert(keyValue.values.length == 1);
     assert(!keyValue.values[0].content.isNull);
@@ -707,7 +689,7 @@ unittest
 {
     import std.file : readText;
 
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
+    const structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
@@ -717,7 +699,7 @@ unittest
     assert(structures.dataflows.isNull);
     assert(structures.constraints.isNull);
 
-    const SDMXCodelists codelists = structures.codelists.get;
+    const codelists = structures.codelists.get;
     assert(codelists.codelists.length == 6);
     assert(codelists.codelists[0].id == "CL_FREQ");
     assert(codelists.codelists[0].agencyId == "ESTAT");
@@ -728,7 +710,7 @@ unittest
     assert(codelists.codelists[0].codes[0].names.length == 1);
     assert(codelists.codelists[0].codes[0].names[0] == SDMXName("en", "Daily"));
 
-    const SDMXConcepts concepts = structures.concepts.get;
+    const concepts = structures.concepts.get;
     assert(concepts.conceptSchemes.length == 1);
     assert(concepts.conceptSchemes[0].id == "CS_DSD_nama_10_gdp");
     assert(concepts.conceptSchemes[0].agencyId == "ESTAT");
@@ -739,10 +721,10 @@ unittest
     assert(concepts.conceptSchemes[0].concepts[0].names.length == 1);
     assert(concepts.conceptSchemes[0].concepts[0].names[0] == SDMXName("en", "FREQ"));
 
-    const SDMXDataStructures dataStructures = structures.dataStructures.get;
+    const dataStructures = structures.dataStructures.get;
     assert(dataStructures.dataStructures.length == 1);
 
-    const SDMXDataStructure dataStructure = dataStructures.dataStructures[0];
+    const dataStructure = dataStructures.dataStructures[0];
     assert(dataStructure.id == "DSD_nama_10_gdp");
     assert(dataStructure.agencyId == "ESTAT");
     assert(dataStructure.names.length == 1);
@@ -798,7 +780,7 @@ unittest
 {
     import std.file : readText;
 
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_category.xml")
+    const structures = readText("./fixtures/sdmx/structure_category.xml")
         .deserializeAs!SDMXStructures;
 
     assert(!structures.categorySchemes.isNull);
@@ -808,7 +790,7 @@ unittest
     assert(structures.dataflows.isNull);
     assert(structures.constraints.isNull);
 
-    const SDMXCategorySchemes categorySchemes = structures.categorySchemes.get;
+    const categorySchemes = structures.categorySchemes.get;
     assert(categorySchemes.categorySchemes.length == 1);
     assert(categorySchemes.categorySchemes[0].categories[0].id == "ECO");
     assert(categorySchemes.categorySchemes[0].categories[0].names.length == 2);
@@ -816,105 +798,4 @@ unittest
         .categorySchemes[0]
         .categories[0]
         .names[0] == SDMXName("fr", "Économie – Conjoncture – Comptes nationaux"));
-}
-
-alias ResourceRefPair = Tuple!(string, "resourceId", SDMXRef, "reference");
-alias AgencyReferencePair = Tuple!(string, "agencyId", string, "referenceId");
-
-private auto extractIdAndAgencyId(const SDMXRef ref_, const SDMXDataStructure structure)
-{
-    return ref_.agencyId.isNull
-        ? AgencyReferencePair(structure.agencyId, ref_.id)
-        : AgencyReferencePair(ref_.agencyId.get, ref_.id);
-}
-
-private auto gatherResourceRefs(T)(T resources) pure nothrow @safe
-if(isInputRange!T && (is(ElementType!T: const(SDMXAttribute)) || is(ElementType!T: const(SDMXDimension))))
-{
-    return resources
-        .filter!(d =>
-            !d.localRepresentation.isNull
-            && !d.localRepresentation.get.enumeration.isNull
-            && !d.id.isNull)
-        .map!(d => ResourceRefPair(d.id.get, d.localRepresentation.get.enumeration.get.ref_));
-}
-
-private auto gatherResourceConcept(T)(T resources) pure nothrow @safe
-if(isInputRange!T &&
-    (
-        is(ElementType!T: const(SDMXAttribute))
-        || is(ElementType!T: const(SDMXDimension))
-        || is(ElementType!T: const(SDMXPrimaryMeasure))
-        || is(ElementType!T: const(SDMXTimeDimension))
-    )
-)
-{
-    return resources
-        .filter!(a => !a.id.isNull && !a.conceptIdentity.isNull)
-        .map!(a => ResourceRefPair(a.id.get, a.conceptIdentity.get.ref_));
-}
-
-private auto gatherEnumerationRefs(const SDMXDataStructure structure) pure nothrow @safe
-{
-    auto fromDimensions = structure
-        .dataStructureComponents.dimensionList.dimensions
-            .gatherResourceRefs;
-
-    auto fromAttributes = structure
-        .dataStructureComponents.attributeList.attributes
-            .gatherResourceRefs;
-
-    return chain(fromDimensions, fromAttributes);
-}
-
-auto gatherCodelistIds(const SDMXDataStructures structures) pure nothrow @safe
-{
-    return structures.dataStructures
-        .map!(ds => gatherEnumerationRefs(ds).map!(r => extractIdAndAgencyId(r.reference, ds)))
-        .joiner
-        .array;
-}
-
-auto gatherConceptIds(const SDMXDataStructures structures) pure nothrow @safe
-{
-    return structures.dataStructures
-        .map!(ds =>
-            ds.dataStructureComponents.dimensionList.dimensions
-                .gatherResourceConcept
-                .map!(d => extractIdAndAgencyId(d.reference, ds))
-                .chain(
-                    ds.dataStructureComponents.attributeList.attributes
-                        .gatherResourceConcept
-                        .map!(a => extractIdAndAgencyId(a.reference, ds))
-                )
-                .chain(
-                    [ds.dataStructureComponents.measureList.primaryMeasure]
-                        .gatherResourceConcept
-                        .map!(m => extractIdAndAgencyId(m.reference, ds))
-                )
-                .chain(
-                    [ds.dataStructureComponents.dimensionList.timeDimension]
-                        .gatherResourceConcept
-                        .map!(t => extractIdAndAgencyId(t.reference, ds))
-                )
-        )
-        .joiner
-        .array;
-}
-
-unittest
-{
-    import std.file : readText;
-
-    const SDMXStructures structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
-        .deserializeAs!SDMXStructures;
-
-    const SDMXDataStructures dataStructures = structures.dataStructures.get;
-    const conceptIds = gatherConceptIds(dataStructures);
-    assert(conceptIds.length == 8);
-    assert(conceptIds[0] == AgencyReferencePair("ESTAT", "FREQ"));
-
-    const codelistIds = gatherCodelistIds(dataStructures);
-    assert(codelistIds.length == 6);
-    assert(codelistIds[0] == AgencyReferencePair("ESTAT", "CL_FREQ"));
 }
