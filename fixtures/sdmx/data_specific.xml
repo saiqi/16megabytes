@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CompactData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/message https://registry.sdmx.org/schemas/v2_0/SDMXMessage.xsd http://dataservices.imf.org/compact/FAS http://dataservices.imf.org/compact/FAS.xsd" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/message">
+    <Header>
+        <ID>bae62165-9325-4f4b-8d06-b1fe024ddd8a</ID>
+        <Test>false</Test>
+        <Prepared>2021-01-04T15:38:33</Prepared>
+        <Sender id="1C0">
+            <Name xml:lang="en">IMF</Name>
+            <Contact>
+                <URI>http://www.imf.org</URI>
+                <Telephone>+ 1 (202) 623-6220</Telephone>
+            </Contact>
+        </Sender>
+        <Receiver id="ZZZ" />
+        <DataSetID>FAS</DataSetID>
+    </Header>
+    <DataSet xmlns="http://dataservices.imf.org/compact/FAS">
+        <Series FREQ="A" REF_AREA="FR" INDICATOR="FCAA_NUM" UNIT_MULT="0" TIME_FORMAT="P1Y" />
+        <Series FREQ="A" REF_AREA="FR" INDICATOR="FCAK_NUM" UNIT_MULT="0" TIME_FORMAT="P1Y" />
+        <Series FREQ="A" REF_AREA="FR" INDICATOR="FCLODDH_XDC" UNIT_MULT="6" TIME_FORMAT="P1Y">
+            <Obs TIME_PERIOD="2019" OBS_VALUE="38254.592" />
+        </Series>
+    </DataSet>
+</CompactData>

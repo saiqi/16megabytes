@@ -1,0 +1,352 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message:GenericData xmlns:footer="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message/footer" xmlns:generic="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic" xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+    <message:Header>
+        <message:ID>BALANCE-PAIEMENTS_1609708336193</message:ID>
+        <message:Test>false</message:Test>
+        <message:Prepared>2021-01-03T22:12:16</message:Prepared>
+        <message:Sender id="FR1">
+            <common:Name xml:lang="fr">Institut national de la statistique et des études économiques</common:Name>
+        </message:Sender>
+        <message:Structure structureID="FR1_BALANCE-PAIEMENTS_1_0" dimensionAtObservation="TIME_PERIOD">
+            <common:StructureUsage>
+                <Ref agencyID="FR1" id="BALANCE-PAIEMENTS" version="1.0"/>
+            </common:StructureUsage>
+        </message:Structure>
+        <message:Source xml:lang="fr">Banque de données macro-économiques</message:Source>
+    </message:Header>
+    <message:DataSet structureRef="FR1_BALANCE-PAIEMENTS_1_0">
+        <generic:Series>
+            <generic:SeriesKey>
+                <generic:Value id="BASIND" value="SO"/>
+                <generic:Value id="CORRECTION" value="BRUT"/>
+                <generic:Value id="COMPTE" value="CREDITS"/>
+                <generic:Value id="FREQ" value="M"/>
+                <generic:Value id="UNIT_MULT" value="6"/>
+                <generic:Value id="INDICATEUR" value="BALANCE_DES_PAIEMENTS"/>
+                <generic:Value id="UNIT_MEASURE" value="EUROS"/>
+                <generic:Value id="NATURE" value="VALEUR_ABSOLUE"/>
+                <generic:Value id="REF_AREA" value="FE"/>
+                <generic:Value id="INSTRUMENTS_BALANCE_PAIEMENTS" value="205"/>
+            </generic:SeriesKey>
+            <generic:Attributes>
+                <generic:Value id="IDBANK" value="001694113"/>
+                <generic:Value id="TITLE_FR" value="Balance des paiements - Crédit - Compte financier - Investissements directs, en valeur comptable - Données brutes"/>
+                <generic:Value id="TITLE_EN" value="Balance of payments - Credit - Financial account - Direct investments, according to book value valuation - Raw data"/>
+                <generic:Value id="LAST_UPDATE" value="2020-12-08"/>
+                <generic:Value id="DECIMALS" value="0"/>
+            </generic:Attributes>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-10"/>
+                <generic:ObsValue value="4027"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-09"/>
+                <generic:ObsValue value="2594"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-08"/>
+                <generic:ObsValue value="1892"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-07"/>
+                <generic:ObsValue value="2264"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-06"/>
+                <generic:ObsValue value="-39"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-05"/>
+                <generic:ObsValue value="-11938"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-04"/>
+                <generic:ObsValue value="553"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-03"/>
+                <generic:ObsValue value="-2558"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-02"/>
+                <generic:ObsValue value="4001"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-01"/>
+                <generic:ObsValue value="-261"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+        </generic:Series>
+        <generic:Series>
+            <generic:SeriesKey>
+                <generic:Value id="BASIND" value="SO"/>
+                <generic:Value id="CORRECTION" value="BRUT"/>
+                <generic:Value id="COMPTE" value="DEBITS"/>
+                <generic:Value id="FREQ" value="M"/>
+                <generic:Value id="UNIT_MULT" value="6"/>
+                <generic:Value id="INDICATEUR" value="BALANCE_DES_PAIEMENTS"/>
+                <generic:Value id="UNIT_MEASURE" value="EUROS"/>
+                <generic:Value id="NATURE" value="VALEUR_ABSOLUE"/>
+                <generic:Value id="REF_AREA" value="FE"/>
+                <generic:Value id="INSTRUMENTS_BALANCE_PAIEMENTS" value="205"/>
+            </generic:SeriesKey>
+            <generic:Attributes>
+                <generic:Value id="IDBANK" value="001694171"/>
+                <generic:Value id="TITLE_FR" value="Balance des paiements - Débit - Compte financier - Investissements directs, en valeur comptable - Données brutes"/>
+                <generic:Value id="TITLE_EN" value="Balance of payments - Debit - Financial account - Direct investments, according to book value valuation - Raw data"/>
+                <generic:Value id="LAST_UPDATE" value="2020-12-08"/>
+                <generic:Value id="DECIMALS" value="0"/>
+            </generic:Attributes>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-10"/>
+                <generic:ObsValue value="2337"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-09"/>
+                <generic:ObsValue value="2637"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-08"/>
+                <generic:ObsValue value="2500"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-07"/>
+                <generic:ObsValue value="3277"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-06"/>
+                <generic:ObsValue value="1652"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-05"/>
+                <generic:ObsValue value="2079"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-04"/>
+                <generic:ObsValue value="2173"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-03"/>
+                <generic:ObsValue value="-7645"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-02"/>
+                <generic:ObsValue value="-7326"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-01"/>
+                <generic:ObsValue value="-6524"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+        </generic:Series>
+        <generic:Series>
+            <generic:SeriesKey>
+                <generic:Value id="BASIND" value="SO"/>
+                <generic:Value id="CORRECTION" value="BRUT"/>
+                <generic:Value id="COMPTE" value="SOLDE_SIMPLE"/>
+                <generic:Value id="FREQ" value="M"/>
+                <generic:Value id="UNIT_MULT" value="6"/>
+                <generic:Value id="INDICATEUR" value="BALANCE_DES_PAIEMENTS"/>
+                <generic:Value id="UNIT_MEASURE" value="EUROS"/>
+                <generic:Value id="NATURE" value="VALEUR_ABSOLUE"/>
+                <generic:Value id="REF_AREA" value="FE"/>
+                <generic:Value id="INSTRUMENTS_BALANCE_PAIEMENTS" value="205"/>
+            </generic:SeriesKey>
+            <generic:Attributes>
+                <generic:Value id="IDBANK" value="001694234"/>
+                <generic:Value id="TITLE_FR" value="Balance des paiements - Solde - Compte financier - Investissements directs, en valeur comptable - Données brutes"/>
+                <generic:Value id="TITLE_EN" value="Balance of payments - Balance - Financial account - Direct investments, according to book value valuation - Raw data"/>
+                <generic:Value id="LAST_UPDATE" value="2020-12-08"/>
+                <generic:Value id="DECIMALS" value="0"/>
+            </generic:Attributes>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-10"/>
+                <generic:ObsValue value="1690"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-09"/>
+                <generic:ObsValue value="-43"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-08"/>
+                <generic:ObsValue value="-608"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-07"/>
+                <generic:ObsValue value="-1013"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-06"/>
+                <generic:ObsValue value="-1690"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-05"/>
+                <generic:ObsValue value="-14017"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-04"/>
+                <generic:ObsValue value="-1620"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-03"/>
+                <generic:ObsValue value="5087"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-02"/>
+                <generic:ObsValue value="11327"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+            <generic:Obs>
+                <generic:ObsDimension value="2020-01"/>
+                <generic:ObsValue value="6263"/>
+                <generic:Attributes>
+                    <generic:Value id="OBS_STATUS" value="A"/>
+                    <generic:Value id="OBS_QUAL" value="DEF"/>
+                    <generic:Value id="OBS_TYPE" value="A"/>
+                </generic:Attributes>
+            </generic:Obs>
+        </generic:Series>
+    </message:DataSet>
+</message:GenericData>

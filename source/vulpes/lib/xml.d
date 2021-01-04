@@ -5,7 +5,7 @@ import std.format : format;
 import std.traits : hasUDA, getUDAs, isArray;
 import std.range;
 import std.traits : isSomeChar, isArray, TemplateOf, TemplateArgsOf;
-import std.typecons : Nullable;
+import std.typecons : Nullable, nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
 
 ///Dedicated module `Exception`
@@ -108,6 +108,20 @@ enum text;
     }
 }
 
+/// Control that value all attributes must be deserialized as assoc array
+enum allAttr;
+
+///
+@safe nothrow unittest
+{
+    @xmlRoot("Foo")
+    static struct Foo
+    {
+        @allAttr
+        string[string] attrs;
+    }
+}
+
 ///
 @safe nothrow unittest
 {
@@ -193,7 +207,7 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
     static if (isForwardRangeOfChar!R)
     {
         static if(isNullable!S)
-            field = value.to!(typeof(field.get));
+            field = value.to!(typeof(field.get)).nullable;
         else
         {
             enforce!DeserializationException(value !is null, errMsg);
@@ -218,7 +232,10 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
 private void setLeafValue(S, Entity, R)(ref S source, Entity entity, R text_)
 if(isForwardRangeOfChar!R)
 {
-    import std.algorithm : find;
+    import std.algorithm : find, map;
+    import std.array : assocArray;
+    import std.range : zip;
+    import std.traits : isAssociativeArray;
 
     assert(entity.type == EntityType.elementStart);
 
@@ -237,6 +254,12 @@ if(isForwardRangeOfChar!R)
         {
             if(text_.length > 0)
                 convertValue(__traits(getMember, source, m), text_, S.stringof, m);
+        }
+        else static if(hasUDA!(__traits(getMember, S, m), allAttr))
+        {
+            static assert(isAssociativeArray!(typeof(__traits(getMember, S, m))));
+            __traits(getMember, source, m) = zip(entity.attributes.map!(a => a.name),
+                                                entity.attributes.map!(a => a.value)).assocArray;
         }
     }
 }
@@ -270,7 +293,7 @@ if(isForwardRangeOfChar!R)
                         static if(isNullable!CT)
                         {
                             if(__traits(getMember, source[$ - 1], m).isNull)
-                                __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]();
+                                __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]().nullable;
                         }
                         setValue!(CT, Entity, R)
                             (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
@@ -313,12 +336,12 @@ if(isForwardRangeOfChar!R)
                             static if(isNullable!S)
                             {
                                 if(__traits(getMember, source.get, m).isNull)
-                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]();
+                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]().nullable;
                             }
                             else
                             {
                                 if(__traits(getMember, source, m).isNull)
-                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]();
+                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]().nullable;
                             }
                         }
 
@@ -559,6 +582,13 @@ version (unittest)
         Nullable!Other other;
     }
 
+    @xmlRoot("keys")
+    struct Keys
+    {
+        @allAttr
+        string[string] attrs;
+    }
+
     @xmlRoot("foo")
     struct Foo
     {
@@ -579,6 +609,9 @@ version (unittest)
 
         @xmlElementList("edit")
         Edit[] edits;
+
+        @xmlElement("keys")
+        Keys keys;
     }
 
     @xmlRoot("foos")
@@ -603,6 +636,7 @@ unittest
     ~               "</description>\n"
     ~               "<name xml:lang='fr'>Bare</name>\n"
     ~               "<name xml:lang='en'>Bar</name>\n"
+    ~               "<keys a='1' b='2' c='3'/>\n"
     ~               "<edit timestamp='0'/>"
     ~               "<edit timestamp='17'>\n"
     ~                   "<version major='1' minor='0'/>\n"
@@ -615,6 +649,7 @@ unittest
     ~               "</description>\n"
     ~               "<name xml:lang='fr'>Baze</name>\n"
     ~               "<name xml:lang='en'>Baz</name>\n"
+    ~               "<keys a='1' b='2' c='3'/>\n"
     ~           "</ns:foo>\n"
     ~           "<ns:foo category='b'>\n"
     ~               "<ref status='biz'>AF93</ref>\n"
@@ -622,6 +657,7 @@ unittest
     ~               "</description>\n"
     ~               "<name xml:lang='fr'>Bize</name>\n"
     ~               "<name xml:lang='en'>Biz</name>\n"
+    ~               "<keys a='1' b='2' c='3'/>\n"
     ~           "</ns:foo>\n"
     ~       "</foos>\n"
     ~   "</level>\n"
@@ -637,6 +673,7 @@ unittest
     assert(foo0.edits.length == 2);
     assert(foo0.edits[0].version_.isNull);
     assert(!foo0.edits[1].version_.isNull);
+    assert(foo0.keys.attrs["a"] == "1");
 
     results.popFront();
 

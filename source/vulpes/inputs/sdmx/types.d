@@ -611,6 +611,9 @@ struct SDMXObs
 
     @xmlElement("Attributes")
     Nullable!SDMXAttributes attributes;
+
+    @allAttr
+    string[string] structureAttributes;
 }
 
 @xmlRoot("Series")
@@ -621,13 +624,19 @@ struct SDMXSeries
 
     @xmlElement("Attributes")
     SDMXAttributes attributes;
+
+    @xmlElementList("Obs")
+    SDMXObs[] observations;
+
+    @allAttr
+    string[string] structureKeys;
 }
 
 @xmlRoot("DataSet")
 struct SDMXDataSet
 {
     @attr("structureRef")
-    string structureRef;
+    Nullable!string structureRef;
 
     @xmlElementList("Series")
     SDMXSeries[] series;
@@ -798,4 +807,43 @@ unittest
         .categorySchemes[0]
         .categories[0]
         .names[0] == SDMXName("fr", "Économie – Conjoncture – Comptes nationaux"));
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.typecons : nullable;
+
+    const dataset = readText("./fixtures/sdmx/data_generic.xml")
+        .deserializeAs!SDMXDataSet;
+
+    assert(!dataset.structureRef.isNull);
+    assert(dataset.series.length == 3);
+    assert(dataset.series[0].seriesKey.values.length == 10);
+    assert(dataset.series[0].seriesKey.values[0] == SDMXValue("BASIND".nullable, "SO".nullable));
+    assert(dataset.series[0].attributes.values.length == 5);
+    assert(dataset.series[0].attributes.values[0] == SDMXValue("IDBANK".nullable, "001694113".nullable));
+    assert(dataset.series[0].observations.length == 10);
+    assert(dataset.series[0].observations[0].obsDimesion.value == "2020-10");
+    assert(dataset.series[0].observations[0].obsValue.value.get == 4027.0);
+    assert(!dataset.series[0].observations[0].attributes.isNull);
+    assert(dataset.series[0].observations[0].attributes.get.values.length == 3);
+    assert(dataset.series[0].observations[0].attributes.get.values[0] == SDMXValue(
+        "OBS_STATUS".nullable, "A".nullable));
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.typecons : nullable;
+
+    const dataset = readText("./fixtures/sdmx/data_specific.xml")
+        .deserializeAs!SDMXDataSet;
+
+    assert(dataset.structureRef.isNull);
+    assert(dataset.series);
+    assert(dataset.series[0].structureKeys["FREQ"] == "A");
+    assert(!dataset.series[0].observations);
+    assert(dataset.series[2].observations);
+    assert(dataset.series[2].observations[0].structureAttributes["TIME_PERIOD"] == "2019");
 }
