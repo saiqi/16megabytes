@@ -7,10 +7,11 @@ import std.array : array;
 import std.conv : to;
 import vulpes.inputs.sdmx.types;
 import vulpes.lib.xml : deserializeAsRangeOf;
-import vulpes.core.models;
+import vulpes.core.cube;
 import vibe.inet.url : URL;
 import vibe.core.log;
 import requests : Request;
+import sumtype : SumType, match;
 
 
 ///Dedicated module `Exception`
@@ -25,7 +26,7 @@ class SDMXClientException : Exception
 }
 
 package:
-URL getRoolURL(const SDMXProvider provider)
+URL getRoolURL(const SDMXProvider provider) @safe
 {
     with(SDMXProvider)
     {
@@ -38,7 +39,7 @@ URL getRoolURL(const SDMXProvider provider)
             return URL("http://ec.europa.eu/eurostat/SDMX/diss-web/rest");
 
             case ECB:
-            return URL("http://sdw-wsrest.ecb.int/service");
+            return URL("http://sdw-wsrest.ecb.europa.eu/service");
 
             case UNSD:
             return URL("https://data.un.org/WS/rest");
@@ -56,15 +57,18 @@ URL getRoolURL(const SDMXProvider provider)
             return URL("http://api.worldbank.org/v2/sdmx/rest");
 
             case WITS:
-            return URL("https://wits.worldbank.org/API/V1/SDMX/V21/rest");
+            return URL("http://wits.worldbank.org/API/V1/SDMX/V21/rest");
 
             case SDMX:
             return URL("https://registry.sdmx.org/ws/public/sdmxapi/rest");
+
+            case UNICEF:
+            return URL("https://sdmx.data.unicef.org/ws/public/sdmxapi/rest");
         }
     }
 }
 
-URL toURL(const StructureRequest req)
+URL toStructureURL(const StructureRequest req) @safe
 {
     auto url = getRoolURL(req.provider);
 
@@ -78,10 +82,6 @@ URL toURL(const StructureRequest req)
             req.resourceId == "all"
                 ? url.pathString([url.pathString, req.type, req.provider].join("/"))
                 : url.pathString([url.pathString, req.type, req.provider, req.resourceId].join("/"));
-            // if(req.provider != SDMXProvider.WB && req.provider != SDMXProvider.ESTAT)
-            //     url.pathString([url.pathString, req.type, req.provider, req.version_, req.itemId].join("/"));
-            // else
-            //     url.pathString([url.pathString, req.type, req.provider, req.version_].join("/"));
             break;
         }
     }
@@ -117,9 +117,61 @@ unittest
         a[4],
         a[5].to!StructureDetail,
         a[6].to!StructureReferences))
-    .map!toURL
+    .map!toStructureURL
     .array;
 
+}
+
+URL toDataURL(const DataRequest req)
+{
+    auto url = getRoolURL(req.provider);
+
+    import std.array : join;
+
+    url.pathString([url.pathString, "data", req.resourceId, req.keys, req.provider].join("/"));
+
+    string[] queryParams = [];
+
+    if(!req.startPeriod.isNull) queryParams ~= "startPeriod=" ~ req.startPeriod.get;
+    if(!req.endPeriod.isNull) queryParams ~= "endPeriod=" ~ req.endPeriod.get;
+    if(!req.updatedAfter.isNull) queryParams ~= "updatedAfter=" ~ req.updatedAfter.get;
+    if(!req.firstNObservations.isNull) queryParams ~= "firstNObservations=" ~ req.firstNObservations.get;
+    if(!req.lastNObservations.isNull) queryParams ~= "lastNObservations=" ~ req.lastNObservations.get;
+
+    if(queryParams) url.queryString(queryParams.join("&"));
+
+    return url;
+}
+
+unittest
+{
+    import std.traits : EnumMembers;
+    [EnumMembers!SDMXProvider]
+        .map!(p => [
+            DataRequest(
+                DataRequestFormat.generic,
+                "resource",
+                "keys",
+                p,
+                (Nullable!string).init,
+                (Nullable!string).init,
+                (Nullable!string).init,
+                (Nullable!string).init,
+                (Nullable!string).init)
+                .toDataURL,
+            DataRequest(
+                DataRequestFormat.structurespecific,
+                "resource",
+                "keys",
+                p,
+                "ok".nullable,
+                "ok".nullable,
+                "ok".nullable,
+                "ok".nullable,
+                "ok".nullable)
+                .toDataURL,
+        ])
+        .array;
 }
 
 auto errorMessage(const size_t code, const string responseBody)
@@ -165,18 +217,39 @@ auto doVibedRequest(const URL url, string[string] headers)
     return tuple(resp.statusCode, resp.bodyReader.readAllUTF8);
 }
 
-auto doStructureRequest(alias fetcher = doRequest)(const StructureRequest sReq)
+auto toURL(SDMXRequest req)
+{
+    return req.match!(
+        (StructureRequest sReq) => toStructureURL(sReq),
+        (DataRequest dReq) => toDataURL(dReq)
+    );
+}
+
+auto toHeaders(SDMXRequest req)
+{
+    return req.match!(
+        (StructureRequest sReq) => [
+            "Accept":"application/vnd.sdmx.structure+xml;version=2.1",
+            "Accept-Encoding": "gzip,deflate"
+        ],
+        (DataRequest dReq) => [
+            "Accept": dReq.format == DataRequestFormat.generic
+                ? "application/vnd.sdmx.genericdata+xml;version=2.1"
+                : "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+            "Accept-Encoding": "gzip,deflate"
+        ]
+    );
+}
+
+auto doSDMXRequest(alias fetcher)(const SDMXRequest sReq)
 {
     auto url = sReq.toURL();
 
-    logInfo("Fetching from %s", url);
+    logDebug("Fetching from %s", url);
 
-    auto response = fetcher(url, [
-        "Accept":"application/vnd.sdmx.structure+xml;version=2.1",
-        "Accept-Encoding": "gzip,deflate"
-    ]);
+    auto response = fetcher(url, sReq.toHeaders());
 
-    logInfo("Got response from %s", url);
+    logDebug("Got response from %s", url);
 
     auto code = response[0];
     auto responseBody = response[1];
@@ -198,7 +271,7 @@ unittest
         return tuple(200, "ok");
     }
 
-    const sReq = StructureRequest(
+    SDMXRequest sReq = StructureRequest(
         SDMXProvider.ECB,
         StructureType.conceptscheme,
         "all",
@@ -207,7 +280,7 @@ unittest
         StructureDetail.full,
         StructureReferences.parentsandsiblings);
 
-    assert(doStructureRequest!mockFetcherOk(sReq) == "ok");
+    assert(doSDMXRequest!mockFetcherOk(sReq) == "ok");
 
     auto mockFetcherKo(const URL url, string[string] headers)
     {
@@ -219,9 +292,51 @@ unittest
         return tuple(400, "not parsable");
     }
 
-    assertThrown!SDMXClientException(doStructureRequest!mockFetcherKo(sReq));
-    assertThrown!SDMXClientException(doStructureRequest!mockFetchNoMessage(sReq));
+    assertThrown!SDMXClientException(doSDMXRequest!mockFetcherKo(sReq));
+    assertThrown!SDMXClientException(doSDMXRequest!mockFetchNoMessage(sReq));
+
+    SDMXRequest dReq = DataRequest(DataRequestFormat.generic, "foo", "keys", SDMXProvider.UNICEF);
+    assert(doSDMXRequest!mockFetcherOk(dReq) == "ok");
 }
+
+auto getProvider(const string providerId)
+{
+    SDMXProvider provider;
+    try {
+        provider = providerId.to!SDMXProvider;
+    }
+    catch(Exception e)
+    {
+        enforce!SDMXClientException(false, format!"Unknown SDMX provider: %s"(providerId));
+    }
+    return provider;
+}
+
+struct StructureRequest
+{
+    SDMXProvider provider;
+    StructureType type;
+    string resourceId;
+    string version_;
+    string itemId;
+    StructureDetail detail;
+    StructureReferences references;
+}
+
+struct DataRequest
+{
+    DataRequestFormat format;
+    string resourceId;
+    string keys;
+    SDMXProvider provider;
+    Nullable!string startPeriod;
+    Nullable!string endPeriod;
+    Nullable!string updatedAfter;
+    Nullable!string firstNObservations;
+    Nullable!string lastNObservations;
+}
+
+alias SDMXRequest = SumType!(StructureRequest, DataRequest);
 
 public:
 enum SDMXProvider: string
@@ -235,6 +350,7 @@ enum SDMXProvider: string
     WB = "WB",
     WITS = "WITS",
     IAEG = "IAEG",
+    UNICEF = "UNICEF",
     SDMX = "SDMX"
 }
 
@@ -269,15 +385,10 @@ enum StructureReferences: string
     contentconstraint = "contentconstraint"
 }
 
-struct StructureRequest
+enum DataRequestFormat
 {
-    SDMXProvider provider;
-    StructureType type;
-    string resourceId;
-    string version_;
-    string itemId;
-    StructureDetail detail;
-    StructureReferences references;
+    generic,
+    structurespecific
 }
 
 auto fetchStructure(alias fetcher = doRequest)(
@@ -289,17 +400,8 @@ auto fetchStructure(alias fetcher = doRequest)(
     const StructureDetail detail = StructureDetail.full,
     const StructureReferences references = StructureReferences.none)
 {
-    SDMXProvider provider;
-    try {
-        provider = providerId.to!SDMXProvider;
-    }
-    catch(Exception e)
-    {
-        enforce!SDMXClientException(false, format!"Unknown SDMX provider: %s"(providerId));
-    }
-
-    return StructureRequest(provider, type, resourceId, version_, itemId, detail, references)
-        .doStructureRequest!fetcher;
+    SDMXRequest req = StructureRequest(providerId.getProvider, type, resourceId, version_, itemId, detail, references);
+    return req.doSDMXRequest!fetcher;
 }
 
 unittest
@@ -317,3 +419,40 @@ unittest
         fetchStructure!mockerFetcher(SDMXProvider.ECB.to!string, StructureType.dataflow));
 }
 
+auto fetchData(alias fetcher = doRequest)(
+    const DataRequestFormat format,
+    const string resourceId,
+    const string keys,
+    const string providerId,
+    const Nullable!string startPeriod = (Nullable!string).init,
+    const Nullable!string endPeriod = (Nullable!string).init,
+    const Nullable!string updatedAfter = (Nullable!string).init,
+    const Nullable!string firstNObservations = (Nullable!string).init,
+    const Nullable!string lastNObservations = (Nullable!string).init)
+{
+    SDMXRequest req = DataRequest(
+        format,
+        resourceId,
+        keys,
+        providerId.getProvider,
+        startPeriod,
+        endPeriod,
+        updatedAfter,
+        firstNObservations,
+        lastNObservations
+    );
+    return req.doSDMXRequest!fetcher;
+}
+
+unittest
+{
+    import std.exception : assertThrown, assertNotThrown;
+
+    auto mockerFetcher(const URL url, string[string] headers)
+    {
+        return tuple(200, "ok");
+    }
+
+    assertNotThrown!SDMXClientException(
+        fetchData!mockerFetcher(DataRequestFormat.generic, "foo", "keys", SDMXProvider.UNICEF.to!string));
+}

@@ -604,10 +604,10 @@ struct SDMXObsValue
 struct SDMXObs
 {
     @xmlElement("ObsDimension")
-    SDMXObsDimension obsDimesion;
+    Nullable!SDMXObsDimension obsDimension;
 
     @xmlElement("ObsValue")
-    SDMXObsValue obsValue;
+    Nullable!SDMXObsValue obsValue;
 
     @xmlElement("Attributes")
     Nullable!SDMXAttributes attributes;
@@ -620,10 +620,10 @@ struct SDMXObs
 struct SDMXSeries
 {
     @xmlElement("SeriesKey")
-    SDMXSeriesKey seriesKey;
+    Nullable!SDMXSeriesKey seriesKey;
 
     @xmlElement("Attributes")
-    SDMXAttributes attributes;
+    Nullable!SDMXAttributes attributes;
 
     @xmlElementList("Obs")
     SDMXObs[] observations;
@@ -819,13 +819,13 @@ unittest
 
     assert(!dataset.structureRef.isNull);
     assert(dataset.series.length == 3);
-    assert(dataset.series[0].seriesKey.values.length == 10);
-    assert(dataset.series[0].seriesKey.values[0] == SDMXValue("BASIND".nullable, "SO".nullable));
-    assert(dataset.series[0].attributes.values.length == 5);
-    assert(dataset.series[0].attributes.values[0] == SDMXValue("IDBANK".nullable, "001694113".nullable));
+    assert(dataset.series[0].seriesKey.get.values.length == 10);
+    assert(dataset.series[0].seriesKey.get.values[0] == SDMXValue("BASIND".nullable, "SO".nullable));
+    assert(dataset.series[0].attributes.get.values.length == 5);
+    assert(dataset.series[0].attributes.get.values[0] == SDMXValue("IDBANK".nullable, "001694113".nullable));
     assert(dataset.series[0].observations.length == 10);
-    assert(dataset.series[0].observations[0].obsDimesion.value == "2020-10");
-    assert(dataset.series[0].observations[0].obsValue.value.get == 4027.0);
+    assert(dataset.series[0].observations[0].obsDimension.get.value == "2020-10");
+    assert(dataset.series[0].observations[0].obsValue.get.value.get == 4027.0);
     assert(!dataset.series[0].observations[0].attributes.isNull);
     assert(dataset.series[0].observations[0].attributes.get.values.length == 3);
     assert(dataset.series[0].observations[0].attributes.get.values[0] == SDMXValue(
@@ -842,8 +842,13 @@ unittest
 
     assert(dataset.structureRef.isNull);
     assert(dataset.series);
+    assert(dataset.series[0].seriesKey.isNull);
+    assert(dataset.series[0].attributes.isNull);
     assert(dataset.series[0].structureKeys["FREQ"] == "A");
     assert(!dataset.series[0].observations);
     assert(dataset.series[2].observations);
     assert(dataset.series[2].observations[0].structureAttributes["TIME_PERIOD"] == "2019");
+    assert(dataset.series[2].observations[0].obsDimension.isNull);
+    assert(dataset.series[2].observations[0].attributes.isNull);
+    assert(dataset.series[2].observations[0].obsValue.isNull);
 }

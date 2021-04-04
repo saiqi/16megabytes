@@ -276,12 +276,13 @@ if(isForwardRangeOfChar!R)
             static assert(!isNullable!S);
 
             alias ET = ElementType!S;
+            auto app = appender(&source);
 
             if(path.length == 1)
             {
                 auto item = ET();
                 setValue!(ET, Entity, R)(item, path, entity, text_);
-                source ~= item;
+                app.put(item);
             }
             else
             {
@@ -728,4 +729,7 @@ unittest
 
     auto r = deserializeAs!(Root, string)(xml);
     assert(r.node.value.get == "text");
+
+    import std.exception : assertThrown;
+    assertThrown!DeserializationException(deserializeAs!(Root, string)("<other/>"));
 }
