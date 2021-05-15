@@ -1,4 +1,4 @@
-module vulpes.inputs.sdmxml21.services;
+module vulpes.datasources.sdmxml21.services;
 
 import std.conv : to;
 import std.typecons : Nullable, nullable, Tuple, apply;
