@@ -1,0 +1,417 @@
+openapi: '3.0.2'
+
+info:
+  title: Vulpes Cube API
+  version: '1.0'
+
+servers:
+  - url: https://api.server.test/v1
+
+tags:
+  - name: datastructure
+    description: Everything about structure of cubes
+  - name: data
+    description: Everything about data fetching
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+    Name:
+      type: object
+      properties:
+        shortName:
+          type: string
+        longName:
+          type: string
+    Label:
+      type: object
+      additionalProperties:
+        type: object
+        $ref: '#/components/schemas/Name'
+    Provider:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+    CubeDescription:
+      type: object
+      properties:
+        id:
+          type: string
+        providerId:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+        definitionId:
+          type: string
+        definitionProviderId:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    Concept:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+    Dimension:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+        isObsDimension:
+          type: boolean
+        concept:
+          $ref: '#/components/schemas/Concept'
+    Attribute:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+        concept:
+          $ref: '#/components/schemas/Concept'
+    Measure:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+        concept:
+          $ref: '#/components/schemas/Concept'
+    CubeDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+        providerId:
+          type: string
+        dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dimension'
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+        measures:
+          type: array
+          items:
+            $ref: '#/components/schemas/Measure'
+    Code:
+      type: object
+      properties:
+        id:
+          type: string
+        labels:
+          $ref: '#/components/schemas/Label'
+    Value:
+      type: object
+      properties:
+        id:
+          type: string
+        value:
+          type: string
+    Observation:
+      type: object
+      properties:
+        obsValue:
+          $ref: '#/components/schemas/Value'
+        obsDimensions:
+          $ref: '#/components/schemas/Value'
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Value'
+    Serie:
+      type: object
+      properties:
+        observations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Observation'
+        dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Value'
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Value'
+    Dataset:
+      type: object
+      properties:
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/Serie'
+
+paths:
+  /providers:
+    get:
+      summary: Returns the list of all supported cube providers
+      tags:
+        - datastructure
+      responses:
+        '200':
+          description: Successfully returned the list of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Provider'
+  /providers/{providerId}/tags:
+    get:
+      summary: Returns the list of all available tags given a provider
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the list of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+  /providers/{providerId}/cube-descriptions:
+    get:
+      summary: Returns the list of all available cube descriptions given a provider
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: s
+          description: a search pattern
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: tags
+          description: a comma list separated of tags
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the lisf of cube description
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CubeDescription'
+  /providers/{providerId}/cube-definitions/{definitionId}:
+    get:
+      summary: Returns the cube definition given a provider and a cube description
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: definitionId
+          description: an unique identifier of the cube definition
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the cube definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CubeDefinition'
+  /providers/{providerId}/cube-definitions/{definitionId}/dimensions/{dimensionId}/codes:
+    get:
+      summary: Returns the list of codes given a provider and a dimension
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: definitionId
+          description: an unique identifier of the cube definition
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: dimensionId
+          description: an unique identifier of the dimension
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cubeId
+          description: an unique identifier of the cube to narrow down the list of codes
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the list of codes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Code'
+  /providers/{providerId}/cube-definitions/{definitionId}/attributes/{attributeId}/codes:
+    get:
+      summary: Returns the list of codes given a provider and an attribute
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: definitionId
+          description: an unique identifier of the cube definition
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attributeId
+          description: an unique identifier of the attribute
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cubeId
+          description: an unique identifier of the cube to narrow down the list of codes
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the list of codes
+          content:
+            application/json:
+              schema:
+                type: string
+                items:
+                  $ref: '#/components/schemas/Code'
+  /providers/{providerId}/datasets/{cubeId}:
+    get:
+      summary: Returns a possibly paginated dataset together with the current query and the next one
+      tags:
+        - data
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cubeId
+          description: an unique identifier of the cube
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: current
+          description: a filter query to be evaluated
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataset:
+                    $ref: '#/components/schemas/Dataset'
+                  current:
+                    type: string
+                  next:
+                    type: string
+  /query/run:
+    post:
+      summary: Runs a query and returns the resulting dataset
+      tags:
+        - data
+      requestBody:
+        description: a text query
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Successfully ran the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+  /query/autocomplete:
+    post:
+      summary: Parses a query and returns the list of possible coming tokens
+      tags:
+        - data
+      requestBody:
+        description: a text query
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Successfully returned the list of possible tokens
+          content:
+            text/plain:
+              schema:
+                type: string
+

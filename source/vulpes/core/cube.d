@@ -5,23 +5,15 @@ import std.traits : TemplateOf;
 import std.algorithm : filter, map;
 import std.array : array;
 
-enum Language: string
-{
-    fr = "fr",
-    en = "en",
-    de = "de",
-    es = "es"
-}
-
 struct Label
 {
     private:
-    Language language_;
+    string language_;
     string shortName_;
     Nullable!string longName_;
 
     public:
-    inout(Language) language() inout pure nothrow @safe
+    inout(string) language() inout pure nothrow @safe
     {
         return language_;
     }
@@ -37,7 +29,31 @@ struct Label
     }
 }
 
+
 struct Provider
+{
+    private:
+    string id_;
+    Label[] labels_;
+
+    public:
+    this(this) pure @safe nothrow
+    {
+        labels_ = labels_.dup;
+    }
+
+    inout(string) id() inout pure nothrow @safe
+    {
+        return id_;
+    }
+
+    inout(Label[]) labels() inout pure nothrow @safe
+    {
+        return labels_;
+    }
+}
+
+struct Tag
 {
     private:
     string id_;
@@ -67,13 +83,14 @@ struct CubeDescription
     string id_;
     Label[] labels_;
     string definitionId_;
-    string[] tags_;
+    string definitionProviderId_;
+    string[] tagIds_;
 
     public:
     this(this) pure @safe nothrow
     {
         labels_ = labels_.dup;
-        tags_ = tags_.dup;
+        tagIds_ = tagIds_.dup;
     }
 
     inout(string) providerId() inout pure nothrow @safe
@@ -96,15 +113,16 @@ struct CubeDescription
         return definitionId_;
     }
 
-    inout(string[]) tags() inout pure nothrow @safe
+    inout(string[]) tagIds() inout pure nothrow @safe
     {
-        return tags_;
+        return tagIds_;
+    }
+
+    inout(string) definitionProviderId() inout pure nothrow @safe
+    {
+        return definitionProviderId_;
     }
 }
-
-alias NoConstraint = Flag!"noConstraint";
-alias MissingMeasureId = Flag!"missingMeasureId";
-alias MissingDimensionId = Flag!"missingDimensionId";
 
 struct CubeDefinition
 {
@@ -114,9 +132,6 @@ struct CubeDefinition
     Dimension[] dimensions_;
     Attribute[] attributes_;
     Measure[] measures_;
-    NoConstraint noConstraint_;
-    MissingMeasureId missingMeasureId_;
-    MissingDimensionId missingDimensionId_;
 
     public:
     this(this) pure @safe nothrow
@@ -150,62 +165,50 @@ struct CubeDefinition
     {
         return measures_;
     }
-
-    inout(NoConstraint) noConstraint() inout pure nothrow @safe
-    {
-        return noConstraint_;
-    }
-
-    inout(MissingMeasureId) missingMeasureId() inout pure nothrow @safe
-    {
-        return missingMeasureId_;
-    }
-
-    inout(MissingDimensionId) missingDimensionId() inout pure nothrow @safe
-    {
-        return missingDimensionId_;
-    }
 }
+
+alias TimeDimension = Flag!"timeDimension";
+alias ObsDimension = Flag!"obsDimension";
 
 struct Dimension
 {
     private:
     Nullable!string id_;
-    Label[] labels_;
-    bool isObsDimension_;
-    Code[] codes_;
+    ObsDimension obsDimension_;
+    TimeDimension timeDimension_;
     Nullable!Concept concept_;
+    Nullable!string codelistId_;
+    Nullable!string codelistProviderId_;
 
     public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-        codes_ = codes_.dup;
-    }
-
     inout(Nullable!string) id() inout pure nothrow @safe
     {
         return id_;
     }
 
-    inout(Label[]) labels() inout pure nothrow @safe
+    inout(ObsDimension) obsDimension() inout pure nothrow @safe
     {
-        return labels_;
+        return obsDimension_;
     }
 
-    inout(bool) isObsDimension() inout pure nothrow @safe
+    inout(TimeDimension) timeDimension() inout pure nothrow @safe
     {
-        return isObsDimension_;
-    }
-
-    inout(Code[]) codes() inout pure nothrow @safe
-    {
-        return codes_;
+        return timeDimension_;
     }
 
     inout(Nullable!Concept) concept() inout pure nothrow @safe
     {
         return concept_;
+    }
+
+    inout(Nullable!string) codelistId() inout pure nothrow @safe
+    {
+        return codelistId_;
+    }
+
+    inout(Nullable!string) codelistProviderId() inout pure nothrow @safe
+    {
+        return codelistProviderId_;
     }
 }
 
@@ -213,35 +216,29 @@ struct Attribute
 {
     private:
     Nullable!string id_;
-    Label[] labels_;
-    Code[] codes_;
     Nullable!Concept concept_;
+    Nullable!string codelistId_;
+    Nullable!string codelistProviderId_;
 
     public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-        codes_ = codes_.dup;
-    }
-
     inout(Nullable!string) id() inout pure nothrow @safe
     {
         return id_;
     }
 
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
-    }
-
-    inout(Code[]) codes() inout pure nothrow @safe
-    {
-        return codes_;
-    }
-
     inout(Nullable!Concept) concept() inout pure nothrow @safe
     {
         return concept_;
+    }
+
+    inout(Nullable!string) codelistId() inout pure nothrow @safe
+    {
+        return codelistId_;
+    }
+
+    inout(Nullable!string) codelistProviderId() inout pure nothrow @safe
+    {
+        return codelistProviderId_;
     }
 }
 
@@ -295,23 +292,12 @@ struct Measure
 {
     private:
     Nullable!string id_;
-    Label[] labels_;
     Nullable!Concept concept_;
 
     public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-    }
-
     inout(Nullable!string) id() inout pure nothrow @safe
     {
         return id_;
-    }
-
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
     }
 
     inout(Nullable!Concept) concept() inout pure nothrow @safe
@@ -371,16 +357,13 @@ struct DatasetMetadata
 
 Nullable!DatasetMetadata toDatasetMetadata(CubeDefinition def, const string descriptionId) pure nothrow @safe
 {
-    if(def.missingDimensionId || def.missingMeasureId)
-        return typeof(return).init;
-
     auto dimensionIds = def.dimensions
-        .filter!(d => !d.isObsDimension)
+        .filter!(d => !d.obsDimension)
         .map!(d => d.id.get)
         .array;
 
     auto obsDimensionIds = def.dimensions
-        .filter!(d => d.isObsDimension)
+        .filter!(d => d.obsDimension)
         .map!(d => d.id.get)
         .array;
 

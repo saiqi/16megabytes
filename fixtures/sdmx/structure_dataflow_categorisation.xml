@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure">
+    <mes:Header>
+        <mes:ID>dataflows_BALANCE-PAIEMENTS_1618758749441</mes:ID>
+        <mes:Test>false</mes:Test>
+        <mes:Prepared>2021-04-18T17:12:29.441+02:00</mes:Prepared>
+        <mes:Sender id="FR1">
+            <com:Name xml:lang="fr">Institut national de la statistique et des études économiques</com:Name>
+        </mes:Sender>
+        <mes:Receiver id="unknown"/>
+        <mes:Source xml:lang="fr">Banque de données macro-économiques</mes:Source>
+    </mes:Header>
+    <mes:Structures>
+        <str:Dataflows>
+            <str:Dataflow id="BALANCE-PAIEMENTS" urn="urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=FR1:BALANCE-PAIEMENTS(1.0)" agencyID="FR1" version="1.0">
+                <com:Annotations>
+                    <com:Annotation>
+                        <com:AnnotationURL>https://www.insee.fr/fr/statistiques/series/103212755</com:AnnotationURL>
+                    </com:Annotation>
+                    <com:Annotation>
+                        <com:AnnotationText xml:lang="fr">Nombre de séries : 197</com:AnnotationText>
+                    </com:Annotation>
+                </com:Annotations>
+                <com:Name xml:lang="fr">Balance des paiements</com:Name>
+                <com:Name xml:lang="en">Balance of payments</com:Name>
+                <str:Structure>
+                    <Ref id="BALANCE-PAIEMENTS" version="1.0" agencyID="FR1" package="datastructure" class="DataStructure"/>
+                </str:Structure>
+            </str:Dataflow>
+        </str:Dataflows>
+        <str:Categorisations>
+            <str:Categorisation id="COMMERCE_EXT_BALANCE-PAIEMENTS" urn="urn:sdmx:org.sdmx.infomodel.categoryscheme.Categorisation=FR1:COMMERCE_EXT_BALANCE-PAIEMENTS(1.0)" agencyID="FR1" version="1.0">
+                <com:Name xml:lang="fr">Association entre la catégorie COMMERCE_EXT et le dataflows BALANCE-PAIEMENTS</com:Name>
+                <com:Name xml:lang="en">Association between category COMMERCE_EXT and dataflows BALANCE-PAIEMENTS</com:Name>
+                <str:Source>
+                    <Ref id="BALANCE-PAIEMENTS" version="1.0" agencyID="FR1" package="datastructure" class="Dataflow"/>
+                </str:Source>
+                <str:Target>
+                    <Ref id="COMMERCE_EXT" maintainableParentID="CLASSEMENT_DATAFLOWS" maintainableParentVersion="1.0" agencyID="FR1" package="categoryscheme" class="Category"/>
+                </str:Target>
+            </str:Categorisation>
+        </str:Categorisations>
+    </mes:Structures>
+</mes:Structure>

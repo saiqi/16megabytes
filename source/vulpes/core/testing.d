@@ -34,17 +34,17 @@ auto buildTestDataset(T)(
     }
 
     auto dimensions = dimensionValues[0].keys
-        .map!(k => Dimension(k.nullable, [], false, [], (Nullable!Concept).init))
-        .array ~ [Dimension(obsDimensionId.nullable, [], true, [], (Nullable!Concept).init)];
+        .map!(k => Dimension(k.nullable, ObsDimension.no, TimeDimension.no, (Nullable!Concept).init))
+        .array ~ [Dimension(obsDimensionId.nullable, ObsDimension.yes, TimeDimension.no, (Nullable!Concept).init)];
 
     auto attributes = serieAttributeValues[0].keys
-        .map!(k => Attribute(k.nullable, [], [], (Nullable!Concept).init))
+        .map!(k => Attribute(k.nullable, (Nullable!Concept).init))
         .array
         ~ obsAttributeValues.keys
-            .map!(k => Attribute(k.nullable, [], [], (Nullable!Concept).init))
+            .map!(k => Attribute(k.nullable, (Nullable!Concept).init))
             .array;
 
-    auto measures = [Measure(obsValueId.nullable, [], (Nullable!Concept).init)];
+    auto measures = [Measure(obsValueId.nullable, (Nullable!Concept).init)];
 
     import std.algorithm : cartesianProduct;
 
@@ -57,10 +57,7 @@ auto buildTestDataset(T)(
         "TEST",
         dimensions,
         attributes,
-        measures,
-        NoConstraint.no,
-        MissingMeasureId.no,
-        MissingDimensionId.no);
+        measures);
 
     return Tuple!(CubeDefinition, "cubeDefinition", Dataset!T, "dataset", DatasetMetadata, "metadata")(
         def,

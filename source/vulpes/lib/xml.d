@@ -276,13 +276,12 @@ if(isForwardRangeOfChar!R)
             static assert(!isNullable!S);
 
             alias ET = ElementType!S;
-            auto app = appender(&source);
 
             if(path.length == 1)
             {
                 auto item = ET();
                 setValue!(ET, Entity, R)(item, path, entity, text_);
-                app.put(item);
+                source ~= item;
             }
             else
             {
@@ -383,7 +382,7 @@ unittest
     assert(r.front.type == EntityType.elementStart);
 }
 
-/// An `InputRange` of `T` resulting from the deserialization of a `ForwardRange` of `char`
+/// An `ForwardRange` of `T` resulting from the deserialization of a `ForwardRange` of `char`
 struct DeserializationResult(R, T)
 if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
 {
@@ -455,7 +454,7 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
     }
 
     ///ditto
-    T front()
+    ref T front()
     {
         prime();
         assert(!empty);
@@ -476,6 +475,13 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
         while (!isNextNodeReached());
 
         buildCurrent();
+    }
+
+    auto save()
+    {
+        auto retval = this;
+        retval._entityRange = _entityRange.save;
+        return retval;
     }
 }
 
@@ -732,4 +738,45 @@ unittest
 
     import std.exception : assertThrown;
     assertThrown!DeserializationException(deserializeAs!(Root, string)("<other/>"));
+}
+
+unittest
+{
+    immutable xml =
+    "<root>\n"
+    ~   "<level>\n"
+    ~       "<foos>\n"
+    ~           "<ns:foo id='0' category='a'>\n"
+    ~               "<ref status='bar'>XB12</ref>\n"
+    ~               "<description>\n"
+    ~                   "<current year='2020'/>\n"
+    ~                   "<other><ref status='bar'>XB12bis</ref></other>\n"
+    ~               "</description>\n"
+    ~               "<name xml:lang='fr'>Bare</name>\n"
+    ~               "<name xml:lang='en'>Bar</name>\n"
+    ~               "<keys a='1' b='2' c='3'/>\n"
+    ~               "<edit timestamp='0'/>"
+    ~               "<edit timestamp='17'>\n"
+    ~                   "<version major='1' minor='0'/>\n"
+    ~               "</edit>\n"
+    ~           "</ns:foo>\n"
+    ~           "<ns:foo id='1' category='b'>\n"
+    ~               "<ref status='baz'>HB15</ref>\n"
+    ~               "<description>\n"
+    ~                   "<previous year='2019'/>\n"
+    ~               "</description>\n"
+    ~               "<name xml:lang='fr'>Baze</name>\n"
+    ~               "<name xml:lang='en'>Baz</name>\n"
+    ~               "<keys a='1' b='2' c='3'/>\n"
+    ~           "</ns:foo>\n"
+    ~       "</foos>\n"
+    ~   "</level>\n"
+    ~ "</root>";
+
+    auto results = deserializeAsRangeOf!(Foo, string)(xml);
+    auto copy = results.save;
+    results.popFront();
+    assert(copy.front.id == 0);
+    copy.popFront();
+    assert(results.front.id == 1);
 }

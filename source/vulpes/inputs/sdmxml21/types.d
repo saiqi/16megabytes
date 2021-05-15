@@ -1,4 +1,4 @@
-module vulpes.inputs.sdmx.types;
+module vulpes.inputs.sdmxml21.types;
 
 import std.typecons : Nullable;
 import vulpes.lib.xml;
@@ -436,6 +436,52 @@ struct SDMXCategoryScheme
     SDMXCategory[] categories;
 }
 
+@xmlRoot("Source")
+struct SDMXSource
+{
+    @xmlElement("Ref")
+    SDMXRef ref_;
+}
+
+@xmlRoot("Target")
+struct SDMXTarget
+{
+    @xmlElement("Ref")
+    SDMXRef ref_;
+}
+
+@xmlRoot("Categorisation")
+struct SDMXCategorisation
+{
+    @attr("id")
+    string id;
+
+    @attr("urn")
+    Nullable!string urn;
+
+    @attr("agencyID")
+    string agencyId;
+
+    @attr("version")
+    string version_;
+
+    @xmlElementList("Name")
+    SDMXName[] names;
+
+    @xmlElement("Source")
+    SDMXSource source;
+
+    @xmlElement("Target")
+    SDMXTarget target;
+}
+
+@xmlRoot("Categorisations")
+struct SDMXCategorisations
+{
+    @xmlElementList("Categorisation")
+    SDMXCategorisation[] categorisations;
+}
+
 @xmlRoot("Codelists")
 struct SDMXCodelists
 {
@@ -556,6 +602,9 @@ struct SDMXStructures
 
     @xmlElement("Constraints")
     Nullable!SDMXConstraints constraints;
+
+    @xmlElement("Categorisations")
+    Nullable!SDMXCategorisations categorisations;
 
 }
 
@@ -807,6 +856,28 @@ unittest
         .categorySchemes[0]
         .categories[0]
         .names[0] == SDMXName("fr", "Économie – Conjoncture – Comptes nationaux"));
+}
+
+unittest
+{
+    import std.file : readText;
+
+    const structures = readText("./fixtures/sdmx/structure_dataflow_categorisation.xml")
+        .deserializeAs!SDMXStructures;
+
+    assert(structures.categorySchemes.isNull);
+    assert(structures.codelists.isNull);
+    assert(structures.concepts.isNull);
+    assert(structures.dataStructures.isNull);
+    assert(!structures.dataflows.isNull);
+    assert(structures.constraints.isNull);
+    assert(!structures.categorisations.isNull);
+
+    const categorisations = structures.categorisations.get;
+    assert(categorisations.categorisations.length == 1);
+    assert(categorisations.categorisations[0].names.length == 2);
+    assert(categorisations.categorisations[0].source.ref_.id == "BALANCE-PAIEMENTS");
+    assert(categorisations.categorisations[0].target.ref_.id == "COMMERCE_EXT");
 }
 
 unittest
