@@ -6,6 +6,7 @@ branches:
 
 d:
   - dmd
+  - ldc2
 
 script:
   - dub test -b unittest-cov --compiler=${DC}
