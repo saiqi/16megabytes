@@ -1,0 +1,555 @@
+[
+    {
+        "id": "FR1",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/www.bdm.insee.fr/series/sdmx",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "ECB",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/sdw-wsrest.ecb.europa.eu/service",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "UNSD",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/data.un.org/WS/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "IAEG",
+        "isPublic": false,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/data.un.org/WS/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "ILO",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/www.ilo.org/sdmx/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "queryTemplate": {
+                    "format": "compact_2_1"
+                },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "ESTAT",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/ec.europa.eu/eurostat/SDMX/diss-web/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "WB",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/api.worldbank.org/v2/sdmx/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "WITS",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/wits.worldbank.org/API/V1/SDMX/V21/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "WBG_WITS",
+        "isPublic": false,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/wits.worldbank.org/API/V1/SDMX/V21/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "SDG",
+        "isPublic": false,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/registry.sdmx.org/ws/public/sdmxapi/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "UNICEF",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/sdmx.data.unicef.org/ws/public/sdmxapi/rest",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
+    },
+    {
+        "id": "IMF",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/dataservices.imf.org/REST/SDMX_XML.svc"
+    }
+]

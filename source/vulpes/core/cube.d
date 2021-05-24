@@ -5,6 +5,17 @@ import std.traits : TemplateOf;
 import std.algorithm : filter, map;
 import std.array : array;
 
+enum ResourceType : string
+{
+    taglist = "taglist",
+    descriptionlist = "descriptionlist",
+    definition = "definition",
+    dimension = "dimension",
+    attribute = "attribute",
+    codelist = "codelist",
+    dataset = "dataset"
+}
+
 struct Label
 {
     private:
@@ -13,43 +24,19 @@ struct Label
     Nullable!string longName_;
 
     public:
-    inout(string) language() inout pure nothrow @safe
+    inout(string) language() @property inout pure nothrow @safe
     {
         return language_;
     }
 
-    inout(string) shortName() inout pure nothrow @safe
+    inout(string) shortName() @property inout pure nothrow @safe
     {
         return shortName_;
     }
 
-    inout(Nullable!string) longName() inout pure nothrow @safe
+    inout(Nullable!string) longName() @property inout pure nothrow @safe
     {
         return longName_;
-    }
-}
-
-
-struct Provider
-{
-    private:
-    string id_;
-    Label[] labels_;
-
-    public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-    }
-
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
-
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
     }
 }
 
