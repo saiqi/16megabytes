@@ -1,7 +1,7 @@
 module vulpes.core.cube;
 import std.typecons : Nullable, nullable, Flag;
 import std.range : isInputRange, ElementType;
-import std.traits : TemplateOf;
+import std.traits : Unqual;
 import std.algorithm : filter, map;
 import std.array : array;
 
@@ -38,6 +38,90 @@ struct Label
     {
         return longName_;
     }
+}
+
+private auto searchScore(size_t default_ = size_t.max)(in Label label, in string query) pure @safe nothrow
+{
+    scope(failure) return default_;
+
+    import std.algorithm : min;
+    import std.uni : toLower;
+    import vulpes.lib.text : fuzzySearch;
+
+    auto score = fuzzySearch(query.toLower, label.shortName.toLower).get(default_);
+    if(label.longName.isNull) return score;
+    return min(score, fuzzySearch(query.toLower, label.longName.get.toLower).get(default_));
+}
+
+unittest
+{
+    auto l1 = Label("en", "Wonderful", (Nullable!string).init);
+    auto l2 = Label("en", "Far away", (Nullable!string).init);
+    auto l3 = Label("en", "", "Wonderful".nullable);
+    auto q = "WONDER";
+    assert(l1.searchScore(q) < l2.searchScore(q));
+    assert(l1.searchScore(q) == l3.searchScore(q));
+}
+
+enum isLabelized(T) = is(Unqual!(typeof(T.labels.init[0])) == Label);
+
+private auto computeLabelsSearchScore(size_t default_ = size_t.max, T)(in T resource, in string query) pure @safe nothrow
+if(isLabelized!T)
+{
+    scope(failure) return default_;
+    import std.algorithm : min, map, fold;
+    if(!resource.labels) return default_;
+    return resource.labels.map!(l => l.searchScore!default_(query)).fold!min;
+}
+
+unittest
+{
+    static struct Foo
+    {
+        Label[] labels;
+    }
+
+    auto q = "wonder";
+    auto l1 = Label("en", "Wonderful");
+    auto l2 = Label("en", "Far away");
+    auto foo = Foo([l1, l2]);
+    assert(foo.computeLabelsSearchScore(q) == l1.searchScore(q));
+    assert(foo.computeLabelsSearchScore(q) < q.length);
+    assert(Foo([]).computeLabelsSearchScore(q) == size_t.max);
+}
+
+auto search(R)(R resources, in string query) pure @safe nothrow
+if(isInputRange!R && isLabelized!(ElementType!R))
+{
+    import std.algorithm : map, filter, sort;
+    import std.array : array;
+    import std.typecons : tuple;
+    return resources
+        .map!(r => tuple(r, computeLabelsSearchScore(r, query)))
+        .filter!(t => t[1] < query.length)
+        .array
+        .sort!((a, b) => a[1] < b[1])
+        .map!(t => t[0]);
+}
+
+unittest
+{
+    static struct Foo
+    {
+        uint id;
+        Label[] labels;
+    }
+
+    import std.array : array;
+    auto q = "wonder";
+    auto foos = [
+        Foo(1u, [Label("en", "abcfgh")]),
+        Foo(0u, [Label("en", "Wonderful")]),
+        Foo(2u, [Label("en", "eordw")])
+    ];
+    auto r = search(foos, q).array;
+    assert(r.length == 2);
+    assert(r[0].id == 0u);
 }
 
 struct Tag
