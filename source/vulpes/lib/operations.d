@@ -85,6 +85,14 @@ if(isInputRange!R1 && isInputRange!R2)
         right_.popFront();
         adjustPosition();
     }
+
+    auto save()
+    {
+        auto retval = this;
+        retval.left_ = left_.save;
+        retval.right_ = right_.save;
+        return retval;
+    }
 }
 
 auto innerjoin(alias leftKeyFunc, alias rightKeyFunc, R1, R2)(R1 left, R2 right)
@@ -138,6 +146,19 @@ unittest
 
 }
 
+unittest
+{
+    auto left = [1, 2, 3];
+    auto right = [2, 3, 4];
+
+    auto r = left.innerjoin!(x => x, x => x)(right);
+    auto rs = r.save;
+
+    r.popFront();
+    assert(r.front.left == 3);
+    assert(rs.front.left == 2);
+}
+
 struct LeftOuterJoinResult(alias leftKeyFunc, alias rightKeyFunc, R1, R2)
 {
     private:
@@ -187,12 +208,15 @@ struct LeftOuterJoinResult(alias leftKeyFunc, alias rightKeyFunc, R1, R2)
     {
         assert(!empty);
         left_.popFront();
-
-        // import std.stdio : writeln;
-        // writeln(left_.front);
-        // writeln(right_.front);
-
         adjustPosition();
+    }
+
+    auto save()
+    {
+        auto retval = this;
+        retval.left_ = left_.save;
+        retval.right_ = right_.save;
+        return retval;
     }
 }
 
@@ -260,4 +284,17 @@ unittest
     auto r = left.leftouterjoin!(x => x, x => x)(right);
     assert(!r.empty);
     assert(!r.front.right.isNull);
+}
+
+unittest
+{
+    auto left = [1, 2, 3];
+    auto right = [2, 4];
+
+    auto r = left.leftouterjoin!(x => x, x => x)(right);
+    auto rs = r.save;
+
+    r.popFront();
+    assert(r.front.left == 2);
+    assert(rs.front.left == 1);
 }
