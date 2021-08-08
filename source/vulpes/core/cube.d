@@ -1,6 +1,6 @@
 module vulpes.core.cube;
 import std.typecons : Nullable, nullable, Flag;
-import std.range : isInputRange, ElementType;
+import std.range;
 import std.traits : Unqual;
 import std.algorithm : filter, map;
 import std.array : array;
@@ -40,7 +40,7 @@ struct Label
     }
 }
 
-private auto searchScore(size_t default_ = size_t.max)(in Label label, in string query) pure @safe nothrow
+private auto searchScore(size_t default_)(in Label label, in string query) pure @safe nothrow
 {
     scope(failure) return default_;
 
@@ -59,13 +59,18 @@ unittest
     auto l2 = Label("en", "Far away", (Nullable!string).init);
     auto l3 = Label("en", "", "Wonderful".nullable);
     auto q = "WONDER";
-    assert(l1.searchScore(q) < l2.searchScore(q));
-    assert(l1.searchScore(q) == l3.searchScore(q));
+    assert(l1.searchScore!(1024)(q) < l2.searchScore!(1024)(q));
+    assert(l1.searchScore!(1024)(q) == l3.searchScore!(1024)(q));
 }
 
 enum isLabelized(T) = is(Unqual!(typeof(T.labels.init[0])) == Label);
 
-private auto computeLabelsSearchScore(size_t default_ = size_t.max, T)(in T resource, in string query) pure @safe nothrow
+static assert(isLabelized!CubeDescription);
+static assert(isLabelized!Concept);
+static assert(isLabelized!Tag);
+
+private auto computeLabelsSearchScore(size_t default_ = size_t.max, T)(in T resource,
+                                                                       in string query) pure @safe nothrow
 if(isLabelized!T)
 {
     scope(failure) return default_;
@@ -85,23 +90,24 @@ unittest
     auto l1 = Label("en", "Wonderful");
     auto l2 = Label("en", "Far away");
     auto foo = Foo([l1, l2]);
-    assert(foo.computeLabelsSearchScore(q) == l1.searchScore(q));
+    assert(foo.computeLabelsSearchScore(q) == l1.searchScore!(size_t.max)(q));
     assert(foo.computeLabelsSearchScore(q) < q.length);
-    assert(Foo([]).computeLabelsSearchScore(q) == size_t.max);
+    auto empty = Foo([]);
+    assert(empty.computeLabelsSearchScore(q) == size_t.max);
 }
 
-auto search(R)(R resources, in string query) pure @safe nothrow
-if(isInputRange!R && isLabelized!(ElementType!R))
+auto search(size_t threshold = 1u, R)(R resources, in string query) pure @safe nothrow
+if(isForwardRange!R && isLabelized!(ElementType!R))
 {
-    import std.algorithm : map, filter, sort;
+    import std.algorithm : map, filter;
     import std.array : array;
-    import std.typecons : tuple;
-    return resources
-        .map!(r => tuple(r, computeLabelsSearchScore(r, query)))
-        .filter!(t => t[1] < query.length)
+    import vulpes.lib.operations : sort;
+
+    return zip(resources.map!(r => computeLabelsSearchScore(r, query)), resources)
+        .filter!(a => a[0] <= threshold)
         .array
-        .sort!((a, b) => a[1] < b[1])
-        .map!(t => t[0]);
+        .sort!"a[0] < b[0]"
+        .map!"a[1]";
 }
 
 unittest
@@ -116,12 +122,23 @@ unittest
     auto q = "wonder";
     auto foos = [
         Foo(1u, [Label("en", "abcfgh")]),
-        Foo(0u, [Label("en", "Wonderful")]),
+        Foo(0u, [Label("en", "Wondarful")]),
         Foo(2u, [Label("en", "eordw")])
     ];
     auto r = search(foos, q).array;
-    assert(r.length == 2);
+    assert(r.length == 1);
     assert(r[0].id == 0u);
+}
+
+unittest
+{
+    auto cs = [
+        CubeDescription("P", "1", [Label("en", "Bar")], "P", "1", []),
+        CubeDescription("P", "0", [Label("en", "Foo")], "P", "0", [])
+    ];
+    auto r = search(cs, "foo");
+    assert(r.length == 1);
+    assert(r[0].id == "0");
 }
 
 struct Tag
@@ -193,6 +210,21 @@ struct CubeDescription
     {
         return definitionProviderId_;
     }
+}
+
+bool containsTags(in CubeDescription desc, in string[] tagIds) pure nothrow @safe
+{
+    import std.algorithm : canFind;
+    auto r = desc.tagIds.filter!(i => tagIds.canFind(i));
+    return !r.empty;
+}
+
+unittest
+{
+    assert(CubeDescription("FOO", "BAR", [], "FOO", "BAR", ["A", "B", "C"]).containsTags(["A", "B"]));
+    assert(!CubeDescription("FOO", "BAR", [], "FOO", "BAR", ["A", "B", "C"]).containsTags(["D"]));
+    assert(!CubeDescription("FOO", "BAR", [], "FOO", "BAR", ["A", "B", "C"]).containsTags([]));
+    assert(!CubeDescription("FOO", "BAR", [], "FOO", "BAR", []).containsTags(["A", "B"]));
 }
 
 struct CubeDefinition

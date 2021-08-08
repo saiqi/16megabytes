@@ -19,6 +19,13 @@
                     "Accept-Encoding": "gzip"
                 }
             },
+            "categoryscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
             "categorisation": {
                 "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
                 "headerTemplate": {
@@ -76,6 +83,13 @@
                     "Accept-Encoding": "gzip"
                 }
             },
+            "categoryscheme": {
+                "pathTemplate": "/{resourceType}/all/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
             "codelist": {
                 "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
                 "headerTemplate": {
@@ -120,6 +134,13 @@
                 }
             },
             "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categoryscheme": {
                 "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
@@ -230,6 +251,13 @@
                 "queryTemplate": {
                     "format": "compact_2_1"
                 },
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "categoryscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"

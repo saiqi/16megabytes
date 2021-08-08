@@ -228,13 +228,35 @@ paths:
             type: string
       responses:
         '200':
-          description: Successfully returned the lisf of cube description
+          description: Successfully returned the list of cube description
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CubeDescription'
+  /providers/{providerId}/cube-descriptions/count:
+    get:
+      summary: Return the total number of cube descriptions given a provider
+      tags:
+        - datastructure
+      parameters:
+        - name: providerId
+          description: an unique identifier of the provider
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned the total number of cube description
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: number
   /providers/{providerId}/cube-definitions/{definitionId}:
     get:
       summary: Returns the cube definition given a provider and a cube description

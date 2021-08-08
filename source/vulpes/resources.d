@@ -105,3 +105,8 @@ struct DescriptionResource
     string definitionProviderId;
     string[] tagIds;
 }
+
+struct CountResource
+{
+    size_t count;
+}

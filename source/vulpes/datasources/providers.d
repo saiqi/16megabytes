@@ -78,3 +78,18 @@ unittest
     assert(getProvider("UNKNOWN").isNull);
 }
 
+bool hasResource(in Provider provider, in string resourceName) pure nothrow @safe
+{
+    if(provider.resources.isNull) return false;
+
+    if(resourceName in provider.resources.get) return true;
+
+    return false;
+}
+
+unittest
+{
+    auto p = getProvider("ESTAT").get;
+    assert(!hasResource(p, "categoryscheme"));
+    assert(hasResource(p, "dataflow"));
+}

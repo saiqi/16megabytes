@@ -3,7 +3,7 @@ module vulpes.lib.requests;
 import std.typecons : Flag, Tuple;
 import std.exception : enforce;
 import std.format : format;
-import std.traits : isCallable, ReturnType, isSomeChar, Parameters, isAssociativeArray, isSomeString;
+import std.traits : isCallable, ReturnType, isSomeChar, Parameters, isAssociativeArray, isSomeString, TemplateOf;
 import std.range : isForwardRange, ElementType;
 import requests : Request;
 import vibe.core.concurrency : Future;
@@ -20,11 +20,6 @@ class RequestException : Exception
 }
 
 alias RaiseForStatus = Flag!"raiseForStatus";
-
-enum isFetcher(alias func) =
-    isCallable!func
-    && isForwardRange!(ReturnType!func)
-    && isSomeChar!(ElementType!(ReturnType!func));
 
 alias RequestParameter = Tuple!(string, "url", string[string], "headers", string[string], "params");
 
@@ -51,7 +46,6 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
     {
         enforce!RequestException(resp.code < 400, format!"%s returned HTTP %s code"(url, resp.code));
     }
-
     return content;
 }
 

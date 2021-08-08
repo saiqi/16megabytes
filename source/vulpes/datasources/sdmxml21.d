@@ -1,12 +1,16 @@
 module vulpes.datasources.sdmxml21;
 
 import std.typecons : Nullable, nullable, Tuple, apply;
+import std.range : isInputRange, ElementType;
 import vulpes.lib.xml;
 import vulpes.lib.requests;
 import vulpes.datasources.providers;
 import vulpes.core.cube;
 
 private:
+
+enum Unknown = "Unknown";
+
 @xmlRoot("Text")
 struct SDMXText
 {
@@ -443,7 +447,7 @@ struct SDMXCategoryScheme
     SDMXCategory[] categories;
 }
 
-SDMXCategory[] flattenCategory(SDMXCategory category)
+SDMXCategory[] flattenCategory(SDMXCategory category) pure nothrow @safe
 {
     import std.range : chain;
     import std.algorithm : joiner, map;
@@ -462,6 +466,66 @@ unittest
     auto category = message.categorySchemes[0].categories[0];
     auto categories = flattenCategory(category);
     assert(categories.length == 7);
+}
+
+SDMXCategory[][SDMXCategory] buildHierarchy(SDMXCategoryScheme categoryScheme)
+{
+    SDMXCategory[][SDMXCategory] path;
+
+    void visit(SDMXCategory category)
+    {
+        import std.container : DList;
+
+        DList!SDMXCategory queue;
+        queue.insertFront(category);
+        bool[SDMXCategory] visited = [category : true];
+
+        while(!queue.empty)
+        {
+            auto c = queue.front;
+            queue.removeFront;
+
+            visited[c] = true;
+
+            foreach(child; c.children)
+            {
+                if(!(child in visited))
+                {
+                    visited[child] = true;
+                    queue.insertBack(child);
+                    foreach(u; path.get(c, []))
+                    {
+                        path[child] ~= u;
+                    }
+
+                    path[child] ~= c;
+                }
+            }
+        }
+    }
+
+    import std.range : tee;
+
+    foreach(c; categoryScheme.categories)
+    {
+        visit(c);
+    }
+    return path;
+}
+
+unittest
+{
+    import std.file : readText;
+    auto message = readText("./fixtures/sdmx/structure_category.xml");
+    auto schemes = message.deserializeAs!SDMXCategorySchemes;
+    auto h = buildHierarchy(schemes.categorySchemes[0]);
+    import std.algorithm : map, equal, filter;
+
+    auto c = message
+        .deserializeAsRangeOf!SDMXCategory.filter!(c => c.id.get == "COMMERCE_GROS")
+        .front;
+
+    assert(equal(h[c].map!(a => a.id.get), ["SECT_ACT", "COMMERCE"]));
 }
 
 @xmlRoot("Source")
@@ -1008,7 +1072,7 @@ static this()
     ];
 }
 
-auto fetchStructure(alias fetch)(in Provider provider,
+T fetchStructure(alias fetch, T)(in Provider provider,
                                  StructureType type,
                                  string[string] params,
                                  in string resourceId = null,
@@ -1039,28 +1103,32 @@ auto fetchStructure(alias fetch)(in Provider provider,
         : resolveRequestTemplate(resourceCfg.headerTemplate.get.dup, null)
             .mergeAAParams(defaultStructureHeaders);
 
-    auto message = fetch(url, headers, query);
-
-    return [type: message];
+    return fetch(url, headers, query);
 }
 
 auto fetchTags(alias fetch)(in Provider provider)
-if(isFetcher!fetch)
 {
+    import vibe.core.concurrency : Future;
     with(StructureType)
     {
-        return fetchStructure!fetch(provider, categorisation, [References: categoryscheme]);
+        auto fCategorisation = fetchStructure!(fetch, Future!string)(
+            provider, categorisation, [References: StructureReferences.none]);
+        auto fCategoryScheme = fetchStructure!(fetch, Future!string)(
+            provider, categoryscheme, [References: StructureReferences.none]);
+
+        return [categorisation : fCategorisation.getResultOrFail, categoryscheme: fCategoryScheme.getResultOrFail];
     }
 }
 
 unittest
 {
-    import vulpes.errors : NotImplemented;
     import std.exception : assertThrown;
+    import vibe.core.concurrency : async;
+    import vulpes.errors : NotImplemented;
 
     auto fetcher(string u, string[string] h, string[string] q)
     {
-        return "message";
+        return async({return "message";});
     }
 
     auto supportedP = immutable Provider(
@@ -1068,9 +1136,14 @@ unittest
         true,
         "http://localhost:8080",
         Format.sdmxml21.nullable,
-        ["categorisation":  Resource("/{resourceType}/{providerId}/{resourceId}/{version}",
+        [
+            "categorisation":  Resource("/{resourceType}/{providerId}/{resourceId}/{version}",
                 (Nullable!(string[string])).init,
-                ["Accept": "text/plain"].nullable)].nullable);
+                ["Accept": "text/plain"].nullable),
+            "categoryscheme": Resource("/{resourceType}/{providerId}/{resourceId}/{version}",
+                (Nullable!(string[string])).init,
+                ["Accept": "text/plain"].nullable)
+        ].nullable);
 
     auto unsupportedP = immutable Provider(
         "id",
@@ -1083,35 +1156,96 @@ unittest
 
     auto messages = fetchTags!fetcher(supportedP);
     assert(StructureType.categorisation in messages);
+    assert(StructureType.categoryscheme in messages);
     assertThrown!NotImplemented(fetchTags!fetcher(unsupportedP));
+}
+
+auto buildTagId(in string parentResourceId, in string resourceId) pure nothrow @safe
+{
+    return parentResourceId ~ "." ~ resourceId;
+}
+
+auto transformCategories(R1, R2)(R1 categorisations, R2 categorySchemes)
+if(is(ElementType!R1 == SDMXCategorisation) &&
+   is(ElementType!R2 == SDMXCategoryScheme) &&
+   isInputRange!R1 &&
+   isInputRange!R2)
+{
+    import std.algorithm : map, filter, joiner;
+    import std.typecons : tuple;
+    import vulpes.lib.operations : index;
+
+    auto categorisationIdx = categorisations
+        .filter!(c => !c.target.ref_.maintainableParentId.isNull)
+        .index!(c => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id));
+
+    alias RT = Tuple!(
+        string, "categorySchemeId",
+        SDMXCategory, "category",
+        SDMXCategory[], "parentCategories"
+    );
+
+    return categorySchemes
+        .filter!(s => !s.id.isNull)
+        .map!((s) {
+            auto hierarchy = buildHierarchy(s);
+            return s.categories
+                .map!flattenCategory
+                .joiner
+                .filter!(c => !c.id.isNull)
+                .filter!(c => tuple(s.id.get, c.id.get) in categorisationIdx)
+                .map!(c => RT(s.id.get, c, hierarchy.get(c, [])));
+        })
+        .joiner;
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.algorithm : filter, equal, map, uniq, sort;
+    import std.array : array;
+    auto msg = readText("./fixtures/sdmx/structure_category_categorisation.xml");
+    auto structures = msg.deserializeAs!SDMXStructures;
+    auto r = transformCategories(structures.categorisations.get.categorisations,
+                                 structures.categorySchemes.get.categorySchemes);
+    assert(!r.empty);
+
+    auto i = "CARAC_COMMERCE";
+    auto c = r.filter!(a => a.category.id.get == i).front;
+    assert(c.categorySchemeId == "CLASSEMENT_DATAFLOWS");
+    assert(c.category.id == i);
+    assert(equal(c.parentCategories.map!(a => a.id), ["SECT_ACT", "COMMERCE"]));
+
+    auto allCategoryIds = r.map!(t => t.category.id.get);
+    assert(equal(allCategoryIds.array.sort, allCategoryIds.array.sort.uniq));
 }
 
 auto buildTags(in string[StructureType] messages)
 {
-    assert(StructureType.categorisation in messages);
-
-    import std.algorithm : map, filter, joiner;
-    import std.typecons : tuple;
+    import std.algorithm : joiner, map, filter;
     import std.array : array;
-    import vulpes.lib.operations : innerjoin;
+    import std.range : tee;
+    import vulpes.lib.operations : dropDuplicates;
 
-    auto msg = messages[StructureType.categorisation];
-    auto categorisations = msg.deserializeAsRangeOf!SDMXCategorisation;
+    assert(StructureType.categorisation in messages);
+    assert(StructureType.categoryscheme in messages);
 
-    auto categories = msg.deserializeAsRangeOf!SDMXCategoryScheme
-        .filter!(s => !s.id.isNull)
-        .map!(s => s.categories
-            .map!flattenCategory
-            .joiner
-            .map!(c => tuple(s.id.get, c)))
-        .joiner;
+    auto categorisations = messages[StructureType.categorisation].deserializeAs!SDMXCategorisations;
+    auto categorySchemes = messages[StructureType.categoryscheme].deserializeAs!SDMXCategorySchemes;
 
-    return categorisations
-        .filter!(c => !c.target.ref_.maintainableParentId.isNull)
-        .innerjoin!(c => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id),
-                    t => tuple(t[0], t[1].id))(categories)
-        .map!(t => Tag(t.right[1].id,
-                       t.right[1].names.map!toLabel.array));
+    return transformCategories(categorisations.categorisations, categorySchemes.categorySchemes)
+        .map!((t) {
+            auto parents = t.parentCategories
+                .map!(a => Tag(buildTagId(t.categorySchemeId, a.id), a.names.map!toLabel.array))
+                .array;
+
+            auto current = Tag(buildTagId(t.categorySchemeId, t.category.id),
+                               t.category.names.map!toLabel.array);
+
+            return parents ~ current;
+        })
+        .joiner
+        .dropDuplicates!((a, b) => a.id < b.id, (a, b) => a == b);
 }
 
 unittest
@@ -1119,11 +1253,14 @@ unittest
     import std.file : readText;
     import std.range : walkLength;
     import std.algorithm : filter;
-    auto messages = [StructureType.categorisation : readText("./fixtures/sdmx/structure_category_categorisation.xml")];
+    auto messages = [
+        StructureType.categorisation : readText("./fixtures/sdmx/structure_category_categorisation.xml"),
+        StructureType.categoryscheme : readText("./fixtures/sdmx/structure_category_categorisation.xml")
+    ];
     auto tags = buildTags(messages);
     assert(!tags.empty);
 
-    auto i = "CARAC_ENTRP";
+    auto i = "CLASSEMENT_DATAFLOWS.CARAC_ENTRP";
 
     auto cat = tags.filter!(t => t.id == i);
     assert(!cat.empty);
@@ -1132,45 +1269,164 @@ unittest
     assert(cat.front.labels[0].shortName == "Caractéristiques des entreprises");
     assert(cat.front.labels[1].language == "en");
     assert(cat.front.labels[1].shortName == "Characteristics of enterprises");
+
+    assert(tags.filter!(t => t.id == "CLASSEMENT_DATAFLOWS.SECT_ACT").walkLength == 1);
 }
 
 auto fetchDescriptions(alias fetch)(in Provider provider)
 {
+    import vibe.core.concurrency : Future;
+
+    string[StructureType] result;
+
     with(StructureType)
     {
-        return fetchStructure!fetch(provider, dataflow, [References: categorisation]);
+        auto fDataflow = fetchStructure!(fetch, Future!string)(provider, dataflow, [References: categorisation]);
+
+        if(hasResource(provider, categoryscheme))
+        {
+            auto fCategoryScheme = fetchStructure!(fetch, Future!string)(
+                provider, categoryscheme, [References: categorisation]);
+
+            auto rCategoryScheme = fCategoryScheme.getResultOrNullable;
+            if(!rCategoryScheme.isNull)
+                result[categoryscheme] = rCategoryScheme.get;
+        }
+
+        auto mDataflow = fDataflow.getResultOrFail;
+
+        result[dataflow] = mDataflow;
     }
+
+    return result;
+}
+
+unittest
+{
+    import vibe.core.concurrency : async;
+    import std.algorithm : canFind;
+    import std.exception : enforce;
+
+    auto mockFetcher(bool throw_)(string url, string[string] headers, string[string] params = null)
+    {
+        return async({
+            if(url.canFind("dataflow"))
+                return "";
+
+            static if(!throw_)
+                return "";
+            else
+            {
+                enforce!RequestException(false, "Mock exception");
+                assert(false);
+            }
+        });
+    }
+
+    auto p0 = Provider(
+        "0",
+        true,
+        "",
+        (Nullable!Format).init,
+        [
+            "dataflow": Resource("", Nullable!(string[string]).init, Nullable!(string[string]).init),
+            "categoryscheme": Resource("", Nullable!(string[string]).init, Nullable!(string[string]).init)
+        ].nullable);
+
+    auto msg0 = fetchDescriptions!(mockFetcher!false)(p0);
+    assert(StructureType.dataflow in msg0);
+    assert(StructureType.categoryscheme in msg0);
+
+    auto p1 = Provider(
+        "0",
+        true,
+        "",
+        (Nullable!Format).init,
+        [
+            "dataflow": Resource("", Nullable!(string[string]).init, Nullable!(string[string]).init)
+        ].nullable);
+
+    auto msg1 = fetchDescriptions!(mockFetcher!false)(p1);
+    assert(StructureType.dataflow in msg1);
+    assert(!(StructureType.categoryscheme in msg1));
+
+
 }
 
 auto buildDescriptions(in string[StructureType] messages)
 {
     assert(StructureType.dataflow in messages);
 
-    import vulpes.lib.operations : leftouterjoin;
     import std.algorithm : map, filter;
     import std.array : array;
+    import vulpes.lib.operations : index;
 
-    auto msg = messages[StructureType.dataflow];
-    auto dataflows = msg.deserializeAsRangeOf!SDMXDataflow;
-    auto categorisations = msg.deserializeAsRangeOf!SDMXCategorisation;
+    auto sDataflow = messages[StructureType.dataflow].deserializeAs!SDMXStructures;
+    auto sCategoryScheme = (StructureType.categoryscheme in messages)
+        ? messages[StructureType.categoryscheme].deserializeAs!SDMXStructures
+        : SDMXStructures();
 
-    alias dataflowId = d => d.id.get;
-    alias categorisationId = c => c.source.ref_.id;
+    auto dataflows = (sDataflow.dataflows.isNull)
+        ? []
+        : sDataflow.dataflows.get.dataflows;
+
+    auto categorisations = (sDataflow.categorisations.isNull)
+        ? (
+            (!sCategoryScheme.categorisations.isNull)
+                ? sCategoryScheme.categorisations.get.categorisations
+                : []
+        )
+        : sDataflow.categorisations.get.categorisations;
+
+    auto categorisationIdx = (categorisations.length == 0)
+        ? null
+        : categorisations
+            .filter!(c => !c.target.ref_.maintainableParentId.isNull)
+            .index!(c => c.source.ref_.id);
+
+    auto makeCubeDescription(SDMXDataflow df, string[] tagIds)
+    {
+        return CubeDescription(df.agencyId.get(Unknown),
+                               df.id.get,
+                               df.names.map!toLabel.array,
+                               df.structure.get.ref_.id,
+                               df.structure.get.ref_.agencyId.get(Unknown),
+                               tagIds);
+    }
+
+    // Memoize mapping between category id and transformed category if category scheme is provided
+    auto categories = (!sCategoryScheme.categorySchemes.isNull)
+        ? transformCategories(categorisations,
+                              sCategoryScheme.categorySchemes.get.categorySchemes)
+            .filter!(c => !c.category.id.isNull)
+            .index!(c => c.category.id.get)
+        : null;
 
     return dataflows
         .filter!(d => !d.id.isNull && !d.structure.isNull)
-        .leftouterjoin!(dataflowId, categorisationId)(categorisations)
-        .map!((t) {
-            auto df = t.left;
-            auto cat = t.right;
+        .map!((df) {
+            if(categorisationIdx is null || !(df.id.get in categorisationIdx))
+                return makeCubeDescription(df, []);
 
-            return CubeDescription(df.agencyId.get("Unknown"),
-                                   df.id.get,
-                                   df.names.map!toLabel.array,
-                                   df.structure.get.ref_.id,
-                                   df.structure.get.ref_.agencyId,
-                                   cat.isNull ? [] : [cat.get.target.ref_.id]);
-        });
+            auto cat = categorisationIdx[df.id.get];
+
+            auto currentTagId = buildTagId(cat.target.ref_.maintainableParentId.get,
+                                           cat.target.ref_.id);
+
+            // If no categoryscheme has been provided, build cube description tags from categorisation
+            if(categories is null)
+                return makeCubeDescription(df, [currentTagId]);
+
+            if(!(cat.target.ref_.id in categories))
+                return makeCubeDescription(df, [currentTagId]);
+
+            auto categoryT = categories[cat.target.ref_.id];
+            auto tagIds = [currentTagId]
+                ~ categoryT.parentCategories
+                    .map!(c => buildTagId(categoryT.categorySchemeId, c.id))
+                    .array;
+            return makeCubeDescription(df, tagIds);
+    });
 }
 
 unittest
@@ -1190,7 +1446,10 @@ unittest
     assert(descriptions.front.definitionId == "BALANCE-PAIEMENTS");
     assert(descriptions.front.definitionProviderId == "FR1");
     assert(descriptions.front.tagIds.length == 1);
-    assert(descriptions.front.tagIds[0] == "COMMERCE_EXT");
+    assert(descriptions.front.tagIds[0] == "CLASSEMENT_DATAFLOWS.COMMERCE_EXT");
+
+    import std.algorithm : all;
+    assert(descriptions.all!"a.id.length > 0");
 }
 
 unittest
@@ -1213,6 +1472,30 @@ unittest
     assert(desc.definitionId == "BALANCE-PAIEMENTS");
     assert(desc.definitionProviderId == "FR1");
     assert(desc.tagIds.length == 0);
+
+    import std.algorithm : all;
+    assert(descriptions.all!"a.id.length > 0");
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.algorithm : equal;
+    auto messages = [
+        StructureType.dataflow : readText("./fixtures/sdmx/structure_dataflow_categorisation.xml"),
+        StructureType.categoryscheme : readText("./fixtures/sdmx/structure_category_categorisation.xml")
+    ];
+    auto descriptions = buildDescriptions(messages);
+    assert(!descriptions.empty);
+    assert(descriptions.front.id == "BALANCE-PAIEMENTS");
+    assert(descriptions.front.providerId == "FR1");
+    assert(descriptions.front.labels.length == 2);
+    assert(descriptions.front.labels[0].language == "fr");
+    assert(descriptions.front.labels[0].shortName == "Balance des paiements");
+    assert(descriptions.front.definitionId == "BALANCE-PAIEMENTS");
+    assert(descriptions.front.definitionProviderId == "FR1");
+    assert(descriptions.front.tagIds.length == 2);
+    assert(equal(descriptions.front.tagIds, ["CLASSEMENT_DATAFLOWS.COMMERCE_EXT", "CLASSEMENT_DATAFLOWS.ECO"]));
 }
 
 auto buildDefinition(in string[StructureType] messages)
@@ -1468,5 +1751,5 @@ unittest
 public:
 import std.functional : pipe;
 alias fetch = doRequest!(RaiseForStatus.yes);
-alias getTags = pipe!(fetchTags!fetch, buildTags);
-alias getDescriptions = pipe!(fetchDescriptions!fetch, buildDescriptions);
+alias getTags = pipe!(fetchTags!doAsyncRequest, buildTags);
+alias getDescriptions = pipe!(fetchDescriptions!doAsyncRequest, buildDescriptions);
