@@ -1074,7 +1074,7 @@ static this()
 
 T fetchStructure(alias fetch, T)(in Provider provider,
                                  StructureType type,
-                                 string[string] params,
+                                 string[string] params = null,
                                  in string resourceId = null,
                                  in string version_ = null)
 {
@@ -1112,9 +1112,9 @@ auto fetchTags(alias fetch)(in Provider provider)
     with(StructureType)
     {
         auto fCategorisation = fetchStructure!(fetch, Future!string)(
-            provider, categorisation, [References: StructureReferences.none]);
+            provider, categorisation);
         auto fCategoryScheme = fetchStructure!(fetch, Future!string)(
-            provider, categoryscheme, [References: StructureReferences.none]);
+            provider, categoryscheme);
 
         return [categorisation : fCategorisation.getResultOrFail, categoryscheme: fCategoryScheme.getResultOrFail];
     }
@@ -1281,12 +1281,12 @@ auto fetchDescriptions(alias fetch)(in Provider provider)
 
     with(StructureType)
     {
-        auto fDataflow = fetchStructure!(fetch, Future!string)(provider, dataflow, [References: categorisation]);
+        auto fDataflow = fetchStructure!(fetch, Future!string)(provider, dataflow);
 
         if(hasResource(provider, categoryscheme))
         {
             auto fCategoryScheme = fetchStructure!(fetch, Future!string)(
-                provider, categoryscheme, [References: categorisation]);
+                provider, categoryscheme);
 
             auto rCategoryScheme = fCategoryScheme.getResultOrNullable;
             if(!rCategoryScheme.isNull)
