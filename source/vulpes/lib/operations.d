@@ -371,26 +371,79 @@ unittest
     assert(equal(dropDuplicates(i), [1, 2, 3]));
 }
 
-auto index(alias indexFunc, R)(R range)
+auto groupby(alias indexFunc, R)(R range)
 {
-    import std.array : assocArray;
-    import std.typecons : tuple;
-    import std.algorithm : map;
+    import std.typecons : tuple, Tuple;
+    import std.algorithm : map, fold, sort;
 
-    return range.map!(e => tuple(indexFunc(e), e)).assocArray;
+    alias mapper = e => tuple(indexFunc(e), e);
+    alias reducer = (acc, cur) {
+        auto k = cur[0];
+        auto v = cur[1];
+
+        if(acc.length == 0) return [tuple(k, [v])];
+
+        auto pk = acc[$ - 1][0];
+        auto pv = acc[$ - 1][1];
+
+        if(pk != k) return acc[0 .. $] ~ tuple(k, [v]);
+
+        return acc[0 .. ($ - 1)] ~ tuple(k, pv ~ v);
+    };
+
+    alias KT = typeof(indexFunc(range.front));
+    alias VT = ElementType!R;
+
+    Tuple!(KT, VT[])[] seed;
+
+    static if(isRandomAccessRange!R)
+    {
+        return range
+            .sort!((a, b) => indexFunc(a) < indexFunc(b))
+            .map!mapper
+            .fold!reducer(seed);
+    }
+    else {
+        import std.array : array;
+        return range
+            .array
+            .sort!((a, b) => indexFunc(a) < indexFunc(b))
+            .map!mapper
+            .fold!reducer(seed);
+    }
 }
 
 unittest
 {
-    auto r = [Foo(0), Foo(1), Foo(3)].index!(i => i.id);
-    assert(r[0] == Foo(0));
-    assert(r[1] == Foo(1));
-    assert(r[3] == Foo(3));
+    import std.array : assocArray;
+    import std.algorithm : equal;
+    auto r = [Foo(0), Foo(1), Foo(0), Foo(3)].groupby!(i => i.id).assocArray;
+    assert(equal(r[0], [Foo(0), Foo(0)]));
+    assert(equal(r[1], [Foo(1)]));
+    assert(equal(r[3], [Foo(3)]));
 }
 
 unittest
 {
     Foo[] foos = [];
-    auto r = foos.index!(i => i.id);
+    auto r = foos.groupby!(i => i.id);
     assert(r.empty);
+}
+
+auto index(alias indexFunc, R)(R range)
+{
+    import std.typecons : tuple;
+    import std.algorithm : map;
+
+    return range.map!(e => tuple(indexFunc(e), e));
+}
+
+unittest
+{
+    import std.array : assocArray;
+    import std.algorithm : equal;
+    auto r = [Foo(0), Foo(1), Foo(0), Foo(3)].index!(i => i.id).assocArray;
+    assert(r[0] == Foo(0));
+    assert(r[1] == Foo(1));
+    assert(r[3] == Foo(3));
 }

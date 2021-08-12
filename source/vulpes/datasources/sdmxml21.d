@@ -1173,11 +1173,13 @@ if(is(ElementType!R1 == SDMXCategorisation) &&
 {
     import std.algorithm : map, filter, joiner;
     import std.typecons : tuple;
-    import vulpes.lib.operations : index;
+    import std.array : assocArray;
+    import vulpes.lib.operations : groupby;
 
     auto categorisationIdx = categorisations
         .filter!(c => !c.target.ref_.maintainableParentId.isNull)
-        .index!(c => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id));
+        .groupby!(c => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id))
+        .assocArray;
 
     alias RT = Tuple!(
         string, "categorySchemeId",
@@ -1357,9 +1359,9 @@ auto buildDescriptions(in string[StructureType] messages)
 {
     assert(StructureType.dataflow in messages);
 
-    import std.algorithm : map, filter;
-    import std.array : array;
-    import vulpes.lib.operations : index;
+    import std.algorithm : map, filter, joiner, sort, uniq;
+    import std.array : array, assocArray;
+    import vulpes.lib.operations : groupby, index;
 
     auto sDataflow = messages[StructureType.dataflow].deserializeAs!SDMXStructures;
     auto sCategoryScheme = (StructureType.categoryscheme in messages)
@@ -1382,7 +1384,8 @@ auto buildDescriptions(in string[StructureType] messages)
         ? null
         : categorisations
             .filter!(c => !c.target.ref_.maintainableParentId.isNull)
-            .index!(c => c.source.ref_.id);
+            .groupby!(c => c.source.ref_.id)
+            .assocArray;
 
     auto makeCubeDescription(SDMXDataflow df, string[] tagIds)
     {
@@ -1400,6 +1403,7 @@ auto buildDescriptions(in string[StructureType] messages)
                               sCategoryScheme.categorySchemes.get.categorySchemes)
             .filter!(c => !c.category.id.isNull)
             .index!(c => c.category.id.get)
+            .assocArray
         : null;
 
     return dataflows
@@ -1408,24 +1412,25 @@ auto buildDescriptions(in string[StructureType] messages)
             if(categorisationIdx is null || !(df.id.get in categorisationIdx))
                 return makeCubeDescription(df, []);
 
-            auto cat = categorisationIdx[df.id.get];
+            auto currentTagIds = categorisationIdx[df.id.get]
+                .map!((cat) {
+                    auto currentTagId = buildTagId(cat.target.ref_.maintainableParentId.get,
+                                                   cat.target.ref_.id);
 
-            auto currentTagId = buildTagId(cat.target.ref_.maintainableParentId.get,
-                                           cat.target.ref_.id);
+                    if(categories is null || !(cat.target.ref_.id in categories))
+                        return [currentTagId];
 
-            // If no categoryscheme has been provided, build cube description tags from categorisation
-            if(categories is null)
-                return makeCubeDescription(df, [currentTagId]);
+                    return [currentTagId]
+                        ~ categories[cat.target.ref_.id].parentCategories
+                            .map!(c => buildTagId(categories[cat.target.ref_.id].categorySchemeId, c.id))
+                            .array;
+                })
+                .joiner
+                .array
+                .sort
+                .uniq;
 
-            if(!(cat.target.ref_.id in categories))
-                return makeCubeDescription(df, [currentTagId]);
-
-            auto categoryT = categories[cat.target.ref_.id];
-            auto tagIds = [currentTagId]
-                ~ categoryT.parentCategories
-                    .map!(c => buildTagId(categoryT.categorySchemeId, c.id))
-                    .array;
-            return makeCubeDescription(df, tagIds);
+            return makeCubeDescription(df, currentTagIds.array);
     });
 }
 
