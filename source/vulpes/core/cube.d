@@ -101,7 +101,7 @@ if(isForwardRange!R && isLabelized!(ElementType!R))
 {
     import std.algorithm : map, filter;
     import std.array : array;
-    import vulpes.lib.operations : sort;
+    import vulpes.core.operations : sort;
 
     return zip(resources.map!(r => computeLabelsSearchScore(r, query)), resources)
         .filter!(a => a[0] <= threshold)

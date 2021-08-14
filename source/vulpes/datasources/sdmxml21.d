@@ -1174,7 +1174,7 @@ if(is(ElementType!R1 == SDMXCategorisation) &&
     import std.algorithm : map, filter, joiner;
     import std.typecons : tuple;
     import std.array : assocArray;
-    import vulpes.lib.operations : groupby;
+    import vulpes.core.operations : groupby;
 
     auto categorisationIdx = categorisations
         .filter!(c => !c.target.ref_.maintainableParentId.isNull)
@@ -1227,7 +1227,7 @@ auto buildTags(in string[StructureType] messages)
     import std.algorithm : joiner, map, filter;
     import std.array : array;
     import std.range : tee;
-    import vulpes.lib.operations : dropDuplicates;
+    import vulpes.core.operations : dropDuplicates;
 
     assert(StructureType.categorisation in messages);
     assert(StructureType.categoryscheme in messages);
@@ -1361,7 +1361,7 @@ auto buildDescriptions(in string[StructureType] messages)
 
     import std.algorithm : map, filter, joiner, sort, uniq;
     import std.array : array, assocArray;
-    import vulpes.lib.operations : groupby, index;
+    import vulpes.core.operations : groupby, index;
 
     auto sDataflow = messages[StructureType.dataflow].deserializeAs!SDMXStructures;
     auto sCategoryScheme = (StructureType.categoryscheme in messages)
@@ -1509,7 +1509,7 @@ auto buildDefinition(in string[StructureType] messages)
     import std.algorithm : map, sort;
     import std.range : chain;
     import std.conv : to;
-    import vulpes.lib.operations : leftouterjoin;
+    import vulpes.core.operations : leftouterjoin;
     assert(StructureType.datastructure in messages);
 
     auto dsd = messages[StructureType.datastructure].deserializeAs!SDMXDataStructure;
@@ -1703,7 +1703,7 @@ auto buildCodes(in string[StructureType] messages, in string resourceId)
 {
     import std.array : array;
     import std.algorithm : filter, map, joiner;
-    import vulpes.lib.operations : leftouterjoin;
+    import vulpes.core.operations : leftouterjoin;
     assert(StructureType.codelist in messages);
 
     auto codes = messages[StructureType.codelist].deserializeAsRangeOf!SDMXCode;
