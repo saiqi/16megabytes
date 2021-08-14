@@ -14,5 +14,6 @@ libvulpes*
 *.o
 *.obj
 *.lst
+profilegc.log
 
 .vscode
