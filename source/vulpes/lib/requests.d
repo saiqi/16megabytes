@@ -1,11 +1,8 @@
 module vulpes.lib.requests;
 
 import std.typecons : Flag, Tuple;
-import std.exception : enforce;
-import std.format : format;
 import std.traits : isCallable, ReturnType, isSomeChar, Parameters, isAssociativeArray, isSomeString, TemplateOf;
 import std.range : isForwardRange, ElementType;
-import requests : Request;
 import vibe.core.concurrency : Future;
 
 ///Dedicated module `Exception`
@@ -25,28 +22,30 @@ alias RequestParameter = Tuple!(string, "url", string[string], "headers", string
 
 auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers, string[string] params = null)
 {
-    import vibe.core.log : logDebug;
-    import core.time : seconds;
-    auto req = Request();
-    req.sslSetVerifyPeer(false);
-    req.addHeaders(headers);
-    // req.verbosity(7);
-    req.timeout(500.seconds);
+    import std.array : join, array, byPair;
+    import std.algorithm : map;
+    import std.exception : enforce;
+    import std.format : format;
+    import vibe.http.client : requestHTTP;
+    import vibe.inet.url : URL;
+    import vibe.stream.operations : readAllUTF8;
 
-    logDebug("URL %s", url);
-    logDebug("Headers %s", headers);
-    logDebug("Query parameters %s", params);
-    auto resp = req.get(url, params);
-    logDebug("Received %s", resp.code);
-
-    auto content = resp.responseBody.data!string;
-    if(resp.code >= 400) logDebug("Response content %s", content);
+    auto pUrl = URL(url);
+    pUrl.queryString = params.byPair.map!(t => t[0] ~ "=" ~ t[1]).array.join("&");
+    auto resp = requestHTTP(pUrl,
+        (scope req) {
+            foreach(k, v; headers.byPair)
+                req.headers[k] = v;
+        }
+    );
+    scope(exit) resp.dropBody();
 
     static if(raiseForStatus == RaiseForStatus.yes)
     {
-        enforce!RequestException(resp.code < 400, format!"%s returned HTTP %s code"(url, resp.code));
+        enforce!RequestException(resp.statusCode < 400, format!"%s returned HTTP %s code"(url, resp.statusCode));
     }
-    return content;
+
+    return resp.bodyReader.readAllUTF8;
 }
 
 auto doRequestFromParameter(RaiseForStatus raiseForStatus)(RequestParameter p)
@@ -120,6 +119,8 @@ unittest
 
 auto getResultOrFail(alias E = RequestException, T)(Future!T fut)
 {
+    import std.exception : enforce;
+
     try
     {
         return fut.getResult;
@@ -164,6 +165,9 @@ if(isSomeString!T || (isAssociativeArray!T && isSomeString!(ElementType!(typeof(
     {
         import std.regex : regex, matchAll;
         import std.array : replace;
+        import std.exception : enforce;
+        import std.format : format;
+
         auto r = regex(`\{(\w+)\}`);
         T result = template_.dup;
         foreach(m; matchAll(template_, r))

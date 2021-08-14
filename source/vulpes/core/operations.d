@@ -373,44 +373,25 @@ unittest
 
 auto groupby(alias indexFunc, R)(R range)
 {
-    import std.typecons : tuple, Tuple;
-    import std.algorithm : map, fold, sort;
-
-    alias mapper = e => tuple(indexFunc(e), e);
-    alias reducer = (acc, cur) {
-        auto k = cur[0];
-        auto v = cur[1];
-
-        if(acc.length == 0) return [tuple(k, [v])];
-
-        auto pk = acc[$ - 1][0];
-        auto pv = acc[$ - 1][1];
-
-        if(pk != k) return acc[0 .. $] ~ tuple(k, [v]);
-
-        return acc[0 .. ($ - 1)] ~ tuple(k, pv ~ v);
-    };
-
-    alias KT = typeof(indexFunc(range.front));
-    alias VT = ElementType!R;
-
-    Tuple!(KT, VT[])[] seed;
+    import std.typecons : tuple;
+    import std.algorithm : map, sort, chunkBy;
 
     static if(isRandomAccessRange!R)
     {
         return range
             .sort!((a, b) => indexFunc(a) < indexFunc(b))
-            .map!mapper
-            .fold!reducer(seed);
+            .chunkBy!((a, b) => indexFunc(a) == indexFunc(b))
+            .map!(c => tuple(indexFunc(c.front), c));
     }
     else {
         import std.array : array;
         return range
             .array
             .sort!((a, b) => indexFunc(a) < indexFunc(b))
-            .map!mapper
-            .fold!reducer(seed);
+            .chunkBy!((a, b) => indexFunc(a) == indexFunc(b))
+            .map!(c => tuple(indexFunc(c.front), c));
     }
+
 }
 
 unittest
