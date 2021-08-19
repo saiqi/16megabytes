@@ -1,10 +1,9 @@
 module vulpes.lib.xml;
 
 import std.exception : enforce;
-import std.format : format;
 import std.traits : hasUDA, getUDAs, isArray;
 import std.range;
-import std.traits : isSomeChar, isArray, TemplateOf, TemplateArgsOf;
+import std.traits : isSomeChar, isSomeString, isArray, TemplateOf, TemplateArgsOf;
 import std.typecons : Nullable, nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
 
@@ -189,19 +188,20 @@ private template allChildren(S)
 
 
 private auto cleanNs(R)(in R tagName) pure
-if(isArray!R)
+if(isSomeString!R)
 {
-    import std.array : split;
-    return tagName.split(":")[$ - 1];
+    import std.algorithm : splitter, fold;
+    return tagName.splitter(":").fold!((a, b) => b);
 }
 
-private void convertValue(S, R)(ref S field, R value, string structName, string fieldName)
+private void convertValue(S, R)(ref S field, R value, string fieldName)
 if(isAttrRange!R || isForwardRangeOfChar!R)
 {
-    import std.conv : to;
+    import std.conv : to, ConvException;
+    import std.format : format;
 
     auto errMsg() {
-        return format!"Not nullable field %s.%s cannot be null!"(structName, fieldName);
+        return format!"Not nullable field %s cannot be null!"(fieldName);
     }
 
     static if (isForwardRangeOfChar!R)
@@ -211,7 +211,17 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
         else
         {
             enforce!DeserializationException(value !is null, errMsg);
-            field = value.to!(typeof(field));
+            try
+            {
+                field = value.to!(typeof(field));
+            }
+            catch(ConvException)
+            {
+                enforce!DeserializationException(false,
+                                                 format!"%s: %s cannot be converted into %s"(fieldName,
+                                                                                             value,
+                                                                                             typeof(field).stringof));
+            }
         }
     }
     else
@@ -219,12 +229,12 @@ if(isAttrRange!R || isForwardRangeOfChar!R)
         static if(isNullable!S)
         {
             if(!value.empty)
-                convertValue(field, value.front.value, structName, fieldName);
+                convertValue(field, value.front.value, fieldName);
         }
         else
         {
             enforce!DeserializationException(!value.empty, errMsg);
-            convertValue(field, value.front.value, structName, fieldName);
+            convertValue(field, value.front.value, fieldName);
         }
     }
 }
@@ -247,13 +257,12 @@ if(isForwardRangeOfChar!R)
                 entity
                     .attributes
                     .find!(a => a.name.cleanNs == getUDAs!(__traits(getMember, S, m), attr)[0].attrName),
-                S.stringof,
                 m);
         }
         else static if (hasUDA!(__traits(getMember, S, m), text))
         {
             if(text_.length > 0)
-                convertValue(__traits(getMember, source, m), text_, S.stringof, m);
+                convertValue(__traits(getMember, source, m), text_, m);
         }
         else static if(hasUDA!(__traits(getMember, S, m), allAttr))
         {
@@ -269,6 +278,8 @@ if(isForwardRangeOfChar!R)
 {
     assert(path.length > 0);
 
+    auto isLeaf = path.length == 1;
+
     if (handleNullable!(S, getRootName) == path[0])
     {
         static if(isArray!S)
@@ -277,7 +288,7 @@ if(isForwardRangeOfChar!R)
 
             alias ET = ElementType!S;
 
-            if(path.length == 1)
+            if(isLeaf)
             {
                 auto item = ET();
                 setValue!(ET, Entity, R)(item, path, entity, text_);
@@ -285,9 +296,11 @@ if(isForwardRangeOfChar!R)
             }
             else
             {
+                path = path[1 .. $];
+
                 static foreach (m; allChildren!ET)
                 {
-                    if (getElementName!(ET, m) == path[1])
+                    if (getElementName!(ET, m) == path[0])
                     {
                         alias CT = typeof(__traits(getMember, source[$ - 1], m));
                         static if(isNullable!CT)
@@ -296,14 +309,16 @@ if(isForwardRangeOfChar!R)
                                 __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]().nullable;
                         }
                         setValue!(CT, Entity, R)
-                            (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
+                            (__traits(getMember, source[$ - 1], m), path, entity, text_);
+                        // setValue!(CT, Entity, R)
+                        //     (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
                     }
                 }
             }
         }
         else
         {
-            if (path.length == 1)
+            if (isLeaf)
             {
                 static if(isNullable!S)
                 {
@@ -315,12 +330,13 @@ if(isForwardRangeOfChar!R)
             }
             else
             {
+                path = path[1 .. $];
                 // iterate over struct member having either xmlElement or xmlElementList UDA
                 static foreach (m; handleNullable!(S, allChildren))
                 {
                     // if the attribute name of either xmlElement or xmlElementList equals to current path
                     // initialize the children
-                    if (handleNullable!(S, getElementName, m) == path[1])
+                    if (handleNullable!(S, getElementName, m) == path[0])
                     {
                         // workaround compiler warning on Nullable.get_ being deprecated
                         static if(isNullable!S)
@@ -348,10 +364,10 @@ if(isForwardRangeOfChar!R)
                         // workaround compiler warning on Nullable.get_ being deprecated
                         static if(isNullable!S)
                             setValue!(CT, Entity, R)
-                                (__traits(getMember, source.get, m), path[1 .. $], entity, text_);
+                                (__traits(getMember, source.get, m), path, entity, text_);
                         else
                             setValue!(CT, Entity, R)
-                                (__traits(getMember, source, m), path[1 .. $], entity, text_);
+                                (__traits(getMember, source, m), path, entity, text_);
                     }
                 }
             }
@@ -389,7 +405,6 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
     private EntityRange!(simpleXML, R) _entityRange;
     private T _current;
     private bool _primed;
-    private static Appender!(R[]) path;
 
     ///ditto
     this(EntityRange!(simpleXML, R) entityRange)
@@ -418,10 +433,11 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
 
     private void buildCurrent()
     {
+
         assert(isNextNodeReached(), "Seek range to first node");
 
         _current = T();
-        path.clear();
+        R[] path;
 
         while (!_entityRange.empty)
         {
@@ -430,12 +446,12 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
             if (n.type == EntityType.elementStart)
             {
                 path ~= n.name.cleanNs();
-                setValue!(T, typeof(n), R)(_current, path.data, n, _entityRange.getText());
+                setValue!(T, typeof(n), R)(_current, path.dup, n, _entityRange.getText());
             }
 
             if (n.type == EntityType.elementEnd)
             {
-                path = appender(path.data[0 .. ($ - 1)]);
+                path = path[0 .. ($ - 1)];
                 if (n.name.cleanNs() == getRootName!T)
                 {
                     break;
@@ -500,283 +516,266 @@ if(isForwardRangeOfChar!R)
     return DeserializationResult!(R, T)(r);
 }
 
+// Should deserialize an attribute
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint aa;
+    }
+
+    immutable xml = "<a aa='1'></a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.aa == 1u);
+}
+
+// Should ingore namespace
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint aa;
+    }
+
+    immutable xml = "<ns:a aa='1'></ns:a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.aa == 1u);
+}
+
+// Should deserialize multiple occurrences
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint aa;
+    }
+
+    immutable xml = "<root><ns:a aa='1'/><ns:a aa='2'/></root>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.aa == 1u);
+    r.popFront();
+    assert(r.front.aa == 2u);
+    r.popFront();
+    assert(r.empty);
+}
+
+// Should deserialize a text node
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @text
+        uint aa;
+    }
+
+    immutable xml = "<a>1</a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.aa == 1u);
+}
+
+// Should ignore missing value
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("b")
+        Nullable!uint b;
+    }
+
+    immutable xml = "<a aa='1'>1</a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.b.isNull);
+}
+
+// Should deserialize nullable fields
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("b")
+        Nullable!uint b;
+    }
+
+    immutable xml = "<a b='1'>1</a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.b.get == 1u);
+}
+
+// Should deserialize nested structures
+unittest
+{
+    @xmlRoot("c")
+    static struct C
+    {
+        @attr("cc")
+        uint cc;
+    }
+
+    @xmlRoot("b")
+    static struct B
+    {
+        @attr("bb")
+        uint bb;
+
+        @xmlElement("c")
+        C c;
+    }
+
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint aa;
+
+        @xmlElement("b")
+        B b;
+    }
+
+    immutable xml = "<a aa='1'><b bb='2'><c cc='3'></c></b></a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.b.bb == 2u);
+    assert(r.front.b.c.cc == 3u);
+}
+
+// Should deserialize nested structures having a one-to-many relationship
+unittest
+{
+    @xmlRoot("c")
+    static struct C
+    {
+        @attr("cc")
+        uint cc;
+    }
+
+    @xmlRoot("b")
+    static struct B
+    {
+        @attr("bb")
+        uint bb;
+
+        @xmlElement("c")
+        C c;
+    }
+
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint aa;
+
+        @xmlElementList("b")
+        B[] b;
+    }
+
+    immutable xml = "<a aa='1'><b bb='2'><c cc='3'></c></b><b bb='22'><c cc='33'></c></b></a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    assert(!r.empty);
+    assert(r.front.b[0].bb == 2u);
+    assert(r.front.b[0].c.cc == 3u);
+    assert(r.front.b[1].bb == 22u);
+    assert(r.front.b[1].c.cc == 33u);
+}
+
+// Should raise when a value cannot be converted
+unittest
+{
+    import std.exception : assertThrown;
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint b;
+    }
+
+    immutable xml = "<a aa='A'></a>";
+    assertThrown!DeserializationException(deserializeAsRangeOf!(A, string)(xml).front);
+}
+
+// Should raise when a mandatory value is missing
+unittest
+{
+    import std.exception : assertThrown;
+    @xmlRoot("a")
+    static struct A
+    {
+        @attr("aa")
+        uint b;
+    }
+
+    immutable xml = "<a b='A'></a>";
+    assertThrown!DeserializationException(deserializeAsRangeOf!(A, string)(xml).front);
+}
+
+// Should be a ForwardRange
+unittest
+{
+    @xmlRoot("a")
+    static struct A
+    {
+        @text
+        uint aa;
+    }
+
+    immutable xml = "<a>1</a>";
+    auto r = deserializeAsRangeOf!(A, string)(xml);
+    auto c = r.save;
+    r.popFront();
+    assert(r.empty);
+    assert(!c.empty);
+}
+
 auto deserializeAs(T, R)(R xmlStr)
 if(isForwardRangeOfChar!R)
 {
+    import std.format : format;
     auto range = deserializeAsRangeOf!(T, R)(xmlStr);
     enforce!DeserializationException(
         !range.empty, format!"Cannot deserialize content as %s"(T.stringof));
     return range.front;
 }
 
-version (unittest)
-{
-
-    @xmlRoot("version")
-    struct Version
-    {
-        @attr("major")
-        int major;
-
-        @attr("minor")
-        int minor;
-    }
-
-    @xmlRoot("edit")
-    struct Edit
-    {
-        @xmlElement("version")
-        Nullable!Version version_;
-
-        @attr("timestamp")
-        string timestamp;
-    }
-
-    @xmlRoot("name")
-    struct Name
-    {
-        @attr("lang")
-        Nullable!string lang;
-
-        @text
-        Nullable!string label;
-    }
-
-    @xmlRoot("ref")
-    struct Bar
-    {
-        @attr("status")
-        Nullable!string status;
-
-        @text
-        Nullable!string value;
-    }
-
-    @xmlRoot("current")
-    struct Current
-    {
-        @attr("year")
-        Nullable!uint year;
-    }
-
-    @xmlRoot("previous")
-    struct Previous
-    {
-        @attr("year")
-        Nullable!uint year;
-    }
-
-    @xmlRoot("other")
-    struct Other
-    {
-        @xmlElement("ref")
-        Bar ref_;
-    }
-
-    @xmlRoot("description")
-    struct Description
-    {
-        @text
-        Nullable!string content;
-
-        @xmlElement("current")
-        Nullable!Current current;
-
-        @xmlElement("previous")
-        Nullable!Previous previous;
-
-        @xmlElement("other")
-        Nullable!Other other;
-    }
-
-    @xmlRoot("keys")
-    struct Keys
-    {
-        @allAttr
-        string[string] attrs;
-    }
-
-    @xmlRoot("foo")
-    struct Foo
-    {
-        @attr("id")
-        uint id;
-
-        @attr("category")
-        Nullable!string category;
-
-        @xmlElement("description")
-        Description desc;
-
-        @xmlElement("ref")
-        Bar ref_;
-
-        @xmlElementList("name")
-        Name[] names;
-
-        @xmlElementList("edit")
-        Edit[] edits;
-
-        @xmlElement("keys")
-        Keys keys;
-    }
-
-    @xmlRoot("foos")
-    struct Foos
-    {
-        @xmlElementList("foo")
-        Foo[] foos;
-    }
-}
-
+// Should deserialize a struct
 unittest
 {
-    immutable xml =
-    "<root>\n"
-    ~   "<level>\n"
-    ~       "<foos>\n"
-    ~           "<ns:foo id='0' category='a'>\n"
-    ~               "<ref status='bar'>XB12</ref>\n"
-    ~               "<description>\n"
-    ~                   "<current year='2020'/>\n"
-    ~                   "<other><ref status='bar'>XB12bis</ref></other>\n"
-    ~               "</description>\n"
-    ~               "<name xml:lang='fr'>Bare</name>\n"
-    ~               "<name xml:lang='en'>Bar</name>\n"
-    ~               "<keys a='1' b='2' c='3'/>\n"
-    ~               "<edit timestamp='0'/>"
-    ~               "<edit timestamp='17'>\n"
-    ~                   "<version major='1' minor='0'/>\n"
-    ~               "</edit>\n"
-    ~           "</ns:foo>\n"
-    ~           "<ns:foo id='1' category='b'>\n"
-    ~               "<ref status='baz'>HB15</ref>\n"
-    ~               "<description>\n"
-    ~                   "<previous year='2019'/>\n"
-    ~               "</description>\n"
-    ~               "<name xml:lang='fr'>Baze</name>\n"
-    ~               "<name xml:lang='en'>Baz</name>\n"
-    ~               "<keys a='1' b='2' c='3'/>\n"
-    ~           "</ns:foo>\n"
-    ~           "<ns:foo category='b'>\n"
-    ~               "<ref status='biz'>AF93</ref>\n"
-    ~               "<description>\n"
-    ~               "</description>\n"
-    ~               "<name xml:lang='fr'>Bize</name>\n"
-    ~               "<name xml:lang='en'>Biz</name>\n"
-    ~               "<keys a='1' b='2' c='3'/>\n"
-    ~           "</ns:foo>\n"
-    ~       "</foos>\n"
-    ~   "</level>\n"
-    ~ "</root>";
+    @xmlRoot("a")
+    static struct A
+    {
+        @text
+        uint aa;
+    }
 
-    auto results = deserializeAsRangeOf!(Foo, string)(xml);
-    assert(!results.empty);
+    immutable xml = "<a>1</a>";
+    auto r = deserializeAs!(A, string)(xml);
+    assert(r.aa == 1u);
+}
 
-    Foo foo0 = results.front;
-    assert(foo0.id == 0);
-    assert(foo0.desc.current.get.year.get == 2020);
-    assert(foo0.desc.other.get.ref_.value.get == "XB12bis");
-    assert(foo0.edits.length == 2);
-    assert(foo0.edits[0].version_.isNull);
-    assert(!foo0.edits[1].version_.isNull);
-    assert(foo0.keys.attrs["a"] == "1");
-
-    results.popFront();
-
-    assert(!results.empty);
-
-    Foo foo1 = results.front;
-
-    assert(foo1.id == 1);
-    assert(foo1.ref_.status.get == "baz");
-    assert(foo1.ref_.value.get == "HB15");
-    assert(foo1.names.length == 2);
-    assert(foo1.names[0].lang.get == "fr");
-    assert(foo1.names[0].label.get == "Baze");
-    assert(foo1.names[1].lang.get == "en");
-    assert(foo1.names[1].label.get == "Baz");
-    assert(foo1.desc.content.isNull);
-    assert(foo1.desc.current.isNull);
-    assert(foo1.desc.other.isNull);
-    assert(!foo1.desc.previous.isNull);
-    assert(foo1.desc.previous.get.year.get == 2019);
-
+// Should raise when nothing is deserializable
+unittest
+{
     import std.exception : assertThrown;
-    assertThrown!DeserializationException(results.popFront());
-
-}
-
-unittest
-{
-    immutable xml = "<root/>";
-
-    auto results = deserializeAsRangeOf!(Foo, string)(xml);
-    assert(results.empty);
-}
-
-unittest
-{
-    immutable xml = "<root><node>text</node></root>";
-
-    @xmlRoot("node")
-    static struct Node
+    @xmlRoot("a")
+    static struct A
     {
         @text
-        Nullable!string value;
+        uint aa;
     }
 
-    @xmlRoot("root")
-    static struct Root
-    {
-        @xmlElement("node")
-        Node node;
-    }
-
-    auto r = deserializeAs!(Root, string)(xml);
-    assert(r.node.value.get == "text");
-
-    import std.exception : assertThrown;
-    assertThrown!DeserializationException(deserializeAs!(Root, string)("<other/>"));
-}
-
-unittest
-{
-    immutable xml =
-    "<root>\n"
-    ~   "<level>\n"
-    ~       "<foos>\n"
-    ~           "<ns:foo id='0' category='a'>\n"
-    ~               "<ref status='bar'>XB12</ref>\n"
-    ~               "<description>\n"
-    ~                   "<current year='2020'/>\n"
-    ~                   "<other><ref status='bar'>XB12bis</ref></other>\n"
-    ~               "</description>\n"
-    ~               "<name xml:lang='fr'>Bare</name>\n"
-    ~               "<name xml:lang='en'>Bar</name>\n"
-    ~               "<keys a='1' b='2' c='3'/>\n"
-    ~               "<edit timestamp='0'/>"
-    ~               "<edit timestamp='17'>\n"
-    ~                   "<version major='1' minor='0'/>\n"
-    ~               "</edit>\n"
-    ~           "</ns:foo>\n"
-    ~           "<ns:foo id='1' category='b'>\n"
-    ~               "<ref status='baz'>HB15</ref>\n"
-    ~               "<description>\n"
-    ~                   "<previous year='2019'/>\n"
-    ~               "</description>\n"
-    ~               "<name xml:lang='fr'>Baze</name>\n"
-    ~               "<name xml:lang='en'>Baz</name>\n"
-    ~               "<keys a='1' b='2' c='3'/>\n"
-    ~           "</ns:foo>\n"
-    ~       "</foos>\n"
-    ~   "</level>\n"
-    ~ "</root>";
-
-    auto results = deserializeAsRangeOf!(Foo, string)(xml);
-    auto copy = results.save;
-    results.popFront();
-    assert(copy.front.id == 0);
-    copy.popFront();
-    assert(results.front.id == 1);
+    immutable xml = "<b>1</b>";
+    assertThrown!DeserializationException(deserializeAs!(A, string)(xml));
 }

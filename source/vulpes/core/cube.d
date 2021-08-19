@@ -96,7 +96,7 @@ unittest
     assert(empty.computeLabelsSearchScore(q) == size_t.max);
 }
 
-auto search(size_t threshold = 1u, R)(R resources, in string query) pure /*@safe*/ nothrow
+auto search(size_t threshold = 1u, R)(R resources, in string query) //pure @safe nothrow
 if(isForwardRange!R && isLabelized!(ElementType!R))
 {
     import std.algorithm : map, filter;

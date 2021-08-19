@@ -1,7 +1,7 @@
 module vulpes.datasources.sdmxml21;
 
 import std.typecons : Nullable, nullable, Tuple, apply;
-import std.range : isInputRange, ElementType;
+import std.range : isInputRange, isRandomAccessRange, ElementType;
 import vulpes.lib.xml;
 import vulpes.lib.requests;
 import vulpes.datasources.providers;
@@ -503,8 +503,6 @@ SDMXCategory[][SDMXCategory] buildHierarchy(SDMXCategoryScheme categoryScheme)
             }
         }
     }
-
-    import std.range : tee;
 
     foreach(c; categoryScheme.categories)
     {
@@ -1168,17 +1166,21 @@ auto buildTagId(in string parentResourceId, in string resourceId) pure nothrow @
 auto transformCategories(R1, R2)(R1 categorisations, R2 categorySchemes)
 if(is(ElementType!R1 == SDMXCategorisation) &&
    is(ElementType!R2 == SDMXCategoryScheme) &&
-   isInputRange!R1 &&
+   isRandomAccessRange!R1 &&
    isInputRange!R2)
 {
-    import std.algorithm : map, filter, joiner;
+    import std.algorithm : map, filter, joiner, sort;
     import std.typecons : tuple;
-    import std.array : assocArray;
+    import std.array : assocArray, array;
     import vulpes.core.operations : groupby;
+
+    alias toTuple = (c) => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id);
 
     auto categorisationIdx = categorisations
         .filter!(c => !c.target.ref_.maintainableParentId.isNull)
-        .groupby!(c => tuple(c.target.ref_.maintainableParentId.get, c.target.ref_.id))
+        .array
+        .sort!((a, b) => toTuple(a) < toTuple(b))
+        .groupby!(c => toTuple(c))
         .assocArray;
 
     alias RT = Tuple!(
@@ -1206,6 +1208,7 @@ unittest
     import std.file : readText;
     import std.algorithm : filter, equal, map, uniq, sort;
     import std.array : array;
+    import std.range : walkLength;
     auto msg = readText("./fixtures/sdmx/structure_category_categorisation.xml");
     auto structures = msg.deserializeAs!SDMXStructures;
     auto r = transformCategories(structures.categorisations.get.categorisations,
@@ -1218,16 +1221,16 @@ unittest
     assert(c.category.id == i);
     assert(equal(c.parentCategories.map!(a => a.id), ["SECT_ACT", "COMMERCE"]));
 
-    auto allCategoryIds = r.map!(t => t.category.id.get);
-    assert(equal(allCategoryIds.array.sort, allCategoryIds.array.sort.uniq));
+    auto allCategoryIds = r.map!(t => t.category.id.get).array;
+    assert(allCategoryIds.filter!(a => a == "CONJ").walkLength == 1);
+    assert(allCategoryIds.length == allCategoryIds.sort.uniq.walkLength);
 }
 
 auto buildTags(in string[StructureType] messages)
 {
     import std.algorithm : joiner, map, filter;
-    import std.array : array;
-    import std.range : tee;
-    import vulpes.core.operations : dropDuplicates;
+    import std.array : array, join;
+    import std.range : tee, chain;
 
     assert(StructureType.categorisation in messages);
     assert(StructureType.categoryscheme in messages);
@@ -1235,32 +1238,34 @@ auto buildTags(in string[StructureType] messages)
     auto categorisations = messages[StructureType.categorisation].deserializeAs!SDMXCategorisations;
     auto categorySchemes = messages[StructureType.categoryscheme].deserializeAs!SDMXCategorySchemes;
 
+    bool[string] buffer;
+
     return transformCategories(categorisations.categorisations, categorySchemes.categorySchemes)
         .map!((t) {
+            auto current = Tag(buildTagId(t.categorySchemeId, t.category.id.get),t.category.names.map!toLabel.array);
             auto parents = t.parentCategories
-                .map!(a => Tag(buildTagId(t.categorySchemeId, a.id), a.names.map!toLabel.array))
-                .array;
-
-            auto current = Tag(buildTagId(t.categorySchemeId, t.category.id),
-                               t.category.names.map!toLabel.array);
-
-            return parents ~ current;
+                    .map!(a => Tag(buildTagId(t.categorySchemeId, a.id.get), a.names.map!toLabel.array))
+                    .array;
+            return [current].chain(parents);
         })
         .joiner
-        .dropDuplicates!((a, b) => a.id < b.id, (a, b) => a == b);
+        .filter!(t => t.id !in buffer)
+        .tee!(t => buffer[t.id] = true);
 }
 
 unittest
 {
     import std.file : readText;
     import std.range : walkLength;
-    import std.algorithm : filter;
+    import std.algorithm : filter, sort, uniq, map;
+    import std.array : array;
+
     auto messages = [
         StructureType.categorisation : readText("./fixtures/sdmx/structure_category_categorisation.xml"),
         StructureType.categoryscheme : readText("./fixtures/sdmx/structure_category_categorisation.xml")
     ];
-    auto tags = buildTags(messages);
-    assert(!tags.empty);
+    auto tags = buildTags(messages).array;
+    assert(tags.length > 0);
 
     auto i = "CLASSEMENT_DATAFLOWS.CARAC_ENTRP";
 
@@ -1273,6 +1278,9 @@ unittest
     assert(cat.front.labels[1].shortName == "Characteristics of enterprises");
 
     assert(tags.filter!(t => t.id == "CLASSEMENT_DATAFLOWS.SECT_ACT").walkLength == 1);
+
+    auto allIds = tags.map!(t => t.id).array;
+    assert(allIds.length == allIds.sort.uniq.walkLength);
 }
 
 auto fetchDescriptions(alias fetch)(in Provider provider)
@@ -1359,8 +1367,9 @@ auto buildDescriptions(in string[StructureType] messages)
 {
     assert(StructureType.dataflow in messages);
 
-    import std.algorithm : map, filter, joiner, sort, uniq;
+    import std.algorithm : map, filter, joiner, sort;
     import std.array : array, assocArray;
+    import std.range : tee, chain;
     import vulpes.core.operations : groupby, index;
 
     auto sDataflow = messages[StructureType.dataflow].deserializeAs!SDMXStructures;
@@ -1384,6 +1393,8 @@ auto buildDescriptions(in string[StructureType] messages)
         ? null
         : categorisations
             .filter!(c => !c.target.ref_.maintainableParentId.isNull)
+            .array
+            .sort!((a, b) => a.source.ref_.id < b.source.ref_.id)
             .groupby!(c => c.source.ref_.id)
             .assocArray;
 
@@ -1397,7 +1408,6 @@ auto buildDescriptions(in string[StructureType] messages)
                                tagIds);
     }
 
-    // Memoize mapping between category id and transformed category if category scheme is provided
     auto categories = (!sCategoryScheme.categorySchemes.isNull)
         ? transformCategories(categorisations,
                               sCategoryScheme.categorySchemes.get.categorySchemes)
@@ -1412,23 +1422,33 @@ auto buildDescriptions(in string[StructureType] messages)
             if(categorisationIdx is null || !(df.id.get in categorisationIdx))
                 return makeCubeDescription(df, []);
 
+            if(categories is null)
+            {
+                auto currentTagIds = categorisationIdx[df.id.get]
+                    .map!(cat => buildTagId(cat.target.ref_.maintainableParentId.get,
+                                            cat.target.ref_.id));
+                return makeCubeDescription(df, currentTagIds.array);
+            }
+
+            bool[string] buffer;
+
             auto currentTagIds = categorisationIdx[df.id.get]
                 .map!((cat) {
                     auto currentTagId = buildTagId(cat.target.ref_.maintainableParentId.get,
                                                    cat.target.ref_.id);
 
-                    if(categories is null || !(cat.target.ref_.id in categories))
-                        return [currentTagId];
+                    auto parentCategories = (cat.target.ref_.id) in categories
+                        ? categories[cat.target.ref_.id].parentCategories
+                        : [];
 
-                    return [currentTagId]
-                        ~ categories[cat.target.ref_.id].parentCategories
-                            .map!(c => buildTagId(categories[cat.target.ref_.id].categorySchemeId, c.id))
-                            .array;
+                    auto parentIds = parentCategories
+                        .map!(c => buildTagId(categories[cat.target.ref_.id].categorySchemeId, c.id));
+
+                    return [currentTagId].chain(parentIds);
                 })
                 .joiner
-                .array
-                .sort
-                .uniq;
+                .filter!(t => t !in buffer)
+                .tee!(t => buffer[t] = true);
 
             return makeCubeDescription(df, currentTagIds.array);
     });
@@ -1503,255 +1523,255 @@ unittest
     assert(equal(descriptions.front.tagIds, ["CLASSEMENT_DATAFLOWS.COMMERCE_EXT", "CLASSEMENT_DATAFLOWS.ECO"]));
 }
 
-auto buildDefinition(in string[StructureType] messages)
-{
-    import std.array : array;
-    import std.algorithm : map, sort;
-    import std.range : chain;
-    import std.conv : to;
-    import vulpes.core.operations : leftouterjoin;
-    assert(StructureType.datastructure in messages);
+// auto buildDefinition(in string[StructureType] messages)
+// {
+//     import std.array : array;
+//     import std.algorithm : map, sort;
+//     import std.range : chain;
+//     import std.conv : to;
+//     import vulpes.core.operations : leftouterjoin;
+//     assert(StructureType.datastructure in messages);
 
-    auto dsd = messages[StructureType.datastructure].deserializeAs!SDMXDataStructure;
-    auto cs = messages[StructureType.datastructure].deserializeAsRangeOf!SDMXConcept;
+//     auto dsd = messages[StructureType.datastructure].deserializeAs!SDMXDataStructure;
+//     auto cs = messages[StructureType.datastructure].deserializeAsRangeOf!SDMXConcept;
 
-    auto concepts = !cs.empty
-        ? cs.array
-        : (StructureType.conceptscheme in messages)
-            ? messages[StructureType.conceptscheme].deserializeAsRangeOf!SDMXConcept.array
-            : [];
+//     auto concepts = !cs.empty
+//         ? cs.array
+//         : (StructureType.conceptscheme in messages)
+//             ? messages[StructureType.conceptscheme].deserializeAsRangeOf!SDMXConcept.array
+//             : [];
 
-    alias conceptIdentityId = d => d.conceptIdentity.isNull ? "" : d.conceptIdentity.get.ref_.id;
-    alias conceptId = c => c.id;
+//     alias conceptIdentityId = d => d.conceptIdentity.isNull ? "" : d.conceptIdentity.get.ref_.id;
+//     alias conceptId = c => c.id;
 
-    auto dimensions = dsd.dataStructureComponents.dimensionList.dimensions
-        .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
-        .array
-        .sort!((a, b) => a.left.position.apply!(to!int) < b.left.position.apply!(to!int))
-        .map!((t) {
-            auto d = t.left;
-            auto c = t.right;
+//     auto dimensions = dsd.dataStructureComponents.dimensionList.dimensions
+//         .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
+//         .array
+//         .sort!((a, b) => a.left.position.apply!(to!int) < b.left.position.apply!(to!int))
+//         .map!((t) {
+//             auto d = t.left;
+//             auto c = t.right;
 
-            auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
+//             auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
 
-            auto codelist = d.localRepresentation
-                .apply!(lr => lr.enumeration)
-                .apply!(e => e.ref_);
+//             auto codelist = d.localRepresentation
+//                 .apply!(lr => lr.enumeration)
+//                 .apply!(e => e.ref_);
 
-            return Dimension(d.id,
-                             ObsDimension.no,
-                             TimeDimension.no,
-                             concept,
-                             codelist.apply!(c => c.id),
-                             codelist.apply!(c => c.agencyId));
-        });
-    auto timeDimension = [dsd.dataStructureComponents.dimensionList.timeDimension]
-        .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
-        .map!((t) {
-            auto td = t.left;
-            auto c = t.right;
+//             return Dimension(d.id,
+//                              ObsDimension.no,
+//                              TimeDimension.no,
+//                              concept,
+//                              codelist.apply!(c => c.id),
+//                              codelist.apply!(c => c.agencyId));
+//         });
+//     auto timeDimension = [dsd.dataStructureComponents.dimensionList.timeDimension]
+//         .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
+//         .map!((t) {
+//             auto td = t.left;
+//             auto c = t.right;
 
-            auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
+//             auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
 
-            return Dimension(td.id,
-                             ObsDimension.yes,
-                             TimeDimension.yes,
-                             concept,
-                             (Nullable!string).init,
-                             (Nullable!string).init);
-        });
-    auto attributes = dsd.dataStructureComponents.attributeList.attributes
-        .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
-        .map!((t) {
-            auto a = t.left;
-            auto c = t.right;
+//             return Dimension(td.id,
+//                              ObsDimension.yes,
+//                              TimeDimension.yes,
+//                              concept,
+//                              (Nullable!string).init,
+//                              (Nullable!string).init);
+//         });
+//     auto attributes = dsd.dataStructureComponents.attributeList.attributes
+//         .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
+//         .map!((t) {
+//             auto a = t.left;
+//             auto c = t.right;
 
-            auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
+//             auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
 
-            auto codelist = a.localRepresentation
-                .apply!(lr => lr.enumeration)
-                .apply!(e => e.ref_);
+//             auto codelist = a.localRepresentation
+//                 .apply!(lr => lr.enumeration)
+//                 .apply!(e => e.ref_);
 
-            return Attribute(a.id,
-                             concept,
-                             codelist.apply!(c => c.id),
-                             codelist.apply!(c => c.agencyId));
-        });
-    auto measures = [dsd.dataStructureComponents.measureList.primaryMeasure]
-        .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
-        .map!((t) {
-            auto m = t.left;
-            auto c = t.right;
+//             return Attribute(a.id,
+//                              concept,
+//                              codelist.apply!(c => c.id),
+//                              codelist.apply!(c => c.agencyId));
+//         });
+//     auto measures = [dsd.dataStructureComponents.measureList.primaryMeasure]
+//         .leftouterjoin!(conceptIdentityId, conceptId)(concepts)
+//         .map!((t) {
+//             auto m = t.left;
+//             auto c = t.right;
 
-            auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
+//             auto concept = c.apply!(cc => Concept(cc.id, cc.names.map!toLabel.array));
 
-            return Measure(m.id, concept);
-        });
-    return CubeDefinition(dsd.agencyId,
-                          dsd.id,
-                          dimensions.chain(timeDimension).array,
-                          attributes.array,
-                          measures.array);
-}
+//             return Measure(m.id, concept);
+//         });
+//     return CubeDefinition(dsd.agencyId,
+//                           dsd.id,
+//                           dimensions.chain(timeDimension).array,
+//                           attributes.array,
+//                           measures.array);
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.algorithm : canFind, map, all;
-    auto messages = [StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml")];
-    auto def = buildDefinition(messages);
-    assert(def.id == "BALANCE-PAIEMENTS");
-    assert(def.providerId == "FR1");
-    assert(def.dimensions[0].id == "FREQ");
-    assert(!def.dimensions[0].obsDimension);
-    assert(!def.dimensions[0].timeDimension);
-    assert(def.dimensions[0].concept.isNull);
-    assert(def.dimensions[0].codelistId.get == "CL_PERIODICITE");
-    assert(def.dimensions[0].codelistProviderId.get == "FR1");
-    assert(def.dimensions[1].id == "TIME_PERIOD");
-    assert(def.dimensions[1].obsDimension);
-    assert(def.dimensions[1].timeDimension);
-    assert(def.dimensions[1].codelistId.isNull);
-    assert(def.dimensions[1].codelistProviderId.isNull);
-    assert(def.attributes.all!(a => ["UNIT_MULT", "IDBANK"].canFind(a.id.get)));
-    assert(def.attributes.all!(a => a.concept.isNull));
-    assert(def.attributes.all!(a => a.codelistId.isNull && a.codelistProviderId.isNull));
-    assert(def.measures.length == 1);
-    assert(def.measures[0].id.get == "OBS_VALUE");
-    assert(def.measures[0].concept.isNull);
-}
+// unittest
+// {
+//     import std.file : readText;
+//     import std.algorithm : canFind, map, all;
+//     auto messages = [StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml")];
+//     auto def = buildDefinition(messages);
+//     assert(def.id == "BALANCE-PAIEMENTS");
+//     assert(def.providerId == "FR1");
+//     assert(def.dimensions[0].id == "FREQ");
+//     assert(!def.dimensions[0].obsDimension);
+//     assert(!def.dimensions[0].timeDimension);
+//     assert(def.dimensions[0].concept.isNull);
+//     assert(def.dimensions[0].codelistId.get == "CL_PERIODICITE");
+//     assert(def.dimensions[0].codelistProviderId.get == "FR1");
+//     assert(def.dimensions[1].id == "TIME_PERIOD");
+//     assert(def.dimensions[1].obsDimension);
+//     assert(def.dimensions[1].timeDimension);
+//     assert(def.dimensions[1].codelistId.isNull);
+//     assert(def.dimensions[1].codelistProviderId.isNull);
+//     assert(def.attributes.all!(a => ["UNIT_MULT", "IDBANK"].canFind(a.id.get)));
+//     assert(def.attributes.all!(a => a.concept.isNull));
+//     assert(def.attributes.all!(a => a.codelistId.isNull && a.codelistProviderId.isNull));
+//     assert(def.measures.length == 1);
+//     assert(def.measures[0].id.get == "OBS_VALUE");
+//     assert(def.measures[0].concept.isNull);
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.algorithm : any, map;
-    auto messages = [
-        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml"),
-        StructureType.conceptscheme: readText("./fixtures/sdmx/structure_conceptscheme.xml")
-    ];
-    auto def = buildDefinition(messages);
-    assert(def.dimensions[0].concept.get.id == "FREQ");
-    assert(def.dimensions[0].concept.get.labels.length == 2);
-    assert(def.dimensions[1].concept.isNull);
-    assert(def.attributes.any!(a => !a.concept.isNull));
-    assert(def.measures[0].concept.isNull);
-}
+// unittest
+// {
+//     import std.file : readText;
+//     import std.algorithm : any, map;
+//     auto messages = [
+//         StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml"),
+//         StructureType.conceptscheme: readText("./fixtures/sdmx/structure_conceptscheme.xml")
+//     ];
+//     auto def = buildDefinition(messages);
+//     assert(def.dimensions[0].concept.get.id == "FREQ");
+//     assert(def.dimensions[0].concept.get.labels.length == 2);
+//     assert(def.dimensions[1].concept.isNull);
+//     assert(def.attributes.any!(a => !a.concept.isNull));
+//     assert(def.measures[0].concept.isNull);
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.algorithm : equal, map, all;
-    auto messages = [
-        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")];
-    auto def = buildDefinition(messages);
-    assert(def.dimensions.map!(d => d.id).equal(["FREQ", "UNIT", "NA_ITEM", "GEO", "TIME_PERIOD"]));
-    assert(def.dimensions[0].concept.get.id == "FREQ");
-    assert(def.dimensions[4].concept.get.id == "TIME");
-    assert(def.attributes.all!(a => !a.concept.isNull));
-    assert(def.attributes.all!(a => !a.codelistId.isNull && !a.codelistProviderId.isNull));
-    assert(!def.measures[0].concept.isNull);
-}
+// unittest
+// {
+//     import std.file : readText;
+//     import std.algorithm : equal, map, all;
+//     auto messages = [
+//         StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")];
+//     auto def = buildDefinition(messages);
+//     assert(def.dimensions.map!(d => d.id).equal(["FREQ", "UNIT", "NA_ITEM", "GEO", "TIME_PERIOD"]));
+//     assert(def.dimensions[0].concept.get.id == "FREQ");
+//     assert(def.dimensions[4].concept.get.id == "TIME");
+//     assert(def.attributes.all!(a => !a.concept.isNull));
+//     assert(def.attributes.all!(a => !a.codelistId.isNull && !a.codelistProviderId.isNull));
+//     assert(!def.measures[0].concept.isNull);
+// }
 
-auto extractCodelistIds(in string[StructureType] messages, in string resourceId)
-{
-    import std.algorithm : filter, map;
-    import std.exception : enforce;
-    import std.format : format;
-    import vulpes.errors : NotFound;
+// auto extractCodelistIds(in string[StructureType] messages, in string resourceId)
+// {
+//     import std.algorithm : filter, map;
+//     import std.exception : enforce;
+//     import std.format : format;
+//     import vulpes.errors : NotFound;
 
-    assert(StructureType.datastructure in messages);
-    auto dsd = messages[StructureType.datastructure].deserializeAs!SDMXDataStructure;
-    auto dimensions = dsd.dataStructureComponents.dimensionList.dimensions
-        .filter!(d => d.id == resourceId);
-    auto attributes = dsd.dataStructureComponents.attributeList.attributes
-        .filter!(a => a.id == resourceId);
+//     assert(StructureType.datastructure in messages);
+//     auto dsd = messages[StructureType.datastructure].deserializeAs!SDMXDataStructure;
+//     auto dimensions = dsd.dataStructureComponents.dimensionList.dimensions
+//         .filter!(d => d.id == resourceId);
+//     auto attributes = dsd.dataStructureComponents.attributeList.attributes
+//         .filter!(a => a.id == resourceId);
 
-    enforce!NotFound(!dimensions.empty || !attributes.empty,
-                     format!"Cannot find %s in neither dimensions nor attributes in dsd %s"(resourceId, dsd.id));
+//     enforce!NotFound(!dimensions.empty || !attributes.empty,
+//                      format!"Cannot find %s in neither dimensions nor attributes in dsd %s"(resourceId, dsd.id));
 
-    alias Result = Tuple!(string, "id", string, "agencyId");
+//     alias Result = Tuple!(string, "id", string, "agencyId");
 
-    alias extractId = r => r.localRepresentation
-        .apply!(lr => lr.enumeration)
-        .apply!(e => Result(e.ref_.id, e.ref_.agencyId.get(dsd.agencyId)));
+//     alias extractId = r => r.localRepresentation
+//         .apply!(lr => lr.enumeration)
+//         .apply!(e => Result(e.ref_.id, e.ref_.agencyId.get(dsd.agencyId)));
 
-    auto result = dimensions.empty
-        ? attributes.map!extractId.front
-        : dimensions.map!extractId.front;
+//     auto result = dimensions.empty
+//         ? attributes.map!extractId.front
+//         : dimensions.map!extractId.front;
 
-    enforce!NotFound(!result.isNull,
-                    format!"Cannot find codelist related to resource %s"(resourceId));
+//     enforce!NotFound(!result.isNull,
+//                     format!"Cannot find codelist related to resource %s"(resourceId));
 
-    return result.get;
-}
+//     return result.get;
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.exception : assertThrown;
-    import vulpes.errors : NotFound;
+// unittest
+// {
+//     import std.file : readText;
+//     import std.exception : assertThrown;
+//     import vulpes.errors : NotFound;
 
-    auto messages = [StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml")];
-    auto dimIds = extractCodelistIds(messages, "FREQ");
-    assert(dimIds.id == "CL_PERIODICITE");
-    assert(dimIds.agencyId == "FR1");
-    assertThrown!NotFound(extractCodelistIds(messages, "UNIT_MULT"));
-    assertThrown!NotFound(extractCodelistIds(messages, "UNKNOWN"));
-}
+//     auto messages = [StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml")];
+//     auto dimIds = extractCodelistIds(messages, "FREQ");
+//     assert(dimIds.id == "CL_PERIODICITE");
+//     assert(dimIds.agencyId == "FR1");
+//     assertThrown!NotFound(extractCodelistIds(messages, "UNIT_MULT"));
+//     assertThrown!NotFound(extractCodelistIds(messages, "UNKNOWN"));
+// }
 
-auto buildCodes(in string[StructureType] messages, in string resourceId)
-{
-    import std.array : array;
-    import std.algorithm : filter, map, joiner;
-    import vulpes.core.operations : leftouterjoin;
-    assert(StructureType.codelist in messages);
+// auto buildCodes(in string[StructureType] messages, in string resourceId)
+// {
+//     import std.array : array;
+//     import std.algorithm : filter, map, joiner;
+//     import vulpes.core.operations : leftouterjoin;
+//     assert(StructureType.codelist in messages);
 
-    auto codes = messages[StructureType.codelist].deserializeAsRangeOf!SDMXCode;
+//     auto codes = messages[StructureType.codelist].deserializeAsRangeOf!SDMXCode;
 
-    auto constraints = (StructureType.dataflow in messages)
-        ? messages[StructureType.dataflow]
-            .deserializeAsRangeOf!SDMXKeyValue
-            .filter!(kv => kv.id == resourceId)
-            .map!(kv => kv.values)
-            .joiner
-            .filter!(v => !v.content.isNull)
-            .map!(v => v.content.get)
-            .array
-        : [];
+//     auto constraints = (StructureType.dataflow in messages)
+//         ? messages[StructureType.dataflow]
+//             .deserializeAsRangeOf!SDMXKeyValue
+//             .filter!(kv => kv.id == resourceId)
+//             .map!(kv => kv.values)
+//             .joiner
+//             .filter!(v => !v.content.isNull)
+//             .map!(v => v.content.get)
+//             .array
+//         : [];
 
-    return codes
-        .leftouterjoin!(c => c.id, c => c)(constraints)
-        .filter!(t => (constraints.length > 0 && !t.right.isNull) || constraints.length == 0)
-        .map!(t => Code(t.left.id, t.left.names.map!toLabel.array));
-}
+//     return codes
+//         .leftouterjoin!(c => c.id, c => c)(constraints)
+//         .filter!(t => (constraints.length > 0 && !t.right.isNull) || constraints.length == 0)
+//         .map!(t => Code(t.left.id, t.left.names.map!toLabel.array));
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.range : walkLength;
+// unittest
+// {
+//     import std.file : readText;
+//     import std.range : walkLength;
 
-    auto messages = [
-        StructureType.codelist : readText(
-            "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
-        StructureType.dataflow : readText(
-            "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
-    auto codes = buildCodes(messages, "DATA_DOMAIN");
-    assert(!codes.empty);
-    assert(codes.walkLength == 1);
-    assert(codes.front.id == "01R");
-    assert(codes.front.labels.length);
-}
+//     auto messages = [
+//         StructureType.codelist : readText(
+//             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
+//         StructureType.dataflow : readText(
+//             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
+//     auto codes = buildCodes(messages, "DATA_DOMAIN");
+//     assert(!codes.empty);
+//     assert(codes.walkLength == 1);
+//     assert(codes.front.id == "01R");
+//     assert(codes.front.labels.length);
+// }
 
-unittest
-{
-    import std.file : readText;
-    import std.range : walkLength;
+// unittest
+// {
+//     import std.file : readText;
+//     import std.range : walkLength;
 
-    auto messages = [StructureType.codelist : readText("./fixtures/sdmx/structure_codelist.xml")];
-    auto codes = buildCodes(messages, "FREQ");
-    assert(!codes.empty);
-    assert(codes.walkLength == 5);
-}
+//     auto messages = [StructureType.codelist : readText("./fixtures/sdmx/structure_codelist.xml")];
+//     auto codes = buildCodes(messages, "FREQ");
+//     assert(!codes.empty);
+//     assert(codes.walkLength == 5);
+// }
 
 public:
 import std.functional : pipe;

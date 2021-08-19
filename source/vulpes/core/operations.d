@@ -4,153 +4,14 @@ import std.typecons : Tuple, Nullable, nullable;
 import std.functional : binaryFun;
 import std.traits : arity;
 
-auto sortRange(alias sortFunc, R)(R range)
-if(isInputRange!R)
-{
-    import std.algorithm : sort;
-    static if(isRandomAccessRange!R && hasSwappableElements!R && hasSlicing!R && hasLength!R)
-    {
-        return range.sort!sortFunc;
-    }
-    else
-    {
-        import std.array : array;
-        return range.array.sort!sortFunc;
-    }
-}
-
-mixin template JoinMixin(alias leftKeyFunc, alias rightKeyFunc, R1, R2)
-{
-    private:
-    alias leftSortFunc = (a ,b) => leftKeyFunc(a) < leftKeyFunc(b);
-    alias rightSortFunc = (a, b) => rightKeyFunc(a) < rightKeyFunc(b);
-    SortedRange!(ElementType!R1[], leftSortFunc) left_;
-    SortedRange!(ElementType!R2[], rightSortFunc) right_;
-    alias comp = binaryFun!"a < b";
-}
-
-auto intersect(alias leftKeyFunc, alias rightKeyFunc, R1, R2)(R1 left, R2 right)
-if(isInputRange!R1 && isInputRange!R2)
-{
-    static struct InnerJoinResult(alias leftKeyFunc, alias rightKeyFunc, R1, R2)
-    {
-        private:
-        mixin JoinMixin!(leftKeyFunc, rightKeyFunc, R1, R2);
-        alias InnerJoinItem = Tuple!(ElementType!R1, "left", ElementType!R2, "right");
-
-        void adjustPosition()
-        {
-            if(empty) return;
-
-            if(comp(rightKeyFunc(right_.front), leftKeyFunc(left_.front)))
-            {
-                do
-                {
-                    right_.popFront();
-                    if(right_.empty) return;
-                } while(comp(rightKeyFunc(right_.front), leftKeyFunc(left_.front)));
-            }
-
-            if(comp(leftKeyFunc(left_.front), rightKeyFunc(right_.front)))
-            {
-                do
-                {
-                    left_.popFront();
-                    if(left_.empty) return;
-                } while(comp(leftKeyFunc(left_.front), rightKeyFunc(right_.front)));
-            }
-        }
-
-        public:
-        this(R1 left, R2 right)
-        {
-            this.left_ = left.sortRange!leftSortFunc;
-            this.right_ = right.sortRange!rightSortFunc;
-            adjustPosition();
-        }
-
-        @property bool empty()
-        {
-            return left_.empty || right_.empty;
-        }
-
-        @property auto front()
-        {
-            assert(!empty);
-            return InnerJoinItem(left_.front, right_.front);
-        }
-
-        void popFront()
-        {
-            assert(!empty);
-            left_.popFront();
-            right_.popFront();
-            adjustPosition();
-        }
-
-        auto save()
-        {
-            auto retval = this;
-            retval.left_ = left_.save;
-            retval.right_ = right_.save;
-            return retval;
-        }
-    }
-    return InnerJoinResult!(leftKeyFunc, rightKeyFunc, R1, R2)(left, right);
-}
-
-unittest
-{
-    import std.range : iota;
-    import std.algorithm : map, filter;
-
-    auto r1 = iota(3).map!(i => Foo(i))
-        .intersect!(f => f.id, b => b.key)(
-            iota(3).filter!(i => i%2 == 0).map!(i => Bar(i)));
-    assert(!r1.empty);
-    assert(r1.front[0] == Foo(0) && r1.front[1] == Bar(0));
-    r1.popFront();
-    assert(r1.front[0] == Foo(2) && r1.front[1] == Bar(2));
-    r1.popFront();
-    assert(r1.empty);
-
-    auto r2 = iota(3).map!(i => Foo(i))
-        .intersect!(f => f.id, b => b.key)(
-            iota(4).filter!(i => i >= 3).map!(i => Bar(i)));
-    assert(r2.empty);
-
-    auto r3 = iota(3).filter!(i => i%2 == 0).map!(i => Foo(i))
-        .intersect!(f => f.id, b => b.key)(
-            iota(3).map!(i => Bar(i)));
-    assert(!r3.empty);
-    assert(r3.front[0] == Foo(0) && r3.front[1] == Bar(0));
-    r3.popFront();
-    assert(r3.front[0] == Foo(2) && r3.front[1] == Bar(2));
-    r3.popFront();
-    assert(r3.empty);
-
-}
-
-unittest
-{
-    auto left = [1, 2, 3];
-    auto right = [2, 3, 4];
-
-    auto r = left.intersect!(x => x, x => x)(right);
-    auto rs = r.save;
-
-    r.popFront();
-    assert(r.front.left == 3);
-    assert(rs.front.left == 2);
-}
-
 auto leftouterjoin(alias leftKeyFunc, alias rightKeyFunc, R1, R2)(R1 left, R2 right)
 if(isInputRange!R1 && isInputRange!R2)
 {
     static struct LeftOuterJoinResult(alias leftKeyFunc, alias rightKeyFunc, R1, R2)
     {
         private:
-        mixin JoinMixin!(leftKeyFunc, rightKeyFunc, R1, R2);
+        R1 left_; R2 right_;
+        alias comp = binaryFun!"a < b";
         alias LeftOuterJoinItem = Tuple!(ElementType!R1, "left", Nullable!(ElementType!R2), "right");
 
         void adjustPosition()
@@ -170,8 +31,8 @@ if(isInputRange!R1 && isInputRange!R2)
         public:
         this(R1 left, R2 right)
         {
-            this.left_ = left.sortRange!leftSortFunc;
-            this.right_ = right.sortRange!rightSortFunc;
+            this.left_ = left;
+            this.right_ = right;
             adjustPosition();
         }
 
@@ -259,6 +120,7 @@ unittest
 
 unittest
 {
+    import std.algorithm : sort;
     auto left = ["FREQ"];
     auto right = ["FREQ", "INDICATEUR", "ACTIVITE", "SECT-INST", "FINANCEMENT", "OPERATION", "COMPTE", "NATURE-FLUX",
     "FORME-VENTE", "MARCHANDISE", "QUESTION", "INSTRUMENT", "PRODUIT", "NATURE", "METIER", "TYPE-ENT", "CAUSE-DECES",
@@ -278,7 +140,7 @@ unittest
     "AIDES-DEVELOPPEMENT", "REDRESSEMENT_TOUR", "SECTEUR_LOCATIF", "CMA_PM10", "STATIONS_MESURE", "EAU", "ASSAINISSEMENT",
     "ENERGIE_PRIMAIRE", "SUPPRESSION"];
 
-    auto r = left.leftouterjoin!(x => x, x => x)(right);
+    auto r = left.leftouterjoin!(x => x, x => x)(right.sort);
     assert(!r.empty);
     assert(!r.front.right.isNull);
 }
@@ -307,11 +169,11 @@ if(isInputRange!R1 && isInputRange!R2)
 
 unittest
 {
-    import std.algorithm : equal;
+    import std.algorithm : equal, sort;
     import std.typecons : tuple;
     auto left = [2, 1, 2];
     auto right = [1, 3, 2];
-    auto r = left.innerjoin!(x => x, x => x)(right);
+    auto r = left.sort.innerjoin!(x => x, x => x)(right.sort);
     assert(!r.empty);
     assert(equal(r, [tuple(1, 1), tuple(2, 2), tuple(2, 2)]));
 }
@@ -349,48 +211,14 @@ unittest
     assert(i.sort.equal([2, 3, 7]));
 }
 
-auto dropDuplicates(alias less = "a < b", alias eq = "a == b", R)(R range)
-if(isInputRange!R)
-{
-    import std.algorithm : uniq;
-    static if(isRandomAccessRange!R)
-    {
-        return sort!less(range).uniq!eq;
-    }
-    else
-    {
-        import std.array : array;
-        return range.array.sort!less.uniq!eq;
-    }
-}
-
-unittest
-{
-    import std.algorithm : equal;
-    auto i = [1, 2, 1, 1, 2, 3];
-    assert(equal(dropDuplicates(i), [1, 2, 3]));
-}
-
 auto groupby(alias indexFunc, R)(R range)
 {
     import std.typecons : tuple;
-    import std.algorithm : map, sort, chunkBy;
+    import std.algorithm : map, chunkBy;
 
-    static if(isRandomAccessRange!R)
-    {
-        return range
-            .sort!((a, b) => indexFunc(a) < indexFunc(b))
-            .chunkBy!((a, b) => indexFunc(a) == indexFunc(b))
-            .map!(c => tuple(indexFunc(c.front), c));
-    }
-    else {
-        import std.array : array;
-        return range
-            .array
-            .sort!((a, b) => indexFunc(a) < indexFunc(b))
-            .chunkBy!((a, b) => indexFunc(a) == indexFunc(b))
-            .map!(c => tuple(indexFunc(c.front), c));
-    }
+    return range
+        .chunkBy!((a, b) => indexFunc(a) == indexFunc(b))
+        .map!(c => tuple(indexFunc(c.front), c));
 
 }
 
@@ -398,7 +226,7 @@ unittest
 {
     import std.array : assocArray;
     import std.algorithm : equal;
-    auto r = [Foo(0), Foo(1), Foo(0), Foo(3)].groupby!(i => i.id).assocArray;
+    auto r = [Foo(0), Foo(0), Foo(1), Foo(3)].groupby!(i => i.id).assocArray;
     assert(equal(r[0], [Foo(0), Foo(0)]));
     assert(equal(r[1], [Foo(1)]));
     assert(equal(r[3], [Foo(3)]));

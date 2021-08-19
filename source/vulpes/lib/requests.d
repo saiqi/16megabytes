@@ -32,20 +32,24 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
 
     auto pUrl = URL(url);
     pUrl.queryString = params.byPair.map!(t => t[0] ~ "=" ~ t[1]).array.join("&");
-    auto resp = requestHTTP(pUrl,
+    string content;
+    requestHTTP(pUrl,
         (scope req) {
             foreach(k, v; headers.byPair)
                 req.headers[k] = v;
+        },
+        (scope resp) {
+            static if(raiseForStatus == RaiseForStatus.yes)
+            {
+                enforce!RequestException(resp.statusCode < 400, format!"%s returned HTTP %s code"(url, resp.statusCode));
+            }
+            content = resp.bodyReader.readAllUTF8;
         }
     );
-    scope(exit) resp.dropBody();
+    // scope(exit) resp.dropBody();
 
-    static if(raiseForStatus == RaiseForStatus.yes)
-    {
-        enforce!RequestException(resp.statusCode < 400, format!"%s returned HTTP %s code"(url, resp.statusCode));
-    }
-
-    return resp.bodyReader.readAllUTF8;
+    // return resp.bodyReader.readAllUTF8;
+    return content;
 }
 
 auto doRequestFromParameter(RaiseForStatus raiseForStatus)(RequestParameter p)
