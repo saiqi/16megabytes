@@ -1,8 +1,7 @@
-module vulpes.datasources.providers;
+module vulpes.core.providers;
 import std.typecons : Nullable, nullable;
 import vibe.data.json : optional;
 import vulpes.core.cube : ResourceType;
-import vulpes.datasources.sdmxml21;
 
 private:
 auto readProviders()
@@ -18,7 +17,7 @@ unittest
     readProviders();
 }
 
-package:
+public:
 enum Format : string
 {
     sdmxml21 = "sdmxml21"

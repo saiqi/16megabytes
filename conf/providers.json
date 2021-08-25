@@ -20,6 +20,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categoryscheme": {
@@ -80,6 +83,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -140,6 +146,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -200,6 +209,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -251,7 +263,8 @@
             "datastructure": {
                 "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
                 "queryTemplate": {
-                    "format": "compact_2_1"
+                    "format": "compact_2_1",
+                    "references": "conceptscheme"
                 },
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
@@ -361,6 +374,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -414,6 +430,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -467,6 +486,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -520,6 +542,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {
@@ -573,6 +598,9 @@
                 "headerTemplate": {
                     "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
                     "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
                 }
             },
             "categorisation": {

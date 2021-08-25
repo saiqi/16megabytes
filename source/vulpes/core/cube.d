@@ -1,9 +1,10 @@
 module vulpes.core.cube;
-import std.typecons : Nullable, nullable, Flag;
+import std.typecons : Nullable, nullable;
 import std.range;
 import std.traits : Unqual;
 import std.algorithm : filter, map;
 import std.array : array;
+import vulpes.lib.boilerplate : Generate, getter;
 
 enum ResourceType : string
 {
@@ -18,26 +19,16 @@ enum ResourceType : string
 
 struct Label
 {
-    private:
-    string language_;
-    string shortName_;
-    Nullable!string longName_;
+    @getter("language")
+    private string language_;
 
-    public:
-    inout(string) language() @property inout pure nothrow @safe
-    {
-        return language_;
-    }
+    @getter("shortName")
+    private string shortName_;
 
-    inout(string) shortName() @property inout pure nothrow @safe
-    {
-        return shortName_;
-    }
+    @getter("longName")
+    private Nullable!string longName_;
 
-    inout(Nullable!string) longName() @property inout pure nothrow @safe
-    {
-        return longName_;
-    }
+    mixin(Generate);
 }
 
 private auto searchScore(size_t default_)(in Label label, in string query) pure @safe nothrow
@@ -96,7 +87,7 @@ unittest
     assert(empty.computeLabelsSearchScore(q) == size_t.max);
 }
 
-auto search(size_t threshold = 1u, R)(R resources, in string query) //pure @safe nothrow
+auto search(size_t threshold = 1u, R)(R resources, in string query) pure
 if(isForwardRange!R && isLabelized!(ElementType!R))
 {
     import std.algorithm : map, filter;
@@ -143,73 +134,36 @@ unittest
 
 struct Tag
 {
-    private:
-    string id_;
-    Label[] labels_;
+    @getter("id")
+    private string id_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-    }
+    @getter("labels")
+    private Label[] labels_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
-
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
-    }
+    mixin(Generate);
 }
 
 struct CubeDescription
 {
-    private:
-    string providerId_;
-    string id_;
-    Label[] labels_;
-    string definitionId_;
-    string definitionProviderId_;
-    string[] tagIds_;
+    @getter("providerId")
+    private string providerId_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-        tagIds_ = tagIds_.dup;
-    }
+    @getter("id")
+    private string id_;
 
-    inout(string) providerId() inout pure nothrow @safe
-    {
-        return providerId_;
-    }
+    @getter("labels")
+    private Label[] labels_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    @getter("definitionId")
+    private string definitionId_;
 
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
-    }
+    @getter("definitionProviderId")
+    private string definitionProviderId_;
 
-    inout(string) definitionId() inout pure nothrow @safe
-    {
-        return definitionId_;
-    }
+    @getter("tagIds")
+    private string[] tagIds_;
 
-    inout(string[]) tagIds() inout pure nothrow @safe
-    {
-        return tagIds_;
-    }
-
-    inout(string) definitionProviderId() inout pure nothrow @safe
-    {
-        return definitionProviderId_;
-    }
+    mixin(Generate);
 }
 
 bool containsTags(in CubeDescription desc, in string[] tagIds) pure nothrow @safe
@@ -229,233 +183,123 @@ unittest
 
 struct CubeDefinition
 {
-    private:
-    string providerId_;
-    string id_;
-    Dimension[] dimensions_;
-    Attribute[] attributes_;
-    Measure[] measures_;
+    @getter("providerId")
+    private string providerId_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        dimensions_ = dimensions_.dup;
-        attributes_ = attributes_.dup;
-        measures_ = measures_.dup;
-    }
+    @getter("id")
+    private string id_;
 
-    inout(string) providerId() inout pure nothrow @safe
-    {
-        return providerId_;
-    }
+    @getter("dimensions")
+    private Dimension[] dimensions_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    @getter("attributes")
+    private Attribute[] attributes_;
 
-    inout(Dimension[]) dimensions() inout pure nothrow @safe
-    {
-        return dimensions_;
-    }
+    @getter("measures")
+    private Measure[] measures_;
 
-    inout(Attribute[]) attributes() inout pure nothrow @safe
-    {
-        return attributes_;
-    }
+    mixin(Generate);
 
-    inout(Measure[]) measures() inout pure nothrow @safe
-    {
-        return measures_;
-    }
 }
-
-alias TimeDimension = Flag!"timeDimension";
-alias ObsDimension = Flag!"obsDimension";
 
 struct Dimension
 {
-    private:
-    Nullable!string id_;
-    ObsDimension obsDimension_;
-    TimeDimension timeDimension_;
-    Nullable!Concept concept_;
-    Nullable!string codelistId_;
-    Nullable!string codelistProviderId_;
 
-    public:
-    inout(Nullable!string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    @getter("id")
+    private Nullable!string id_;
 
-    inout(ObsDimension) obsDimension() inout pure nothrow @safe
-    {
-        return obsDimension_;
-    }
+    @getter("obsDimension")
+    private bool obsDimension_;
 
-    inout(TimeDimension) timeDimension() inout pure nothrow @safe
-    {
-        return timeDimension_;
-    }
+    @getter("timeDimension")
+    private bool timeDimension_;
 
-    inout(Nullable!Concept) concept() inout pure nothrow @safe
-    {
-        return concept_;
-    }
+    @getter("concept")
+    private Nullable!Concept concept_;
 
-    inout(Nullable!string) codelistId() inout pure nothrow @safe
-    {
-        return codelistId_;
-    }
+    @getter("codelistId")
+    private Nullable!string codelistId_;
 
-    inout(Nullable!string) codelistProviderId() inout pure nothrow @safe
-    {
-        return codelistProviderId_;
-    }
+    @getter("codelistProviderId")
+    private Nullable!string codelistProviderId_;
+
+    mixin(Generate);
 }
 
 struct Attribute
 {
-    private:
-    Nullable!string id_;
-    Nullable!Concept concept_;
-    Nullable!string codelistId_;
-    Nullable!string codelistProviderId_;
 
-    public:
-    inout(Nullable!string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    @getter("id")
+    private Nullable!string id_;
 
-    inout(Nullable!Concept) concept() inout pure nothrow @safe
-    {
-        return concept_;
-    }
+    @getter("concept")
+    private Nullable!Concept concept_;
 
-    inout(Nullable!string) codelistId() inout pure nothrow @safe
-    {
-        return codelistId_;
-    }
+    @getter("codelistId")
+    private Nullable!string codelistId_;
 
-    inout(Nullable!string) codelistProviderId() inout pure nothrow @safe
-    {
-        return codelistProviderId_;
-    }
+    @getter("codelistProviderId")
+    private Nullable!string codelistProviderId_;
+
+    mixin(Generate);
 }
 
 struct Code
 {
-    private:
-    string id_;
-    Label[] labels_;
+    @getter("id")
+    private string id_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-    }
+    @getter("labels")
+    private Label[] labels_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
-
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
-    }
+    mixin(Generate);
 }
 
 struct Concept
 {
-    private:
-    string id_;
-    Label[] labels_;
+    @getter("id")
+    private string id_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        labels_ = labels_.dup;
-    }
+    @getter("labels")
+    private Label[] labels_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
-
-    inout(Label[]) labels() inout pure nothrow @safe
-    {
-        return labels_;
-    }
+    mixin(Generate);
 }
 
 struct Measure
 {
-    private:
-    Nullable!string id_;
-    Nullable!Concept concept_;
 
-    public:
-    inout(Nullable!string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    @getter("id")
+    private Nullable!string id_;
 
-    inout(Nullable!Concept) concept() inout pure nothrow @safe
-    {
-        return concept_;
-    }
+    @getter("concept")
+    private Nullable!Concept concept_;
+
+    mixin(Generate);
 }
 
 struct DatasetMetadata
 {
-    private:
-    string definitionId_;
-    string descriptionId_;
-    string providerId_;
-    string[] dimensionIds_;
-    string[] obsDimensionIds_;
-    string[] measureIds_;
 
-    public:
-    this(this) pure nothrow @safe
-    {
-        dimensionIds_ = dimensionIds_.dup;
-        obsDimensionIds_ = obsDimensionIds_.dup;
-        measureIds_ = measureIds_.dup;
-    }
+    @getter("definitionId")
+    private string definitionId_;
 
-    inout(string) definitionId() inout pure nothrow @safe
-    {
-        return definitionId_;
-    }
+    @getter("descriptionId")
+    private string descriptionId_;
 
-    inout(string) descriptionId() inout pure nothrow @safe
-    {
-        return descriptionId_;
-    }
+    @getter("providerId")
+    private string providerId_;
 
-    inout(string) providerId() inout pure nothrow @safe
-    {
-        return providerId_;
-    }
+    @getter("dimensionIds")
+    private string[] dimensionIds_;
 
-    inout(string[]) dimensionIds() inout pure nothrow @safe
-    {
-        return dimensionIds_;
-    }
+    @getter("obsDimensionIds")
+    private string[] obsDimensionIds_;
 
-    inout(string[]) obsDimensionIds() inout pure nothrow @safe
-    {
-        return obsDimensionIds_;
-    }
+    @getter("measureIds")
+    private string[] measureIds_;
 
-    inout(string[]) measureIds() inout pure nothrow @safe
-    {
-        return measureIds_;
-    }
+    mixin(Generate);
 }
 
 Nullable!DatasetMetadata toDatasetMetadata(CubeDefinition def, const string descriptionId) pure nothrow @safe
@@ -483,23 +327,16 @@ private enum isValueType(T) = isScalarType!T || isSomeString!T;
 struct Value(T)
 if(isValueType!T)
 {
-    private:
-    Nullable!T value_;
-    string id_;
+    @getter("value")
+    private Nullable!T value_;
 
-    public:
-    inout(Nullable!T) value() inout pure nothrow @safe
-    {
-        return value_;
-    }
+    @getter("id")
+    private string id_;
 
-    inout(string) id() inout pure nothrow @safe
-    {
-        return id_;
-    }
+    mixin(Generate);
 }
 
-auto makeValues(T)(const T[string] assocArray) pure @safe nothrow
+auto makeValues(T)(in T[string] assocArray) pure @safe nothrow
 {
     import std.array : byPair, array;
     import std.algorithm : map;
@@ -522,79 +359,38 @@ unittest
 struct Observation(T)
 if(isValueType!T)
 {
-    private:
-    Value!T obsValue_;
-    Value!string obsDimension_;
-    Value!string[] attributes_;
+    @getter("obsValue")
+    private Value!T obsValue_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        attributes_ = attributes_.dup;
-    }
+    @getter("obsDimension")
+    private Value!string obsDimension_;
 
-    inout(Value!T) obsValue() inout pure nothrow @safe
-    {
-        return obsValue_;
-    }
+    @getter("attributes")
+    private Value!string[] attributes_;
 
-    inout(Value!string) obsDimension() inout pure nothrow @safe
-    {
-        return obsDimension_;
-    }
-
-    inout(Value!string[]) attributes() inout pure nothrow @safe
-    {
-        return attributes_;
-    }
+    mixin(Generate);
 }
 
 struct Serie(T)
 if(isValueType!T)
 {
-    private:
-    Observation!T[] observations_;
-    Value!string[] dimensions_;
-    Value!string[] attributes_;
+    @getter("observations")
+    private Observation!T[] observations_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        observations_ = observations_.dup;
-        dimensions_ = dimensions_.dup;
-        attributes_ = attributes_.dup;
-    }
+    @getter("dimensions")
+    private Value!string[] dimensions_;
 
-    inout(Observation!T[]) observations() inout pure nothrow @safe
-    {
-        return observations_;
-    }
+    @getter("attributes")
+    private Value!string[] attributes_;
 
-    inout(Value!string[]) dimensions() inout pure nothrow @safe
-    {
-        return dimensions_;
-    }
-
-    inout(Value!string[]) attributes() inout pure nothrow @safe
-    {
-        return attributes_;
-    }
+    mixin(Generate);
 }
 
 struct Dataset(T)
 if(isValueType!T)
 {
-    private:
-    Serie!T[] series_;
+    @getter("series")
+    private Serie!T[] series_;
 
-    public:
-    this(this) pure @safe nothrow
-    {
-        series_ = series_.dup;
-    }
-
-    inout(Serie!T[]) series() inout pure nothrow @safe
-    {
-        return series_;
-    }
+    mixin(Generate);
 }

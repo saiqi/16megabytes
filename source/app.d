@@ -6,7 +6,7 @@ import vibe.http.router;
 
 private auto getProviderOr404(in string providerId)
 {
-    import vulpes.datasources.providers : getProvider;
+    import vulpes.core.providers : getProvider;
     import std.format : format;
     auto provider = getProvider(providerId);
 
@@ -20,11 +20,11 @@ void handleProviders(HTTPServerRequest req, HTTPServerResponse res)
 {
     import std.algorithm : map;
     import std.array : array;
-    import vulpes.datasources.providers : getProviders;
-    import vulpes.resources : ProviderResource;
+    import vulpes.core.providers : getProviders;
+    import vulpes.resources : providerToResource;
     logDebug("Fetching providers");
     auto providers = getProviders()
-        .map!(p => ProviderResource(p.id))
+        .map!providerToResource
         .array;
     logDebug("Providers list fetched");
     res.writeJsonBody(providers);
@@ -36,12 +36,12 @@ void handleTags(HTTPServerRequest req, HTTPServerResponse res)
     import std.array : array;
     import std.format : format;
     import vulpes.datasources.sdmxml21 : getTags;
-    import vulpes.resources : TagResource, toLabelAA;
+    import vulpes.resources : tagToResource;
     auto provider = getProviderOr404(req.params["providerId"]);
 
     logDebug("Fetching tags for provider %s", provider.id);
     auto tags = getTags(provider)
-        .map!(t => TagResource(t.id, t.labels.toLabelAA)).array;
+        .map!tagToResource.array;
     logDebug("Tags list fetched");
     res.writeJsonBody(tags);
 
@@ -55,7 +55,7 @@ void handleDescriptions(HTTPServerRequest req, HTTPServerResponse res)
     import std.conv : to;
     import std.range : take, drop;
     import vulpes.datasources.sdmxml21 : getDescriptions;
-    import vulpes.resources : DescriptionResource, toLabelAA;
+    import vulpes.resources : descriptionToResource;
     import vulpes.core.cube : search, containsTags;
 
     enforceHTTP(req.query.get("s") is null || req.query.get("tags") is null,
@@ -67,22 +67,15 @@ void handleDescriptions(HTTPServerRequest req, HTTPServerResponse res)
     logDebug("Fetchings descriptions list for provider %s", provider.id);
     auto descs = getDescriptions(provider);
 
-    alias toResource = t => DescriptionResource(t.id,
-                                                t.providerId,
-                                                t.labels.toLabelAA,
-                                                t.definitionId,
-                                                t.definitionProviderId,
-                                                t.tagIds);
-
     if(req.query.get("s") is null && req.query.get("tags") is null)
     {
-        auto result = descs.map!toResource.array;
+        auto result = descs.map!descriptionToResource.array;
         logDebug("Descriptions list fetched");
         res.writeJsonBody(result);
     }
     else if(req.query.get("s") !is null)
     {
-        auto result = search(descs, req.query["s"]).map!toResource.array;
+        auto result = search(descs, req.query["s"]).map!descriptionToResource.array;
         logDebug("Search result fetched");
         res.writeJsonBody(result);
     }
@@ -91,7 +84,7 @@ void handleDescriptions(HTTPServerRequest req, HTTPServerResponse res)
         auto tagIds = req.query.get("tags").split(",");
         auto result = descs
             .filter!(d => d.containsTags(tagIds))
-            .map!toResource
+            .map!descriptionToResource
             .array;
         logDebug("Descriptions filtered by tags fetched");
         res.writeJsonBody(result);
@@ -111,6 +104,25 @@ void handleDescriptionsCount(HTTPServerRequest req, HTTPServerResponse res)
     res.writeJsonBody(CountResource(count));
 }
 
+void handleDefinition(HTTPServerRequest req, HTTPServerResponse res)
+{
+    import std.format : format;
+    import vulpes.datasources.sdmxml21 : getDefinition;
+    import vulpes.resources : definitionToResource;
+    auto provider = getProviderOr404(req.params["providerId"]);
+
+    auto definitionId = req.params["cubeId"];
+    logDebug("Fetching definition %s", definitionId);
+    auto def = getDefinition(provider, definitionId);
+
+    enforceHTTP(!def.isNull,
+                HTTPStatus.notFound,
+                format!"definition %s not found for provider %s"(definitionId, provider.id));
+
+    res.writeJsonBody(definitionToResource(def.get));
+
+}
+
 void main()
 {
     setLogFormat(FileLogger.Format.threadTime, FileLogger.Format.threadTime);
@@ -127,7 +139,8 @@ void main()
     router.get("/providers", &handleProviders)
         .get("/providers/:providerId/tags", &handleTags)
         .get("/providers/:providerId/cube-descriptions", &handleDescriptions)
-        .get("/providers/:providerId/cube-descriptions/count", &handleDescriptionsCount);
+        .get("/providers/:providerId/cube-descriptions/count", &handleDescriptionsCount)
+        .get("/providers/:providerId/cube-definition/:cubeId", &handleDefinition);
 
     auto l = listenHTTP(settings, router);
     scope(exit) l.stopListening();

@@ -29,10 +29,12 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
     import vibe.http.client : requestHTTP;
     import vibe.inet.url : URL;
     import vibe.stream.operations : readAllUTF8;
+    import vibe.core.log : logDebug;
 
     auto pUrl = URL(url);
     pUrl.queryString = params.byPair.map!(t => t[0] ~ "=" ~ t[1]).array.join("&");
     string content;
+    logDebug("Requesting: %s headers: %s", pUrl.toString, headers);
     requestHTTP(pUrl,
         (scope req) {
             foreach(k, v; headers.byPair)
@@ -41,14 +43,13 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
         (scope resp) {
             static if(raiseForStatus == RaiseForStatus.yes)
             {
-                enforce!RequestException(resp.statusCode < 400, format!"%s returned HTTP %s code"(url, resp.statusCode));
+                enforce!RequestException(resp.statusCode < 400,
+                                         format!"%s returned HTTP %s code"(url, resp.statusCode));
             }
             content = resp.bodyReader.readAllUTF8;
+            logDebug("%s: %s", pUrl.toString, resp.statusCode);
         }
     );
-    // scope(exit) resp.dropBody();
-
-    // return resp.bodyReader.readAllUTF8;
     return content;
 }
 

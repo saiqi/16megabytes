@@ -34,8 +34,8 @@ auto buildTestDataset(T)(
     }
 
     auto dimensions = dimensionValues[0].keys
-        .map!(k => Dimension(k.nullable, ObsDimension.no, TimeDimension.no, (Nullable!Concept).init))
-        .array ~ [Dimension(obsDimensionId.nullable, ObsDimension.yes, TimeDimension.no, (Nullable!Concept).init)];
+        .map!(k => Dimension(k.nullable, false, false, (Nullable!Concept).init))
+        .array ~ [Dimension(obsDimensionId.nullable, true, false, (Nullable!Concept).init)];
 
     auto attributes = serieAttributeValues[0].keys
         .map!(k => Attribute(k.nullable, (Nullable!Concept).init))
