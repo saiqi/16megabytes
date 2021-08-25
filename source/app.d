@@ -111,16 +111,54 @@ void handleDefinition(HTTPServerRequest req, HTTPServerResponse res)
     import vulpes.resources : definitionToResource;
     auto provider = getProviderOr404(req.params["providerId"]);
 
-    auto definitionId = req.params["cubeId"];
-    logDebug("Fetching definition %s", definitionId);
-    auto def = getDefinition(provider, definitionId);
+    auto cubeId = req.params["cubeId"];
+    logDebug("Fetching definition %s", cubeId);
+    auto def = getDefinition(provider, cubeId);
 
     enforceHTTP(!def.isNull,
                 HTTPStatus.notFound,
-                format!"definition %s not found for provider %s"(definitionId, provider.id));
+                format!"definition %s not found for provider %s"(cubeId, provider.id));
 
     res.writeJsonBody(definitionToResource(def.get));
 
+}
+
+void handleDimensionCodes(HTTPServerRequest req, HTTPServerResponse res)
+{
+    import std.algorithm : map;
+    import std.array : array;
+    import vulpes.datasources.sdmxml21 : getDimensionCodes;
+    import vulpes.resources : codeToResource;
+    auto provider = getProviderOr404(req.params["providerId"]);
+
+    auto cubeId = req.params["cubeId"]; auto resourceId = req.params["dimensionId"];
+
+    logDebug("Fetching codes of dimension %s of cube %s for provider %s", resourceId, cubeId, provider.id);
+
+    auto codes = getDimensionCodes(provider, cubeId, resourceId)
+        .map!codeToResource
+        .array;
+
+    res.writeJsonBody(codes);
+}
+
+void handleAttributeCodes(HTTPServerRequest req, HTTPServerResponse res)
+{
+    import std.algorithm : map;
+    import std.array : array;
+    import vulpes.datasources.sdmxml21 : getAttributeCodes;
+    import vulpes.resources : codeToResource;
+    auto provider = getProviderOr404(req.params["providerId"]);
+
+    auto cubeId = req.params["cubeId"]; auto resourceId = req.params["attributeId"];
+
+    logDebug("Fetching codes of attribute %s of cube %s for provider %s", resourceId, cubeId, provider.id);
+
+    auto codes = getAttributeCodes(provider, cubeId, resourceId)
+        .map!codeToResource
+        .array;
+
+    res.writeJsonBody(codes);
 }
 
 void main()
@@ -138,9 +176,11 @@ void main()
     auto router = new URLRouter;
     router.get("/providers", &handleProviders)
         .get("/providers/:providerId/tags", &handleTags)
-        .get("/providers/:providerId/cube-descriptions", &handleDescriptions)
-        .get("/providers/:providerId/cube-descriptions/count", &handleDescriptionsCount)
-        .get("/providers/:providerId/cube-definition/:cubeId", &handleDefinition);
+        .get("/providers/:providerId/cubes", &handleDescriptions)
+        .get("/providers/:providerId/cubes/count", &handleDescriptionsCount)
+        .get("/providers/:providerId/cubes/:cubeId/definition", &handleDefinition)
+        .get("/providers/:providerId/cubes/:cubeId/dimensions/:dimensionId/codes", &handleDimensionCodes)
+        .get("/providers/:providerId/cubes/:cubeId/attributes/:attributeId/codes", &handleAttributeCodes);
 
     auto l = listenHTTP(settings, router);
     scope(exit) l.stopListening();

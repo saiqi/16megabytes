@@ -1686,14 +1686,97 @@ unittest
     assert(!def.measures[0].concept.isNull);
 }
 
-auto buildCodes(in string[StructureType] messages, in string resourceId)
+auto fetchCodes(alias fetch, T)(in Provider provider, in string cubeId, in string resourceId)
+if(is(T == SDMXDimension) || is(T == SDMXAttribute))
+{
+    import vulpes.lib.xml : deserializeAsRangeOf;
+    import vulpes.core.providers : hasResource;
+    import std.algorithm : filter, map;
+
+    alias RT = Tuple!(string[StructureType], string);
+
+    with(StructureType)
+    {
+        auto dfMsg = fetchMessages!fetch([
+            const(StructureRequestConfig)(
+                provider, false, dataflow, [References: contentconstraint], cubeId, null, null)
+        ]);
+
+        string agencyCodelistId = provider.id;
+        string codelistId = resourceId;
+        if(dataflow in dfMsg)
+        {
+            auto dfs = dfMsg[dataflow].deserializeAsRangeOf!SDMXDataflow;
+
+            if(!dfs.empty)
+            {
+                string dsdId = cubeId;
+                string dsdAgencyId = provider.id;
+
+                if(!dfs.front.structure.isNull)
+                {
+                    dsdId = dfs.front.structure.get.ref_.id;
+                    dsdAgencyId = dfs.front.structure.get.ref_.agencyId.get(dsdAgencyId);
+                }
+
+                auto dsdMsg = fetchMessages!fetch([
+                    const(StructureRequestConfig)(
+                        provider, false, datastructure, [References: contentconstraint], dsdId, null, dsdAgencyId)
+                ]);
+
+                if(datastructure in dsdMsg)
+                {
+
+                    if(!hasResource(provider, codelist)) return RT(dsdMsg, resourceId);
+
+                    static if(is(T == SDMXDimension))
+                    {
+                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!T
+                            .filter!(d => d.id == resourceId)
+                            .filter!(d => !d.localRepresentation.isNull)
+                            .filter!(d => !d.localRepresentation.get.enumeration.isNull)
+                            .map!(d => d.localRepresentation.get.enumeration.get.ref_);
+                    }
+                    else
+                    {
+                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!T
+                            .filter!(a => !a.id.isNull)
+                            .filter!(a => a.id.get == resourceId)
+                            .filter!(a => !a.localRepresentation.isNull)
+                            .filter!(a => !a.localRepresentation.get.enumeration.isNull)
+                            .map!(a => a.localRepresentation.get.enumeration.get.ref_);
+                    }
+
+                    if(!refs.empty)
+                    {
+                        codelistId = refs.front.id;
+                        agencyCodelistId = refs.front.agencyId.get(agencyCodelistId);
+                    }
+                }
+            }
+
+        }
+
+        auto clMsg = fetchMessages!fetch([
+            const(StructureRequestConfig)(provider, true, codelist, null, codelistId, null, agencyCodelistId)
+        ]);
+
+        return RT(clMsg, resourceId);
+    }
+}
+
+auto buildCodes(in Tuple!(string[StructureType], string) t)
 {
     import std.array : array, assocArray;
     import std.algorithm : filter, map, joiner;
     import vulpes.core.operations : index;
-    assert(StructureType.codelist in messages);
 
-    auto codes = messages[StructureType.codelist].deserializeAsRangeOf!SDMXCode;
+    auto messages = t[0]; auto resourceId = t[1];
+
+    assert(StructureType.codelist in messages ||StructureType.datastructure in messages);
+
+    auto codes = messages.get(StructureType.codelist, messages[StructureType.datastructure])
+        .deserializeAsRangeOf!SDMXCode;
 
     auto constraintIdx = (StructureType.dataflow in messages)
         ? messages[StructureType.dataflow]
@@ -1716,13 +1799,14 @@ unittest
 {
     import std.file : readText;
     import std.range : walkLength;
+    import std.typecons : tuple;
 
     auto messages = [
         StructureType.codelist : readText(
             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
         StructureType.dataflow : readText(
             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
-    auto codes = buildCodes(messages, "DATA_DOMAIN");
+    auto codes = buildCodes(tuple(messages, "DATA_DOMAIN"));
     assert(!codes.empty);
     assert(codes.walkLength == 1);
     assert(codes.front.id == "01R");
@@ -1733,9 +1817,10 @@ unittest
 {
     import std.file : readText;
     import std.range : walkLength;
+    import std.typecons : tuple;
 
     auto messages = [StructureType.codelist : readText("./fixtures/sdmx/structure_codelist.xml")];
-    auto codes = buildCodes(messages, "FREQ");
+    auto codes = buildCodes(tuple(messages, "FREQ"));
     assert(!codes.empty);
     assert(codes.walkLength == 5);
 }
@@ -1745,3 +1830,5 @@ import std.functional : pipe;
 alias getTags = pipe!(fetchTags!doAsyncRequest, buildTags);
 alias getDescriptions = pipe!(fetchDescriptions!doAsyncRequest, buildDescriptions);
 alias getDefinition = pipe!(fetchDefinition!doAsyncRequest, buildDefinition);
+alias getDimensionCodes = pipe!(fetchCodes!(doAsyncRequest, SDMXDimension), buildCodes);
+alias getAttributeCodes = pipe!(fetchCodes!(doAsyncRequest, SDMXAttribute), buildCodes);

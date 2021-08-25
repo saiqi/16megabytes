@@ -88,8 +88,6 @@ struct DescriptionResource
     string id;
     string providerId;
     NameResource[string] labels;
-    string definitionId;
-    string definitionProviderId;
     string[] tagIds;
 }
 
@@ -99,8 +97,6 @@ DescriptionResource descriptionToResource(CubeDescription desc) pure nothrow @sa
         desc.id,
         desc.providerId,
         desc.labels.toNamesAA,
-        desc.definitionId,
-        desc.definitionProviderId,
         desc.tagIds
     );
 }
@@ -196,4 +192,15 @@ DefinitionResource definitionToResource(CubeDefinition def) pure nothrow @safe
         def.attributes.map!attributeToResource.array,
         def.measures.map!measureToResource.array
     );
+}
+
+struct CodeResource
+{
+    string id;
+    NameResource[string] labels;
+}
+
+CodeResource codeToResource(Code c) pure nothrow @safe
+{
+    return CodeResource(c.id, c.labels.toNamesAA);
 }
