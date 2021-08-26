@@ -1693,7 +1693,7 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
     import vulpes.core.providers : hasResource;
     import std.algorithm : filter, map;
 
-    alias RT = Tuple!(string[StructureType], string);
+    alias RT = Tuple!(string[StructureType], string, string);
 
     with(StructureType)
     {
@@ -1727,8 +1727,6 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
                 if(datastructure in dsdMsg)
                 {
 
-                    if(!hasResource(provider, codelist)) return RT(dsdMsg, resourceId);
-
                     static if(is(T == SDMXDimension))
                     {
                         auto refs = dsdMsg[datastructure].deserializeAsRangeOf!T
@@ -1752,6 +1750,8 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
                         codelistId = refs.front.id;
                         agencyCodelistId = refs.front.agencyId.get(agencyCodelistId);
                     }
+
+                    if(!hasResource(provider, codelist)) return RT(dsdMsg, resourceId, codelistId);
                 }
             }
 
@@ -1761,22 +1761,28 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
             const(StructureRequestConfig)(provider, true, codelist, null, codelistId, null, agencyCodelistId)
         ]);
 
-        return RT(clMsg, resourceId);
+        return RT(clMsg, resourceId, codelistId);
     }
 }
 
-auto buildCodes(in Tuple!(string[StructureType], string) t)
+auto buildCodes(in Tuple!(string[StructureType], string, string) t)
 {
     import std.array : array, assocArray;
     import std.algorithm : filter, map, joiner;
+    import std.format : format;
+    import std.exception : enforce;
     import vulpes.core.operations : index;
+    import vulpes.errors : NotFound;
 
-    auto messages = t[0]; auto resourceId = t[1];
+    auto messages = t[0]; auto resourceId = t[1]; auto codelistId = t[2];
 
     assert(StructureType.codelist in messages ||StructureType.datastructure in messages);
 
-    auto codes = messages.get(StructureType.codelist, messages[StructureType.datastructure])
-        .deserializeAsRangeOf!SDMXCode;
+    auto codelist = messages.get(StructureType.codelist, messages[StructureType.datastructure])
+        .deserializeAsRangeOf!SDMXCodelist
+        .filter!(cl => cl.id == codelistId);
+
+    enforce!NotFound(!codelist.empty, format!"Cannot find list of codes for resource %s"(resourceId));
 
     auto constraintIdx = (StructureType.dataflow in messages)
         ? messages[StructureType.dataflow]
@@ -1790,7 +1796,7 @@ auto buildCodes(in Tuple!(string[StructureType], string) t)
             .assocArray
         : null;
 
-    return codes
+    return codelist.front.codes
         .filter!(c => (constraintIdx !is null && c.id in constraintIdx) || constraintIdx is null)
         .map!(c => Code(c.id, c.names.map!toLabel.array));
 }
@@ -1806,7 +1812,7 @@ unittest
             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
         StructureType.dataflow : readText(
             "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
-    auto codes = buildCodes(tuple(messages, "DATA_DOMAIN"));
+    auto codes = buildCodes(tuple(messages, "DATA_DOMAIN", "CL_DATADOMAIN"));
     assert(!codes.empty);
     assert(codes.walkLength == 1);
     assert(codes.front.id == "01R");
@@ -1820,10 +1826,25 @@ unittest
     import std.typecons : tuple;
 
     auto messages = [StructureType.codelist : readText("./fixtures/sdmx/structure_codelist.xml")];
-    auto codes = buildCodes(tuple(messages, "FREQ"));
+    auto codes = buildCodes(tuple(messages, "FREQ", "CL_PERIODICITE"));
     assert(!codes.empty);
     assert(codes.walkLength == 5);
 }
+
+unittest
+{
+    import std.file : readText;
+    import std.range : walkLength;
+    import std.typecons : tuple;
+
+    auto messages = [
+        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
+    ];
+    auto codes = buildCodes(tuple(messages, "FREQ", "CL_FREQ"));
+    assert(!codes.empty);
+    assert(codes.walkLength == 7);
+}
+
 
 public:
 import std.functional : pipe;
