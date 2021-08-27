@@ -256,3 +256,40 @@ unittest
     assert(r[1] == Foo(1));
     assert(r[3] == Foo(3));
 }
+
+auto mergeAA(T1, T2)(in T1[T2] left, in T1[T2] right)
+{
+    import std.array : byPair, assocArray;
+    import std.range : chain;
+    import std.conv : to;
+
+    auto r = right.byPair.chain(left.byPair).assocArray;
+
+    static if(is(typeof(r): T1[T2]))
+    {
+        return r;
+    }
+    else
+    {
+        return r.to!(T1[T2]);
+    }
+}
+
+unittest
+{
+    immutable iLeft = ["a": "A", "b": "B"];
+    immutable iRight = ["c": "C"];
+
+    auto iResult = mergeAA(iLeft, iRight);
+    assert(iResult["a"] == "A");
+    assert(iResult["b"] == "B");
+    assert(iResult["c"] == "C");
+}
+
+unittest
+{
+    auto left = ["a": "AA", "b" : "BB"];
+    auto right = ["b": "B"];
+    auto result = mergeAA(left, right);
+    assert(result["b"] == "BB");
+}

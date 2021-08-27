@@ -3,7 +3,6 @@ module vulpes.datasources.sdmxml21;
 import std.typecons : Nullable, nullable, Tuple, apply;
 import std.range : isInputRange, isRandomAccessRange, ElementType;
 import vulpes.lib.xml;
-import vulpes.lib.requests;
 import vulpes.core.providers;
 import vulpes.core.cube;
 
@@ -1084,6 +1083,8 @@ struct StructureRequestConfig
 T fetchStructure(alias fetch, T)(in StructureRequestConfig cfg)
 {
     import vulpes.errors : NotImplemented;
+    import vulpes.core.operations : mergeAA;
+    import vulpes.lib.requests : resolveRequestTemplate;
     import std.exception : enforce;
     import std.format : format;
 
@@ -1100,13 +1101,15 @@ T fetchStructure(alias fetch, T)(in StructureRequestConfig cfg)
 
     auto query = resourceCfg.queryTemplate.isNull
         ? cast(string[string]) cfg.params
-        : resolveRequestTemplate(resourceCfg.queryTemplate.get, null)
-            .mergeAAParams(cfg.params);
+        // : resolveRequestTemplate(resourceCfg.queryTemplate.get, null)
+        //     .mergeAAParams(cfg.params);
+        : resolveRequestTemplate(cfg.params, null)
+            .mergeAA(resourceCfg.queryTemplate.get);
 
     auto headers = resourceCfg.headerTemplate.isNull
         ? defaultStructureHeaders
         : resolveRequestTemplate(resourceCfg.headerTemplate.get.dup, null)
-            .mergeAAParams(defaultStructureHeaders);
+            .mergeAA(defaultStructureHeaders);
 
     return fetch(url, headers, query);
 }
@@ -1114,6 +1117,7 @@ T fetchStructure(alias fetch, T)(in StructureRequestConfig cfg)
 string[StructureType] fetchMessages(alias fetch)(in StructureRequestConfig[] cfgs)
 {
     import vibe.core.concurrency : Future;
+    import vulpes.lib.requests : getResultOrFail, getResultOrNullable;
 
     alias F = Future!string;
 
@@ -1692,6 +1696,7 @@ auto fetchCodes(alias fetch, CubeResourceType type)(in Provider provider, in str
 if(type == CubeResourceType.dimension || type == CubeResourceType.attribute)
 {
     import vulpes.lib.xml : deserializeAsRangeOf;
+    import vulpes.core.operations : mergeAA;
     import vulpes.core.providers : hasResource;
     import std.algorithm : filter, map;
 
@@ -1763,7 +1768,7 @@ if(type == CubeResourceType.dimension || type == CubeResourceType.attribute)
             const(StructureRequestConfig)(provider, true, codelist, null, codelistId, null, agencyCodelistId)
         ]);
 
-        return RT(clMsg, resourceId, codelistId);
+        return RT(clMsg.mergeAA(dfMsg), resourceId, codelistId);
     }
 }
 
@@ -1773,6 +1778,7 @@ auto buildCodes(in Tuple!(string[StructureType], string, string) t)
     import std.algorithm : filter, map, joiner;
     import std.format : format;
     import std.exception : enforce;
+    import vibe.core.log : logDebug;
     import vulpes.core.operations : index;
     import vulpes.errors : NotFound;
 
@@ -1797,6 +1803,9 @@ auto buildCodes(in Tuple!(string[StructureType], string, string) t)
             .index!(v => v)
             .assocArray
         : null;
+
+    if(constraintIdx is null)
+        logDebug("No contraint will be applied");
 
     return codelist.front.codes
         .filter!(c => (constraintIdx !is null && c.id in constraintIdx) || constraintIdx is null)

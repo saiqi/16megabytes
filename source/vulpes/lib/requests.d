@@ -212,31 +212,3 @@ unittest
     assert(rWithoutVar.keys.equal(["ref"]));
     assert(rWithoutVar.values.equal(["foo"]));
 }
-
-auto mergeAAParams(T)(in T[T] left, in T[T] right)
-if(isSomeString!T)
-{
-    import std.array : byPair, assocArray;
-    import std.range : chain;
-
-    return right.byPair.chain(left.byPair).assocArray;
-}
-
-unittest
-{
-    immutable iLeft = ["a": "A", "b": "B"];
-    immutable iRight = ["c": "C"];
-
-    auto iResult = mergeAAParams(iLeft, iRight);
-    assert(iResult["a"] == "A");
-    assert(iResult["b"] == "B");
-    assert(iResult["c"] == "C");
-}
-
-unittest
-{
-    auto left = ["a": "AA", "b" : "BB"];
-    auto right = ["b": "B"];
-    auto result = mergeAAParams(left, right);
-    assert(result["b"] == "BB");
-}
