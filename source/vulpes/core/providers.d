@@ -1,7 +1,6 @@
 module vulpes.core.providers;
 import std.typecons : Nullable, nullable;
 import vibe.data.json : optional;
-import vulpes.core.cube : ResourceType;
 
 private:
 auto readProviders()

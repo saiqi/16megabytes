@@ -7,7 +7,7 @@ import vulpes.lib.requests;
 import vulpes.core.providers;
 import vulpes.core.cube;
 
-private:
+package:
 
 enum Unknown = "Unknown";
 
@@ -1686,8 +1686,10 @@ unittest
     assert(!def.measures[0].concept.isNull);
 }
 
-auto fetchCodes(alias fetch, T)(in Provider provider, in string cubeId, in string resourceId)
-if(is(T == SDMXDimension) || is(T == SDMXAttribute))
+import vulpes.core.cube : CubeResourceType;
+
+auto fetchCodes(alias fetch, CubeResourceType type)(in Provider provider, in string cubeId, in string resourceId)
+if(type == CubeResourceType.dimension || type == CubeResourceType.attribute)
 {
     import vulpes.lib.xml : deserializeAsRangeOf;
     import vulpes.core.providers : hasResource;
@@ -1727,9 +1729,9 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
                 if(datastructure in dsdMsg)
                 {
 
-                    static if(is(T == SDMXDimension))
+                    static if(type == CubeResourceType.dimension)
                     {
-                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!T
+                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!SDMXDimension
                             .filter!(d => d.id == resourceId)
                             .filter!(d => !d.localRepresentation.isNull)
                             .filter!(d => !d.localRepresentation.get.enumeration.isNull)
@@ -1737,7 +1739,7 @@ if(is(T == SDMXDimension) || is(T == SDMXAttribute))
                     }
                     else
                     {
-                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!T
+                        auto refs = dsdMsg[datastructure].deserializeAsRangeOf!SDMXAttribute
                             .filter!(a => !a.id.isNull)
                             .filter!(a => a.id.get == resourceId)
                             .filter!(a => !a.localRepresentation.isNull)
@@ -1844,12 +1846,3 @@ unittest
     assert(!codes.empty);
     assert(codes.walkLength == 7);
 }
-
-
-public:
-import std.functional : pipe;
-alias getTags = pipe!(fetchTags!doAsyncRequest, buildTags);
-alias getDescriptions = pipe!(fetchDescriptions!doAsyncRequest, buildDescriptions);
-alias getDefinition = pipe!(fetchDefinition!doAsyncRequest, buildDefinition);
-alias getDimensionCodes = pipe!(fetchCodes!(doAsyncRequest, SDMXDimension), buildCodes);
-alias getAttributeCodes = pipe!(fetchCodes!(doAsyncRequest, SDMXAttribute), buildCodes);

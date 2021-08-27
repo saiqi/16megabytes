@@ -101,11 +101,6 @@ DescriptionResource descriptionToResource(CubeDescription desc) pure nothrow @sa
     );
 }
 
-struct CountResource
-{
-    size_t count;
-}
-
 struct ConceptResource
 {
     string id;
@@ -121,8 +116,7 @@ struct AttributeResource
 {
     string id;
     Nullable!ConceptResource concept;
-    Nullable!string codelistId;
-    Nullable!string codelistProviderId;
+    bool hasList;
 }
 
 AttributeResource attributeToResource(Attribute a) pure nothrow @safe
@@ -131,8 +125,7 @@ AttributeResource attributeToResource(Attribute a) pure nothrow @safe
     return AttributeResource(
         a.id.get(Unknown),
         a.concept.apply!conceptToResource,
-        a.codelistId,
-        a.codelistProviderId
+        !a.codelistId.isNull
     );
 }
 
@@ -154,8 +147,7 @@ struct DimensionResource
     bool obsDimension;
     bool timeDimension;
     Nullable!ConceptResource concept;
-    Nullable!string codelistId;
-    Nullable!string codelistProviderId;
+    bool hasList;
 }
 
 DimensionResource dimensionToResource(Dimension d) pure nothrow @safe
@@ -166,8 +158,7 @@ DimensionResource dimensionToResource(Dimension d) pure nothrow @safe
         d.obsDimension,
         d.timeDimension,
         d.concept.apply!conceptToResource,
-        d.codelistId,
-        d.codelistProviderId
+        !d.codelistId.isNull
     );
 }
 

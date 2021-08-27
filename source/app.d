@@ -35,13 +35,13 @@ void handleTags(HTTPServerRequest req, HTTPServerResponse res)
     import std.algorithm : map;
     import std.array : array;
     import std.format : format;
-    import vulpes.datasources.sdmxml21 : getTags;
+    import vulpes.datasources : getTags;
     import vulpes.resources : tagToResource;
+    import vulpes.lib.requests : doAsyncRequest;
     auto provider = getProviderOr404(req.params["providerId"]);
 
     logDebug("Fetching tags for provider %s", provider.id);
-    auto tags = getTags(provider)
-        .map!tagToResource.array;
+    auto tags = getTags!(doAsyncRequest, tagToResource)(provider);
     logDebug("Tags list fetched");
     res.writeJsonBody(tags);
 
@@ -49,115 +49,79 @@ void handleTags(HTTPServerRequest req, HTTPServerResponse res)
 
 void handleDescriptions(HTTPServerRequest req, HTTPServerResponse res)
 {
-    import std.algorithm : map, filter;
-    import std.array : array, split;
+    import std.array : split;
     import std.format : format;
-    import std.conv : to;
-    import std.range : take, drop;
-    import vulpes.datasources.sdmxml21 : getDescriptions;
+    import vulpes.datasources : getDescriptions;
     import vulpes.resources : descriptionToResource;
-    import vulpes.core.cube : search, containsTags;
-
-    enforceHTTP(req.query.get("s") is null || req.query.get("tags") is null,
-                HTTPStatus.badRequest,
-                "s and tags parameters are mutually exclusive");
+    import vulpes.lib.requests : doAsyncRequest;
 
     auto provider = getProviderOr404(req.params["providerId"]);
 
     logDebug("Fetchings descriptions list for provider %s", provider.id);
-    auto descs = getDescriptions(provider);
+    auto s = req.query.get("s");
+    auto tagIds = ("tags" in req.query)
+        ? req.query["tags"].split(",")
+        : [];
 
-    if(req.query.get("s") is null && req.query.get("tags") is null)
-    {
-        auto result = descs.map!descriptionToResource.array;
-        logDebug("Descriptions list fetched");
-        res.writeJsonBody(result);
-    }
-    else if(req.query.get("s") !is null)
-    {
-        auto result = search(descs, req.query["s"]).map!descriptionToResource.array;
-        logDebug("Search result fetched");
-        res.writeJsonBody(result);
-    }
-    else
-    {
-        auto tagIds = req.query.get("tags").split(",");
-        auto result = descs
-            .filter!(d => d.containsTags(tagIds))
-            .map!descriptionToResource
-            .array;
-        logDebug("Descriptions filtered by tags fetched");
-        res.writeJsonBody(result);
-    }
-}
-
-void handleDescriptionsCount(HTTPServerRequest req, HTTPServerResponse res)
-{
-    import std.range : walkLength;
-    import vulpes.resources : CountResource;
-    import vulpes.datasources.sdmxml21 : getDescriptions;
-    auto provider = getProviderOr404(req.params["providerId"]);
-
-    logDebug("Fetchings descriptions list for provider %s", provider.id);
-    auto count = getDescriptions(provider).walkLength;
-    logDebug("Count done");
-    res.writeJsonBody(CountResource(count));
+    auto descs = getDescriptions!(doAsyncRequest, descriptionToResource)(provider, s, tagIds);
+    res.writeJsonBody(descs);
 }
 
 void handleDefinition(HTTPServerRequest req, HTTPServerResponse res)
 {
     import std.format : format;
-    import vulpes.datasources.sdmxml21 : getDefinition;
+    import vulpes.datasources : getDefinition;
     import vulpes.resources : definitionToResource;
+    import vulpes.lib.requests : doAsyncRequest;
     auto provider = getProviderOr404(req.params["providerId"]);
 
     auto cubeId = req.params["cubeId"];
     logDebug("Fetching definition %s", cubeId);
-    auto def = getDefinition(provider, cubeId);
+    auto def = getDefinition!(doAsyncRequest, definitionToResource)(provider, cubeId);
 
     enforceHTTP(!def.isNull,
                 HTTPStatus.notFound,
                 format!"definition %s not found for provider %s"(cubeId, provider.id));
 
-    res.writeJsonBody(definitionToResource(def.get));
+    res.writeJsonBody(def.get);
 
 }
 
 void handleDimensionCodes(HTTPServerRequest req, HTTPServerResponse res)
 {
-    import std.algorithm : map;
-    import std.array : array;
-    import vulpes.datasources.sdmxml21 : getDimensionCodes;
+    import vulpes.datasources : getCodes;
     import vulpes.resources : codeToResource;
+    import vulpes.lib.requests : doAsyncRequest;
+    import vulpes.core.cube : CubeResourceType;
+
     auto provider = getProviderOr404(req.params["providerId"]);
 
     auto cubeId = req.params["cubeId"]; auto resourceId = req.params["dimensionId"];
 
     logDebug("Fetching codes of dimension %s of cube %s for provider %s", resourceId, cubeId, provider.id);
 
-    auto codes = getDimensionCodes(provider, cubeId, resourceId)
-        .map!codeToResource
-        .array;
+    auto codes = getCodes!(doAsyncRequest, codeToResource, CubeResourceType.dimension)(provider, cubeId, resourceId);
 
+    logDebug("Code list built");
     res.writeJsonBody(codes);
 }
 
 void handleAttributeCodes(HTTPServerRequest req, HTTPServerResponse res)
 {
-    import std.algorithm : map;
-    import std.array : array;
-    import vulpes.datasources.sdmxml21 : getAttributeCodes;
+    import vulpes.datasources : getCodes;
     import vulpes.resources : codeToResource;
+    import vulpes.lib.requests : doAsyncRequest;
+    import vulpes.core.cube : CubeResourceType;
+
     auto provider = getProviderOr404(req.params["providerId"]);
 
     auto cubeId = req.params["cubeId"]; auto resourceId = req.params["attributeId"];
 
     logDebug("Fetching codes of attribute %s of cube %s for provider %s", resourceId, cubeId, provider.id);
 
-    auto codes = getAttributeCodes(provider, cubeId, resourceId)
-        .map!codeToResource
-        .array;
+    auto codes = getCodes!(doAsyncRequest, codeToResource, CubeResourceType.attribute)(provider, cubeId, resourceId);
 
+    logDebug("Code list built");
     res.writeJsonBody(codes);
 }
 
@@ -177,7 +141,6 @@ void main()
     router.get("/providers", &handleProviders)
         .get("/providers/:providerId/tags", &handleTags)
         .get("/providers/:providerId/cubes", &handleDescriptions)
-        .get("/providers/:providerId/cubes/count", &handleDescriptionsCount)
         .get("/providers/:providerId/cubes/:cubeId/definition", &handleDefinition)
         .get("/providers/:providerId/cubes/:cubeId/dimensions/:dimensionId/codes", &handleDimensionCodes)
         .get("/providers/:providerId/cubes/:cubeId/attributes/:attributeId/codes", &handleAttributeCodes);

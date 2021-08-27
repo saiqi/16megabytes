@@ -6,7 +6,7 @@ import std.algorithm : filter, map;
 import std.array : array;
 import vulpes.lib.boilerplate : Generate, getter;
 
-enum ResourceType : string
+enum CubeResourceType : string
 {
     taglist = "taglist",
     descriptionlist = "descriptionlist",

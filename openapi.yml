@@ -77,10 +77,8 @@ components:
           type: boolean
         concept:
           $ref: '#/components/schemas/Concept'
-        codelistId:
-          type: string
-        codelistProviderId:
-          type: string
+        hasList:
+          type: boolean
     Attribute:
       type: object
       properties:
@@ -88,6 +86,8 @@ components:
           type: string
         concept:
           $ref: '#/components/schemas/Concept'
+        hasList:
+          type: boolean
     Measure:
       type: object
       properties:
@@ -231,28 +231,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CubeDescription'
-  /providers/{providerId}/cubes/count:
-    get:
-      summary: Return the total number of cube descriptions given a provider
-      tags:
-        - datastructure
-      parameters:
-        - name: providerId
-          description: an unique identifier of the provider
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successfully returned the total number of cube description
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  count:
-                    type: number
   /providers/{providerId}/cubes/{cubeId}/definition:
     get:
       summary: Returns the cube definition given a provider and a cube description
