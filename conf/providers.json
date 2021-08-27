@@ -638,5 +638,61 @@
         "isPublic": true,
         "format": "sdmxml21",
         "rootUrl": "http://192.168.1.216:5000/p/dataservices.imf.org/REST/SDMX_XML.svc"
+    },
+    {
+        "id": "UNESCO",
+        "isPublic": true,
+        "format": "sdmxml21",
+        "rootUrl": "http://192.168.1.216:5000/p/api.uis.unesco.org/sdmx",
+        "resources": {
+            "dataflow": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "categorisation"
+                }
+            },
+            "datastructure": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                },
+                "queryTemplate": {
+                    "references": "conceptscheme"
+                }
+            },
+            "categorisation": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "codelist": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "conceptscheme": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            },
+            "data": {
+                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                "headerTemplate": {
+                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                    "Accept-Encoding": "gzip"
+                }
+            }
+        }
     }
 ]
