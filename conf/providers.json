@@ -637,7 +637,7 @@
         "id": "IMF",
         "isPublic": true,
         "format": "sdmxml21",
-        "rootUrl": "http://192.168.1.216:5000/p/dataservices.imf.org/REST/SDMX_XML.svc"
+        "rootUrl": "http://192.168.1.216:5000/p/http/dataservices.imf.org/REST/SDMX_XML.svc"
     },
     {
         "id": "UNESCO",
