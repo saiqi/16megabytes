@@ -1,0 +1,30 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      matrix:
+        dc: [dmd-2.097.2, dmd-2.097.1, dmd-2.097.0, dmd-2.096.1, dmd-2.096.0]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - uses: dlang-community/setup-dlang@v1
+      name: 'Install compiler'
+      with:
+        compiler: ${{ matrix.dc }}
+
+    - name: 'Run tests'
+      run: dub test
