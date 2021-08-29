@@ -1,7 +1,18 @@
 module vulpes.datasources.hub;
 
-import vulpes.core.providers : Provider;
+import vulpes.core.providers : Provider, Format;
 import vulpes.core.cube : CubeResourceType;
+
+auto getFormat(in Provider p)
+{
+    import std.exception : enforce;
+    import std.format : format;
+    import vulpes.errors : BadInput;
+    
+    enforce!BadInput(!p.format.isNull, format!"Provider %s has not format"(p.id));
+
+    return p.format.get;
+}
 
 auto getTags(alias fetch, alias project)(in Provider provider)
 {
@@ -9,7 +20,7 @@ auto getTags(alias fetch, alias project)(in Provider provider)
     import std.algorithm : map;
     import vulpes.core.providers : Format;
 
-    with(Format) final switch(provider.format)
+    with(Format) final switch(provider.getFormat)
     {
         case sdmxml21:
         import vulpes.datasources.sdmxml21 : fetchTags, buildTags;
@@ -51,7 +62,7 @@ auto getDescriptions(alias fetch, alias project)(in Provider provider, in string
     import vulpes.core.providers : Format;
     import vulpes.core.cube : search, containsTags;
 
-    with(Format) final switch(provider.format)
+    with(Format) final switch(provider.getFormat)
     {
         case sdmxml21:
         import vulpes.datasources.sdmxml21 : fetchDescriptions, buildDescriptions;
@@ -109,7 +120,7 @@ auto getDefinition(alias fetch, alias project)(in Provider provider, in string i
     import vulpes.core.providers : Format;
     import std.typecons : apply;
 
-    with(Format) final switch(provider.format)
+    with(Format) final switch(provider.getFormat)
     {
         case sdmxml21:
         import vulpes.datasources.sdmxml21 : fetchDefinition, buildDefinition;
@@ -148,7 +159,7 @@ auto getCodes(alias fetch, alias project, CubeResourceType type)(in Provider pro
     import std.array : array;
     import std.algorithm : map;
 
-    with(Format) final switch(provider.format)
+    with(Format) final switch(provider.getFormat)
     {
         case sdmxml21:
         import vulpes.datasources.sdmxml21 : fetchCodes, buildCodes;

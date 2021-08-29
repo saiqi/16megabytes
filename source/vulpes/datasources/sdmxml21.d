@@ -1088,7 +1088,7 @@ T fetchStructure(alias fetch, T)(in StructureRequestConfig cfg)
     import std.exception : enforce;
     import std.format : format;
 
-    enforce!NotImplemented(!cfg.provider.resources.isNull && cfg.type in cfg.provider.resources,
+    enforce!NotImplemented(!cfg.provider.resources.isNull && cfg.type in cfg.provider.resources.get,
                             format!"%s not supported by provider %s"(cfg.type, cfg.provider.id));
     const resourceCfg = cfg.provider.resources.get[cfg.type];
     auto pathParams = [
@@ -1442,7 +1442,8 @@ auto buildDescriptions(in string[StructureType] messages)
                         : [];
 
                     auto parentIds = parentCategories
-                        .map!(c => buildTagId(categories[cat.target.ref_.id].categorySchemeId, c.id));
+                        .filter!(c => !c.id.isNull)
+                        .map!(c => buildTagId(categories[cat.target.ref_.id].categorySchemeId, c.id.get));
 
                     return [currentTagId].chain(parentIds);
                 })
