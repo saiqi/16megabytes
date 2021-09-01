@@ -460,7 +460,7 @@ SDMXCategory[] flattenCategory(SDMXCategory category) pure nothrow @safe
 unittest
 {
     import std.file : readText;
-    auto message = readText("./fixtures/sdmx/structure_category.xml")
+    auto message = readText("./fixtures/sdmx21/structure_category.xml")
         .deserializeAs!SDMXCategorySchemes;
     auto category = message.categorySchemes[0].categories[0];
     auto categories = flattenCategory(category);
@@ -513,7 +513,7 @@ SDMXCategory[][SDMXCategory] buildHierarchy(SDMXCategoryScheme categoryScheme)
 unittest
 {
     import std.file : readText;
-    auto message = readText("./fixtures/sdmx/structure_category.xml");
+    auto message = readText("./fixtures/sdmx21/structure_category.xml");
     auto schemes = message.deserializeAs!SDMXCategorySchemes;
     auto h = buildHierarchy(schemes.categorySchemes[0]);
     import std.algorithm : map, equal, filter;
@@ -784,7 +784,7 @@ unittest
 {
     import std.file : readText;
 
-    const structures = readText("./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
+    const structures = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
@@ -836,7 +836,7 @@ unittest
 {
     import std.file : readText;
 
-    const structures = readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
+    const structures = readText("./fixtures/sdmx21/structure_dsd_codelist_conceptscheme.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
@@ -927,7 +927,7 @@ unittest
 {
     import std.file : readText;
 
-    const structures = readText("./fixtures/sdmx/structure_category.xml")
+    const structures = readText("./fixtures/sdmx21/structure_category.xml")
         .deserializeAs!SDMXStructures;
 
     assert(!structures.categorySchemes.isNull);
@@ -952,7 +952,7 @@ unittest
 {
     import std.file : readText;
 
-    const structures = readText("./fixtures/sdmx/structure_dataflow_categorisation.xml")
+    const structures = readText("./fixtures/sdmx21/structure_dataflow_categorisation.xml")
         .deserializeAs!SDMXStructures;
 
     assert(structures.categorySchemes.isNull);
@@ -975,7 +975,7 @@ unittest
     import std.file : readText;
     import std.typecons : nullable;
 
-    const dataset = readText("./fixtures/sdmx/data_generic.xml")
+    const dataset = readText("./fixtures/sdmx21/data_generic.xml")
         .deserializeAs!SDMXDataSet;
 
     assert(!dataset.structureRef.isNull);
@@ -998,7 +998,7 @@ unittest
     import std.file : readText;
     import std.typecons : nullable;
 
-    const dataset = readText("./fixtures/sdmx/data_specific.xml")
+    const dataset = readText("./fixtures/sdmx21/data_specific.xml")
         .deserializeAs!SDMXDataSet;
 
     assert(dataset.structureRef.isNull);
@@ -1271,7 +1271,7 @@ unittest
     import std.algorithm : filter, equal, map, uniq, sort;
     import std.array : array;
     import std.range : walkLength;
-    auto msg = readText("./fixtures/sdmx/structure_category_categorisation.xml");
+    auto msg = readText("./fixtures/sdmx21/structure_category_categorisation.xml");
     auto structures = msg.deserializeAs!SDMXStructures;
     auto r = transformCategories(structures.categorisations.get.categorisations,
                                  structures.categorySchemes.get.categorySchemes);
@@ -1323,8 +1323,8 @@ unittest
     import std.array : array;
 
     auto messages = [
-        StructureType.categorisation : readText("./fixtures/sdmx/structure_category_categorisation.xml"),
-        StructureType.categoryscheme : readText("./fixtures/sdmx/structure_category_categorisation.xml")
+        StructureType.categorisation : readText("./fixtures/sdmx21/structure_category_categorisation.xml"),
+        StructureType.categoryscheme : readText("./fixtures/sdmx21/structure_category_categorisation.xml")
     ];
     auto tags = buildTags(messages).array;
     assert(tags.length > 0);
@@ -1460,7 +1460,7 @@ unittest
     import std.file : readText;
     import std.range : walkLength;
 
-    auto messages = [StructureType.dataflow : readText("./fixtures/sdmx/structure_dataflow_categorisation.xml")];
+    auto messages = [StructureType.dataflow : readText("./fixtures/sdmx21/structure_dataflow_categorisation.xml")];
     auto descriptions = buildDescriptions(messages);
     assert(!descriptions.empty);
     assert(descriptions.walkLength == 1);
@@ -1484,7 +1484,7 @@ unittest
     import std.range : walkLength;
     import std.algorithm : filter;
 
-    auto messages = [StructureType.dataflow : readText("./fixtures/sdmx/structure_dataflow.xml")];
+    auto messages = [StructureType.dataflow : readText("./fixtures/sdmx21/structure_dataflow.xml")];
     auto descriptions = buildDescriptions(messages);
     assert(!descriptions.empty);
     assert(descriptions.walkLength == 195);
@@ -1508,8 +1508,8 @@ unittest
     import std.file : readText;
     import std.algorithm : equal;
     auto messages = [
-        StructureType.dataflow : readText("./fixtures/sdmx/structure_dataflow_categorisation.xml"),
-        StructureType.categoryscheme : readText("./fixtures/sdmx/structure_category_categorisation.xml")
+        StructureType.dataflow : readText("./fixtures/sdmx21/structure_dataflow_categorisation.xml"),
+        StructureType.categoryscheme : readText("./fixtures/sdmx21/structure_category_categorisation.xml")
     ];
     auto descriptions = buildDescriptions(messages);
     assert(!descriptions.empty);
@@ -1636,7 +1636,7 @@ unittest
 {
     import std.file : readText;
     import std.algorithm : canFind, map, all;
-    auto messages = [StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml")];
+    auto messages = [StructureType.datastructure : readText("./fixtures/sdmx21/structure_dsd.xml")];
     auto def = buildDefinition(messages);
     assert(!def.isNull);
     assert(def.get.id == "BALANCE-PAIEMENTS");
@@ -1665,8 +1665,8 @@ unittest
     import std.file : readText;
     import std.algorithm : any, map;
     auto messages = [
-        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd.xml"),
-        StructureType.conceptscheme: readText("./fixtures/sdmx/structure_conceptscheme.xml")
+        StructureType.datastructure : readText("./fixtures/sdmx21/structure_dsd.xml"),
+        StructureType.conceptscheme: readText("./fixtures/sdmx21/structure_conceptscheme.xml")
     ];
     auto def = buildDefinition(messages).get;
     assert(def.dimensions[0].concept.get.id == "FREQ");
@@ -1681,7 +1681,7 @@ unittest
     import std.file : readText;
     import std.algorithm : equal, map, all;
     auto messages = [
-        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")];
+        StructureType.datastructure : readText("./fixtures/sdmx21/structure_dsd_codelist_conceptscheme.xml")];
     auto def = buildDefinition(messages).get;
     assert(def.dimensions.map!(d => d.id).equal(["FREQ", "UNIT", "NA_ITEM", "GEO", "TIME_PERIOD"]));
     assert(def.dimensions[0].concept.get.id == "FREQ");
@@ -1821,9 +1821,9 @@ unittest
 
     auto messages = [
         StructureType.codelist : readText(
-            "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
+            "./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml"),
         StructureType.dataflow : readText(
-            "./fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
+            "./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")];
     auto codes = buildCodes(tuple(messages, "DATA_DOMAIN", "CL_DATADOMAIN"));
     assert(!codes.empty);
     assert(codes.walkLength == 1);
@@ -1837,7 +1837,7 @@ unittest
     import std.range : walkLength;
     import std.typecons : tuple;
 
-    auto messages = [StructureType.codelist : readText("./fixtures/sdmx/structure_codelist.xml")];
+    auto messages = [StructureType.codelist : readText("./fixtures/sdmx21/structure_codelist.xml")];
     auto codes = buildCodes(tuple(messages, "FREQ", "CL_PERIODICITE"));
     assert(!codes.empty);
     assert(codes.walkLength == 5);
@@ -1850,7 +1850,7 @@ unittest
     import std.typecons : tuple;
 
     auto messages = [
-        StructureType.datastructure : readText("./fixtures/sdmx/structure_dsd_codelist_conceptscheme.xml")
+        StructureType.datastructure : readText("./fixtures/sdmx21/structure_dsd_codelist_conceptscheme.xml")
     ];
     auto codes = buildCodes(tuple(messages, "FREQ", "CL_FREQ"));
     assert(!codes.empty);

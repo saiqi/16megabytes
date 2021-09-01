@@ -43,8 +43,8 @@ unittest
     {
         return async({
             if(u.canFind("/categorisation/"))
-                return readFileUTF8("fixtures/sdmx/structure_category_categorisation.xml");
-            return readFileUTF8("fixtures/sdmx/structure_category.xml");
+                return readFileUTF8("fixtures/sdmx21/structure_category_categorisation.xml");
+            return readFileUTF8("fixtures/sdmx21/structure_category.xml");
         });
     }
 
@@ -98,8 +98,8 @@ unittest
     {
         return async({
             if(u.canFind("/dataflow/"))
-                return readFileUTF8("fixtures/sdmx/structure_dataflow_categorisation.xml");
-            return readFileUTF8("fixtures/sdmx/structure_category.xml");
+                return readFileUTF8("fixtures/sdmx21/structure_dataflow_categorisation.xml");
+            return readFileUTF8("fixtures/sdmx21/structure_category.xml");
         });
     }
 
@@ -140,7 +140,7 @@ unittest
     auto fetcher(string u, string[string] h, string[string] q)
     {
         return async({
-            return readFileUTF8("fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml");
+            return readFileUTF8("fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml");
         });
     }
 
@@ -180,7 +180,7 @@ unittest
     auto fetcher(string u, string[string] h, string[string] q)
     {
         return async({
-            return readFileUTF8("fixtures/sdmx/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml");
+            return readFileUTF8("fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml");
         });
     }
 
