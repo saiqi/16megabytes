@@ -306,12 +306,10 @@ if(isForwardRangeOfChar!R)
                         static if(isNullable!CT)
                         {
                             if(__traits(getMember, source[$ - 1], m).isNull)
-                                __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]().nullable;
+                                __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]();
                         }
                         setValue!(CT, Entity, R)
                             (__traits(getMember, source[$ - 1], m), path, entity, text_);
-                        // setValue!(CT, Entity, R)
-                        //     (__traits(getMember, source[$ - 1], m), path[1 .. $], entity, text_);
                     }
                 }
             }
@@ -352,12 +350,12 @@ if(isForwardRangeOfChar!R)
                             static if(isNullable!S)
                             {
                                 if(__traits(getMember, source.get, m).isNull)
-                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]().nullable;
+                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]();
                             }
                             else
                             {
                                 if(__traits(getMember, source, m).isNull)
-                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]().nullable;
+                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]();
                             }
                         }
 
@@ -740,6 +738,64 @@ unittest
     assert(!c.empty);
 }
 
+// Should handle nested nullable
+unittest
+{
+    @xmlRoot("b")
+    static struct B
+    {
+        @text
+        Nullable!uint value;
+    }
+
+    @xmlRoot("a")
+    static struct A
+    {
+        @xmlElement("b")
+        Nullable!B b;
+    }
+
+    @xmlRoot("root")
+    static struct Root
+    {
+        @xmlElement("a")
+        Nullable!A a;
+    }
+
+    immutable xml = "<root><a><b>5</b></a></root>";
+    auto r = deserializeAsRangeOf!(Root, string)(xml);
+    assert(r.front.a.get.b.get.value.get == 5);
+}
+
+// Should handle null nullable
+unittest
+{
+    @xmlRoot("b")
+    static struct B
+    {
+        @text
+        Nullable!uint value;
+    }
+
+    @xmlRoot("a")
+    static struct A
+    {
+        @xmlElement("b")
+        Nullable!B b;
+    }
+
+    @xmlRoot("root")
+    static struct Root
+    {
+        @xmlElement("a")
+        Nullable!A a;
+    }
+
+    immutable xml = "<root><a></a></root>";
+    auto r = deserializeAsRangeOf!(Root, string)(xml);
+    assert(r.front.a.get.b.isNull);
+}
+
 auto deserializeAs(T, R)(R xmlStr)
 if(isForwardRangeOfChar!R)
 {
@@ -765,7 +821,7 @@ unittest
     assert(r.aa == 1u);
 }
 
-// Should raise when nothing is deserializable
+// Should raise when nothing can be deserializabled
 unittest
 {
     import std.exception : assertThrown;

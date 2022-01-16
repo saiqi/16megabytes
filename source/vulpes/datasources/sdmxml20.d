@@ -131,7 +131,7 @@ struct SDMXAttribute
 
     @attr("assignmentStatus")
     Nullable!string assignmentStatus;
-    
+
     @attr("attachmentLevel")
     Nullable!string attachmentLevel;
 }

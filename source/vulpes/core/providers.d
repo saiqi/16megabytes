@@ -1,32 +1,15 @@
 module vulpes.core.providers;
+
 import std.typecons : Nullable, nullable;
-import vibe.data.json : optional;
-
-private:
-auto readProviders()
-{
-    import vibe.core.file : readFileUTF8;
-    import vibe.data.json : deserializeJson;
-    auto content = readFileUTF8("./conf/providers.json");
-    return deserializeJson!(immutable Provider[])(content);
-}
-
-unittest
-{
-    readProviders();
-}
-
-public:
-enum Format : string
-{
-    sdmxml21 = "sdmxml21"
-}
+import vulpes.lib.boilerplate : Generate;
 
 struct Resource
 {
     string pathTemplate;
-    @optional Nullable!(string[string]) queryTemplate;
-    @optional Nullable!(string[string]) headerTemplate;
+    Nullable!(string[string]) queryTemplate;
+    Nullable!(string[string]) headerTemplate;
+
+    mixin(Generate);
 }
 
 struct Provider
@@ -34,46 +17,9 @@ struct Provider
     string id;
     bool isPublic;
     string rootUrl;
-    @optional Nullable!Format format;
-    @optional Nullable!(Resource[string]) resources;
-}
+    Nullable!(Resource[string]) resources;
 
-immutable Provider[] providers;
-
-shared static this()
-{
-    providers = readProviders();
-}
-
-public:
-auto getProviders() pure nothrow
-{
-    import std.algorithm : filter;
-    import std.array : array;
-    return providers.filter!(p => p.isPublic).array;
-}
-
-unittest
-{
-    import std.algorithm : all;
-    auto ps = getProviders();
-    assert(ps.all!(p => p.isPublic));
-}
-
-Nullable!(immutable(Provider)) getProvider(in string id)
-{
-    import std.algorithm : filter;
-    auto candidates = providers.filter!(p => p.id == id);
-
-    return candidates.empty
-        ? (typeof(return)).init
-        : candidates.front.nullable;
-}
-
-unittest
-{
-    assert(getProvider("FR1").get.id == "FR1");
-    assert(getProvider("UNKNOWN").isNull);
+    mixin(Generate);
 }
 
 bool hasResource(in Provider provider, in string resourceName) pure nothrow @safe
@@ -87,7 +33,7 @@ bool hasResource(in Provider provider, in string resourceName) pure nothrow @saf
 
 unittest
 {
-    auto p = getProvider("ESTAT").get;
-    assert(!hasResource(p, "categoryscheme"));
-    assert(hasResource(p, "dataflow"));
+    auto p = Provider("myid", true, "http://foo.bar", ["foo": Resource()].nullable);
+    assert(!hasResource(p, "bar"));
+    assert(hasResource(p, "foo"));
 }
