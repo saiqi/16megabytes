@@ -27,7 +27,7 @@ jobs:
         compiler: ${{ matrix.dc }}
 
     - name: 'Run library tests'
-      run: dub test :libs --build=unittest-cov --config=library
+      run: dub test :lib --build=unittest-cov --config=library
 
     - name: 'Run application tests'
       run: dub test --build=unittest-cov --config=application
