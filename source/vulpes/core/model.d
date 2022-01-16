@@ -236,7 +236,7 @@ struct DataStructure
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     DataStructureComponents dataStructureComponents;
 
@@ -249,7 +249,7 @@ struct Category
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     Category[] categories;
 
@@ -271,12 +271,12 @@ unittest
 {
     import std.algorithm : equal, sort;
 
-    auto child0 = Category("0", null, null, (Nullable!string).init, null, [], []);
-    auto child00 = Category("00", null, null, (Nullable!string).init, null, [], []);
-    auto child01 = Category("01", null, null, (Nullable!string).init, null, [], []);
-    auto child010 = Category("010", null, null, (Nullable!string).init, null, [], []);
-    auto child011 = Category("011", null, null, (Nullable!string).init, null, [], []);
-    auto child012 = Category("012", null, null, (Nullable!string).init, null, [], []);
+    auto child0 = Category("0", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child00 = Category("00", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child01 = Category("01", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child010 = Category("010", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child011 = Category("011", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child012 = Category("012", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -302,7 +302,7 @@ struct CategoryScheme
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     bool isPartial;
     Category[] categories;
@@ -362,13 +362,13 @@ unittest
     import std.algorithm : equal;
 
     auto cs = CategoryScheme();
-    auto child0 = Category("0", null, null, (Nullable!string).init, null, [], []);
-    auto child1 = Category("1", null, null, (Nullable!string).init, null, [], []);
-    auto child00 = Category("00", null, null, (Nullable!string).init, null, [], []);
-    auto child01 = Category("01", null, null, (Nullable!string).init, null, [], []);
-    auto child010 = Category("010", null, null, (Nullable!string).init, null, [], []);
-    auto child011 = Category("011", null, null, (Nullable!string).init, null, [], []);
-    auto child012 = Category("012", null, null, (Nullable!string).init, null, [], []);
+    auto child0 = Category("0", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child1 = Category("1", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child00 = Category("00", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child01 = Category("01", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child010 = Category("010", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child011 = Category("011", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child012 = Category("012", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -391,7 +391,7 @@ struct Concept
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
 
     mixin(Generate);
@@ -407,7 +407,7 @@ struct ConceptScheme
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     bool isPartial;
     Concept[] concepts;
@@ -421,7 +421,7 @@ struct Code
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
 
     mixin(Generate);
@@ -437,7 +437,7 @@ struct Codelist
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     bool isPartial;
     Code[] codes;
@@ -455,7 +455,7 @@ struct Dataflow
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     string structure;
 
@@ -472,7 +472,7 @@ struct Categorisation
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     string source;
     string target;
@@ -517,7 +517,7 @@ struct DataConstraint
     string name;
     string[Language] names;
     Nullable!string description;
-    string[Language] descriptions;
+    Nullable!(string[Language]) descriptions;
     Link[] links;
     Nullable!RoleType role;
     Nullable!ConstraintAttachment constraintAttachment;
@@ -558,4 +558,156 @@ struct Message
     Error[] errors;
 
     mixin(Generate);
+}
+
+import std.range : isInputRange, ElementType;
+
+enum canBeSearched(T) = is(typeof(T.name.init) : string);
+
+unittest
+{
+    static assert(canBeSearched!Dataflow);
+    static assert(canBeSearched!Concept);
+    static assert(canBeSearched!Code);
+    static assert(canBeSearched!DataStructure);
+    static assert(canBeSearched!ConceptScheme);
+    static assert(canBeSearched!Codelist);
+    static assert(canBeSearched!Categorisation);
+    static assert(canBeSearched!Category);
+    static assert(canBeSearched!CategoryScheme);
+    static assert(canBeSearched!DataConstraint);
+}
+
+string[] collectSearchItems(T)(in T resource) pure @safe nothrow
+if(canBeSearched!T)
+{
+    import std.array : appender, array;
+    import std.algorithm : uniq;
+
+    auto a = appender!(string[]);
+    a.put(resource.name);
+
+    static if(is(typeof(T.names.init) : string[Language]))
+    {
+        if(resource.names !is null)
+            a.put(resource.names.byValue);
+    }
+
+    static if(is(typeof(T.description.init) : Nullable!string))
+    {
+        if(!resource.description.isNull)
+            a.put(resource.description.get);
+    }
+
+    static if(is(typeof(T.descriptions.init) : Nullable!(string[Language])))
+    {
+        if(!resource.descriptions.isNull)
+            a.put(resource.descriptions.get.byValue);
+    }
+
+    return a.data.uniq.array;
+}
+
+unittest
+{
+    import std.algorithm : equal, sort;
+
+    static struct OnlyName
+    {
+        string name;
+    }
+
+    static struct WithDesc
+    {
+        string name;
+        Nullable!string description;
+    }
+
+    static struct WithNames
+    {
+        string name;
+        Nullable!string description;
+        string[Language] names;
+    }
+
+    static struct WithDescriptions
+    {
+        string name;
+        Nullable!string description;
+        string[Language] names;
+        Nullable!(string[Language]) descriptions;
+    }
+
+    auto onlyName = OnlyName("foo");
+    assert(equal(collectSearchItems(onlyName), ["foo"]));
+
+    auto withDesc = WithDesc("foo", "Foo".nullable);
+    assert(equal(collectSearchItems(withDesc).sort, ["foo", "Foo"].sort));
+    auto withNullDesc = WithDesc("foo", (Nullable!string).init);
+    assert(equal(collectSearchItems(withNullDesc), ["foo"]));
+
+    auto withNames = WithNames("foo", "Foo".nullable, [Language.en : "foo", Language.fr: "fou"]);
+    assert(equal(collectSearchItems(withNames).sort, ["foo", "fou", "Foo"].sort));
+    auto withNullNames = WithNames("foo", "Foo".nullable, null);
+    assert(equal(collectSearchItems(withNullNames).sort, ["foo", "Foo"].sort));
+
+    auto withDescriptions = WithDescriptions(
+        "foo",
+        "Foo".nullable,
+        [Language.en : "foo", Language.fr: "fou"],
+        [Language.en : "Foo", Language.fr: "Fou"].nullable
+    );
+    assert(equal(collectSearchItems(withDescriptions).sort, ["foo", "Foo", "fou", "Fou"].sort));
+    auto withNullDescriptions = WithDescriptions(
+        "foo",
+        "Foo".nullable,
+        [Language.en : "foo", Language.fr: "fou"],
+        (Nullable!(string[Language])).init
+    );
+    assert(equal(collectSearchItems(withNullDescriptions).sort, ["foo", "Foo", "fou"].sort));
+
+}
+
+auto search(size_t threshold, R)(R resources, in string q) pure @safe nothrow
+if(isInputRange!R && canBeSearched!(ElementType!R))
+{
+    import vulpes.lib.text : fuzzySearch;
+    import std.typecons : Tuple;
+    import std.array : array;
+    import std.algorithm : map, filter, sort, uniq, min, reduce;
+    import std.functional : partial;
+
+    alias T = Tuple!(ElementType!R, "resource", size_t, "score");
+    alias pSearch = partial!(fuzzySearch, q);
+
+    T computeScore(ElementType!R resource)
+    {
+        auto score = collectSearchItems(resource)
+            .map!pSearch
+            .map!(a => a.get(size_t.max));
+        return T(resource, reduce!((a, b) => min(a, b))(size_t.max, score));
+    }
+
+    return resources.map!computeScore
+        .filter!(a => a.score <= threshold)
+        .array
+        .sort!((a, b) => a.score < b.score)
+        .map!"a.resource"
+        .array;
+}
+
+unittest
+{
+    import std.algorithm : equal;
+    static struct WithName
+    {
+        string name;
+    }
+
+    auto wonderful = WithName("wonderful");
+    auto unreachable = WithName("unreachable");
+    auto wanderful = WithName("wanderful");
+    auto withNames = [unreachable, wanderful, wonderful];
+
+    assert(equal(search!1(withNames, "wonderful"), [wonderful, wanderful]));
 }
