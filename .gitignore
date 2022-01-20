@@ -10,6 +10,7 @@ vulpes.a
 vulpes.lib
 vulpes-*test-*
 libvulpes*
+liblib*
 *.exe
 *.o
 *.obj
