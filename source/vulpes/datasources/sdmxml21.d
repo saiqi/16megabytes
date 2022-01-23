@@ -2,7 +2,9 @@ module vulpes.datasources.sdmxml21;
 
 import std.typecons : Nullable, nullable, Tuple, apply;
 import std.range : isInputRange, isRandomAccessRange, ElementType;
+import std.traits : Unqual;
 import vulpes.lib.xml;
+import vulpes.core.model : Dataflow, Language;
 
 package:
 
@@ -54,6 +56,9 @@ struct SDMXDataflow
     @xmlElementList("Name")
     SDMXName[] names;
 
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
+
     @xmlElement("Structure")
     Nullable!SDMXStructure structure;
 
@@ -69,6 +74,46 @@ struct SDMXName
 
     @text
     string content;
+}
+
+@xmlRoot("Description")
+struct SDMXDescription
+{
+    @attr("lang")
+    string lang;
+
+    @text
+    string content;
+}
+
+string[Language] labelize(T)(in T resources) pure @safe
+if(isInputRange!T && (is(Unqual!(ElementType!T) == SDMXName) || is(Unqual!(ElementType!T) == SDMXDescription)))
+{
+    import std.array : assocArray;
+    import std.typecons : tuple;
+    import std.algorithm : map;
+    import std.conv : to;
+
+    return resources
+        .map!(a => tuple(a.lang.to!Language, a.content))
+        .assocArray;
+}
+
+unittest
+{
+    import std.algorithm : equal;
+    const names = [SDMXName("en", "Foo"), SDMXName("fr", "Fou")];
+    auto r = labelize(names);
+    assert(equal(r[Language.en], "Foo"));
+    assert(equal(r[Language.fr], "Fou"));
+}
+
+unittest {
+    import std.algorithm : equal;
+    auto descriptions = [SDMXDescription("en", "Foo"), SDMXDescription("fr", "Fou")];
+    auto r = labelize(descriptions);
+    assert(equal(r[Language.en], "Foo"));
+    assert(equal(r[Language.fr], "Fou"));
 }
 
 @xmlRoot("Structure")
@@ -332,6 +377,9 @@ struct SDMXDataStructure
     @xmlElementList("Name")
     SDMXName[] names;
 
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
+
     @xmlElement("DataStructureComponents")
     SDMXDataStructureComponents dataStructureComponents;
 }
@@ -347,6 +395,9 @@ struct SDMXCode
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 }
 
 @xmlRoot("Codelist")
@@ -367,6 +418,9 @@ struct SDMXCodelist
     @xmlElementList("Name")
     SDMXName[] names;
 
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
+
     @xmlElementList("Code")
     SDMXCode[] codes;
 }
@@ -382,6 +436,9 @@ struct SDMXConcept
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 }
 
 @xmlRoot("ConceptScheme")
@@ -402,6 +459,9 @@ struct SDMXConceptScheme
     @xmlElementList("Name")
     SDMXName[] names;
 
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
+
     @xmlElementList("Concept")
     SDMXConcept[] concepts;
 }
@@ -417,6 +477,9 @@ struct SDMXCategory
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 
     @xmlElementList("Category")
     SDMXCategory[] children;
@@ -439,6 +502,9 @@ struct SDMXCategoryScheme
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 
     @xmlElementList("Category")
     SDMXCategory[] categories;
@@ -475,6 +541,9 @@ struct SDMXCategorisation
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 
     @xmlElement("Source")
     SDMXSource source;
@@ -575,6 +644,9 @@ struct SDMXContentConstraint
 
     @xmlElementList("Name")
     SDMXName[] names;
+
+    @xmlElementList("Description")
+    SDMXDescription[] descriptions;
 
     @xmlElement("ConstraintAttachment")
     Nullable!SDMXConstraintAttachment constraintAttachment;
@@ -786,6 +858,7 @@ unittest
     assert(concepts.conceptSchemes[0].concepts[0].id == "FREQ");
     assert(concepts.conceptSchemes[0].concepts[0].names.length == 1);
     assert(concepts.conceptSchemes[0].concepts[0].names[0] == SDMXName("en", "FREQ"));
+    assert(concepts.conceptSchemes[0].concepts[0].descriptions.length == 1);
 
     const dataStructures = structures.dataStructures.get;
     assert(dataStructures.dataStructures.length == 1);
