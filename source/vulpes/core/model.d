@@ -3,6 +3,8 @@ module vulpes.core.model;
 import std.typecons : Nullable, nullable;
 import vulpes.lib.boilerplate : Generate;
 
+enum Unknown = "Unknown";
+
 struct Sender
 {
     string id;
@@ -213,8 +215,12 @@ struct MeasureList
 enum Language : string
 {
     en = "en",
-    fr = "fr"
+    fr = "fr",
+    de = "de",
+    es = "es"
 }
+
+enum DefaultLanguage = Language.en;
 
 struct DataStructureComponents
 {
@@ -234,7 +240,7 @@ struct DataStructure
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -247,7 +253,7 @@ struct Category
 {
     string id;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -271,12 +277,12 @@ unittest
 {
     import std.algorithm : equal, sort;
 
-    auto child0 = Category("0", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child00 = Category("00", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child01 = Category("01", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child010 = Category("010", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child011 = Category("011", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child012 = Category("012", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child0 = Category("0", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child00 = Category("00", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child01 = Category("01", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child010 = Category("010", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child011 = Category("011", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child012 = Category("012", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -300,7 +306,7 @@ struct CategoryScheme
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -362,13 +368,13 @@ unittest
     import std.algorithm : equal;
 
     auto cs = CategoryScheme();
-    auto child0 = Category("0", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child1 = Category("1", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child00 = Category("00", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child01 = Category("01", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child010 = Category("010", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child011 = Category("011", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child012 = Category("012", null, null, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child0 = Category("0", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child1 = Category("1", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child00 = Category("00", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child01 = Category("01", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child010 = Category("010", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child011 = Category("011", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child012 = Category("012", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -389,7 +395,7 @@ struct Concept
 {
     string id;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -405,7 +411,7 @@ struct ConceptScheme
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -419,7 +425,7 @@ struct Code
 {
     string id;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -435,7 +441,7 @@ struct Codelist
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -453,7 +459,7 @@ struct Dataflow
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -470,7 +476,7 @@ struct Categorisation
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -515,7 +521,7 @@ struct DataConstraint
     bool isExternalReference;
     bool isFinal;
     string name;
-    string[Language] names;
+    Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
     Link[] links;
@@ -587,10 +593,10 @@ if(canBeSearched!T)
     auto a = appender!(string[]);
     a.put(resource.name);
 
-    static if(is(typeof(T.names.init) : string[Language]))
+    static if(is(typeof(T.names.init) : Nullable!(string[Language])))
     {
-        if(resource.names !is null)
-            a.put(resource.names.byValue);
+        if(!resource.names.isNull)
+            a.put(resource.names.get.byValue);
     }
 
     static if(is(typeof(T.description.init) : Nullable!string))
@@ -627,14 +633,14 @@ unittest
     {
         string name;
         Nullable!string description;
-        string[Language] names;
+        Nullable!(string[Language]) names;
     }
 
     static struct WithDescriptions
     {
         string name;
         Nullable!string description;
-        string[Language] names;
+        Nullable!(string[Language]) names;
         Nullable!(string[Language]) descriptions;
     }
 
@@ -646,22 +652,22 @@ unittest
     auto withNullDesc = WithDesc("foo", (Nullable!string).init);
     assert(equal(collectSearchItems(withNullDesc), ["foo"]));
 
-    auto withNames = WithNames("foo", "Foo".nullable, [Language.en : "foo", Language.fr: "fou"]);
+    auto withNames = WithNames("foo", "Foo".nullable, [Language.en : "foo", Language.fr: "fou"].nullable);
     assert(equal(collectSearchItems(withNames).sort, ["foo", "fou", "Foo"].sort));
-    auto withNullNames = WithNames("foo", "Foo".nullable, null);
+    auto withNullNames = WithNames("foo", "Foo".nullable, Nullable!(string[Language]).init);
     assert(equal(collectSearchItems(withNullNames).sort, ["foo", "Foo"].sort));
 
     auto withDescriptions = WithDescriptions(
         "foo",
         "Foo".nullable,
-        [Language.en : "foo", Language.fr: "fou"],
+        [Language.en : "foo", Language.fr: "fou"].nullable,
         [Language.en : "Foo", Language.fr: "Fou"].nullable
     );
     assert(equal(collectSearchItems(withDescriptions).sort, ["foo", "Foo", "fou", "Fou"].sort));
     auto withNullDescriptions = WithDescriptions(
         "foo",
         "Foo".nullable,
-        [Language.en : "foo", Language.fr: "fou"],
+        [Language.en : "foo", Language.fr: "fou"].nullable,
         (Nullable!(string[Language])).init
     );
     assert(equal(collectSearchItems(withNullDescriptions).sort, ["foo", "Foo", "fou"].sort));

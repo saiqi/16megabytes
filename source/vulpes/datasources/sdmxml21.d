@@ -4,11 +4,9 @@ import std.typecons : Nullable, nullable, Tuple, apply;
 import std.range : isInputRange, isRandomAccessRange, ElementType;
 import std.traits : Unqual;
 import vulpes.lib.xml;
-import vulpes.core.model : Dataflow, Language;
+import vulpes.core.model : Dataflow, Language, Unknown, DefaultLanguage;
 
 package:
-
-enum Unknown = "Unknown";
 
 @xmlRoot("Text")
 struct SDMXText
@@ -64,6 +62,41 @@ struct SDMXDataflow
 
     @xmlElement("Ref")
     Nullable!SDMXRef ref_;
+
+    Nullable!Dataflow dataflow() pure @safe inout nothrow
+    {
+        scope(failure) return typeof(return).init;
+
+        if(id.isNull || agencyId.isNull || urn.isNull || structure.isNull)
+            return typeof(return).init;
+
+        auto cNames = names.dup;
+        auto cDescriptions = descriptions.dup;
+
+        auto name = getLabel(cNames);
+
+        if(name.isNull)
+            return typeof(return).init;
+
+        auto urn = structure.get.ref_.urn;
+
+        if(urn.isNull)
+            return typeof(return).init;
+
+        return Dataflow(
+            id.get,
+            version_.get(Unknown),
+            agencyId.get,
+            true,
+            isFinal.get(true),
+            name.get,
+            getIntlLabels(cNames),
+            getLabel(cDescriptions),
+            getIntlLabels(cDescriptions),
+            [],
+            urn.get
+        ).nullable;
+    }
 }
 
 @xmlRoot("Name")
@@ -86,34 +119,61 @@ struct SDMXDescription
     string content;
 }
 
-string[Language] labelize(T)(in T resources) pure @safe
-if(isInputRange!T && (is(Unqual!(ElementType!T) == SDMXName) || is(Unqual!(ElementType!T) == SDMXDescription)))
+enum isLabel(T) = (is(Unqual!T == SDMXName) || is(Unqual!T == SDMXDescription));
+
+Nullable!string getLabel(T)(in T resources) pure @safe
+if(isInputRange!T && isLabel!(ElementType!T))
+{
+    import std.algorithm : map, filter;
+    import std.conv : to;
+
+    auto r = resources
+        .filter!(a => a.lang.to!Language == DefaultLanguage)
+        .map!(a => a.content);
+
+    if(r.empty) return typeof(return).init;
+
+    return r.front.nullable;
+}
+
+unittest
+{
+    auto l1 = getLabel([SDMXName(DefaultLanguage, "Foo"), SDMXName("fr", "Fou")]);
+    assert(!l1.isNull);
+    assert(l1.get == "Foo");
+
+    SDMXName[] eNames;
+    assert(getLabel(eNames).isNull);
+
+    auto l2 = getLabel([SDMXName("de", "Foo"), SDMXName("fr", "Fou")]);
+    assert(l2.isNull);
+}
+
+Nullable!(string[Language]) getIntlLabels(T)(in T resources) pure @safe nothrow
+if(isInputRange!T && isLabel!(ElementType!T))
 {
     import std.array : assocArray;
     import std.typecons : tuple;
     import std.algorithm : map;
     import std.conv : to;
 
+    scope(failure) return typeof(return).init;
+
     return resources
         .map!(a => tuple(a.lang.to!Language, a.content))
-        .assocArray;
+        .assocArray
+        .nullable;
 }
 
 unittest
 {
     import std.algorithm : equal;
     const names = [SDMXName("en", "Foo"), SDMXName("fr", "Fou")];
-    auto r = labelize(names);
+    auto r = getIntlLabels(names).get;
     assert(equal(r[Language.en], "Foo"));
     assert(equal(r[Language.fr], "Fou"));
-}
 
-unittest {
-    import std.algorithm : equal;
-    auto descriptions = [SDMXDescription("en", "Foo"), SDMXDescription("fr", "Fou")];
-    auto r = labelize(descriptions);
-    assert(equal(r[Language.en], "Foo"));
-    assert(equal(r[Language.fr], "Fou"));
+    assert(getIntlLabels([SDMXName("unknown", "")]).isNull);
 }
 
 @xmlRoot("Structure")
@@ -122,6 +182,8 @@ struct SDMXStructure
     @xmlElement("Ref")
     SDMXRef ref_;
 }
+
+enum RootUrn = "urn:sdmx:org.sdmx.infomodel";
 
 @xmlRoot("Ref")
 struct SDMXRef
@@ -146,6 +208,31 @@ struct SDMXRef
 
     @attr("class")
     Nullable!string class_;
+
+    inout(Nullable!string) urn() pure @safe inout nothrow
+    {
+        scope(failure) return typeof(return).init;
+
+        import std.format : format;
+
+        if(package_.isNull || class_.isNull || version_.isNull || agencyId.isNull)
+            return typeof(return).init;
+
+        return format!"%s.%s.%s=%s:%s(%s)"(
+            RootUrn,
+            package_.get,
+            class_.get,
+            agencyId.get,
+            id,
+            version_.get
+        ).nullable;
+
+    }
+}
+
+unittest
+{
+    assert(SDMXRef().urn.isNull);
 }
 
 @xmlRoot("ConceptIdentity")
