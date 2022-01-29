@@ -1,6 +1,7 @@
 module vulpes.core.model;
 
 import std.typecons : Nullable, nullable;
+import std.traits : Unqual;
 import vulpes.lib.boilerplate : Generate;
 
 enum Unknown = "Unknown";
@@ -21,7 +22,7 @@ struct Receiver
 
 struct Link
 {
-    string href;
+    Nullable!string href;
     string rel;
     Nullable!string hreflang;
     Nullable!string urn;
@@ -566,26 +567,203 @@ struct Message
     mixin(Generate);
 }
 
-import std.range : isInputRange, ElementType;
-
-enum canBeSearched(T) = is(typeof(T.name.init) : string);
+enum bool isIdentifiable(T) = is(Unqual!T == struct)
+    && is(typeof(T.init.id) : string);
 
 unittest
 {
-    static assert(canBeSearched!Dataflow);
-    static assert(canBeSearched!Concept);
-    static assert(canBeSearched!Code);
-    static assert(canBeSearched!DataStructure);
-    static assert(canBeSearched!ConceptScheme);
-    static assert(canBeSearched!Codelist);
-    static assert(canBeSearched!Categorisation);
-    static assert(canBeSearched!Category);
-    static assert(canBeSearched!CategoryScheme);
-    static assert(canBeSearched!DataConstraint);
+    static struct Foo
+    {
+        string id;
+    }
+
+    static struct Bar{}
+
+    static assert(isIdentifiable!Foo);
+    static assert(isIdentifiable!(const(Foo)));
+    static assert(!isIdentifiable!Bar);
+}
+
+enum bool isRetrievable(T) = isIdentifiable!T 
+    && is(typeof(T.init.version_) : string) 
+    && is(typeof(T.init.agencyId) : string);
+
+unittest
+{
+    static struct Foo
+    {
+        string id;
+        string version_;
+        string agencyId;
+    }
+
+    static struct Bar{}
+
+    static assert(isRetrievable!Foo);
+    static assert(isRetrievable!(const(Foo)));
+    static assert(!isRetrievable!Bar);
+}
+
+private mixin template GenerateLinks(T, ParentType = void)
+{
+    import std.format : format;
+    import std.uni : toLower;
+    import std.conv : to;
+    import std.traits : hasStaticMember;
+    import vulpes.core.providers : Provider;
+
+    enum rootUrn = "urn:sdmx:org.sdmx.infomodel";
+    enum self = "self";
+    enum hasNoParentType = is(ParentType == void);
+
+    private static string getPackage() pure @safe
+    {
+        static if(hasStaticMember!(T, "package_"))
+            return package_;
+        else
+            return (Unqual!T).stringof.toLower;
+    }
+
+    private static string getClass() pure @safe
+    {
+        static if(hasStaticMember!(T, "class_"))
+            return class_;
+        else
+            return (Unqual!T).stringof;
+    }
+
+    static if(hasNoParentType && isRetrievable!T)
+    {
+        string urn() pure @safe inout @property
+        {
+            return format!"%s.%s.%s=%s:%s(%s)"(rootUrn, getPackage(), getClass(), agencyId, id, version_);
+        }
+
+        Link[] links(inout ref Provider provider) pure @safe inout @property
+        {
+            const rootUrl = provider.rootUrl;
+
+            const href = format!"%s/%s/%s/%s/%s"(rootUrl, getPackage(), agencyId, id, version_);
+            auto s = Link(
+                href.nullable,
+                self,
+                DefaultLanguage.to!string.nullable,
+                urn.nullable,
+                getClass().toLower.nullable,
+            );
+
+            return [s];
+        }
+    }
+    else static if(!hasNoParentType && isIdentifiable!T && isRetrievable!ParentType)
+    {
+        string urn(inout ref ParentType parent) pure @safe inout @property
+        {
+            return format!"%s.%s.%s=%s:%s(%s).%s"
+                (rootUrn, getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id);
+        }
+
+        Link[] links(inout ref ParentType parent) pure @safe inout @property
+        {
+            auto s = Link(
+                (Nullable!string).init,
+                self,
+                (Nullable!string).init,
+                urn(parent).nullable,
+                getClass().toLower.nullable,
+            );
+            return [s];
+        }
+
+    }
+}
+
+unittest
+{
+    import vulpes.core.providers : Provider, Resource;
+
+    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
+
+    static struct Foo
+    {
+        static immutable string package_ = "hello";
+        static immutable string class_ = "Hello";
+        
+        string id;
+        string version_;
+        string agencyId;
+
+        mixin GenerateLinks!(typeof(this));
+    }
+
+    auto foo = Foo("foo", "1.0", "BAR");
+    assert(foo.urn == "urn:sdmx:org.sdmx.infomodel.hello.Hello=BAR:foo(1.0)");
+
+    assert(foo.links(provider).length == 1);
+
+    auto link = foo.links(provider)[0];
+    assert(link.href.get == "https://bar.org/hello/BAR/foo/1.0");
+    assert(link.rel == "self");
+    assert(link.type.get == "hello");
+    assert(link.urn.get == foo.urn);
+}
+
+unittest
+{
+    import vulpes.core.providers : Provider, Resource;
+
+    const provider = Provider("PROV", true, "https://provider.org", Nullable!(Resource[string]).init);
+
+    static struct Foo
+    {
+        string id;
+        string version_;
+        string agencyId;
+    }
+
+    static struct Bar
+    {
+        static immutable string package_ = "foo";
+        static immutable string class_ = "Bar";
+        
+        string id;
+
+        mixin GenerateLinks!(typeof(this), Foo);
+    }
+
+    const foo = Foo("foo", "1.0", "PROV");
+    const bar = Bar("bar");
+
+    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.foo.Bar=PROV:foo(1.0).bar");
+    assert(bar.links(foo).length == 1);
+
+    auto link = bar.links(foo)[0];
+    assert(link.href.isNull);
+    assert(link.rel == "self");
+    assert(link.type.get == "bar");
+    assert(link.urn.get == bar.urn(foo));
+}
+
+import std.range : isInputRange, ElementType;
+
+enum bool isNamed(T) = is(typeof(T.name.init) : string);
+
+unittest
+{
+    static assert(isNamed!Dataflow);
+    static assert(isNamed!Concept);
+    static assert(isNamed!Code);
+    static assert(isNamed!DataStructure);
+    static assert(isNamed!ConceptScheme);
+    static assert(isNamed!Codelist);
+    static assert(isNamed!Categorisation);
+    static assert(isNamed!Category);
+    static assert(isNamed!CategoryScheme);
+    static assert(isNamed!DataConstraint);
 }
 
 string[] collectSearchItems(T)(in T resource) pure @safe nothrow
-if(canBeSearched!T)
+if(isNamed!T)
 {
     import std.array : appender, array;
     import std.algorithm : uniq;
@@ -675,7 +853,7 @@ unittest
 }
 
 auto search(size_t threshold, R)(R resources, in string q) pure @safe nothrow
-if(isInputRange!R && canBeSearched!(ElementType!R))
+if(isInputRange!R && isNamed!(ElementType!R))
 {
     import vulpes.lib.text : fuzzySearch;
     import std.typecons : Tuple;
