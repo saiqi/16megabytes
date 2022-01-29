@@ -6,6 +6,23 @@ import vulpes.lib.boilerplate : Generate;
 
 enum Unknown = "Unknown";
 
+enum Item;
+
+struct Package
+{
+    string name;
+}
+
+struct Class
+{
+    string name;
+}
+
+struct Type
+{
+    string name;
+}
+
 struct Sender
 {
     string id;
@@ -139,10 +156,11 @@ struct LocalRepresentation
     mixin(Generate);
 }
 
+@Package("datastructure")
+@Class("DataAttribute")
 struct Attribute
 {
     string id;
-    Link[] links;
     Nullable!AssignementStatus assignementStatus;
     Nullable!AttributeRelationship attributeRelationship;
     Nullable!string conceptIdentity;
@@ -150,67 +168,94 @@ struct Attribute
     Nullable!LocalRepresentation localRepresentation;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+@Package("datastructure")
+@Class("AttributeDescriptor")
 struct AttributeList
 {
     string id;
-    Link[] links;
     Attribute[] attributes;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+@Package("datastructure")
+@Class("Dimension")
 struct Dimension
 {
     string id;
-    Link[] links;
     uint position;
     Nullable!string conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+@Package("datastructure")
+@Class("TimeDimension")
+struct TimeDimension
+{
+    string id;
+    uint position;
+    Nullable!string conceptIdentity;
+    string[] conceptRoles;
+    Nullable!LocalRepresentation localRepresentation;
+
+    mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
+}
+
+@Package("datastructure")
+@Class("DimensionDescriptor")
 struct DimensionList
 {
     string id;
-    Link[] links;
     Dimension[] dimensions;
-    Nullable!Dimension timeDimension;
+    TimeDimension[] timeDimensions;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+@Package("datastructure")
+@Class("GroupDimensionDescriptor")
 struct Group
 {
     string id;
-    Link[] links;
     string[] groupDimensions;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-struct Measure
+@Package("datastructure")
+@Class("PrimaryMeasure")
+struct PrimaryMeasure
 {
     string id;
-    Link[] links;
     Nullable!string conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
     Nullable!UsageType usage;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+@Package("datastructure")
+@Class("MeasureDescriptor")
 struct MeasureList
 {
     string id;
-    Link[] links;
-    Measure[] measures;
+    PrimaryMeasure measure;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
 enum Language : string
@@ -233,6 +278,9 @@ struct DataStructureComponents
     mixin(Generate);
 }
 
+@Package("datastructure")
+@Class("DataStructure")
+@Type("datastructure")
 struct DataStructure
 {
     string id;
@@ -244,12 +292,15 @@ struct DataStructure
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     DataStructureComponents dataStructureComponents;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
+@Package("categoryscheme")
+@Class("Category")
+@Item
 struct Category
 {
     string id;
@@ -257,10 +308,10 @@ struct Category
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     Category[] categories;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), CategoryScheme);
 }
 
 Category[] flattenCategory(Category category) pure @safe
@@ -278,12 +329,23 @@ unittest
 {
     import std.algorithm : equal, sort;
 
-    auto child0 = Category("0", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child00 = Category("00", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child01 = Category("01", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child010 = Category("010", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child011 = Category("011", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child012 = Category("012", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto buildCategory(string id)
+    {
+        return Category(
+            id,
+            null,
+            Nullable!(string[Language]).init,
+            (Nullable!string).init,
+            Nullable!(string[Language]).init,
+            []);
+    }
+
+    auto child0 = buildCategory("0");
+    auto child00 = buildCategory("00");
+    auto child01 = buildCategory("01");
+    auto child010 = buildCategory("010");
+    auto child011 = buildCategory("011");
+    auto child012 = buildCategory("012");
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -299,6 +361,9 @@ unittest
     assert(equal(child0.flattenCategory.sort!"a.id < b.id", expected));
 }
 
+@Package("categoryscheme")
+@Class("CategoryScheme")
+@Type("categoryscheme")
 struct CategoryScheme
 {
     string id;
@@ -310,11 +375,11 @@ struct CategoryScheme
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     bool isPartial;
     Category[] categories;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
 alias CategoryHierarchy = Category[][Category];
@@ -368,14 +433,25 @@ unittest
 {
     import std.algorithm : equal;
 
+    auto buildCategory(string id)
+    {
+        return Category(
+            id,
+            null,
+            Nullable!(string[Language]).init,
+            (Nullable!string).init,
+            Nullable!(string[Language]).init,
+            []);
+    }
+
     auto cs = CategoryScheme();
-    auto child0 = Category("0", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child1 = Category("1", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child00 = Category("00", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child01 = Category("01", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child010 = Category("010", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child011 = Category("011", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
-    auto child012 = Category("012", null, Nullable!(string[Language]).init, (Nullable!string).init, Nullable!(string[Language]).init, [], []);
+    auto child0 =   buildCategory("0");
+    auto child1 =   buildCategory("1");
+    auto child00 =  buildCategory("00");
+    auto child01 =  buildCategory("01");
+    auto child010 = buildCategory("010");
+    auto child011 = buildCategory("011");
+    auto child012 = buildCategory("012");
 
     child01.categories ~= child010;
     child01.categories ~= child011;
@@ -392,6 +468,9 @@ unittest
 
 }
 
+@Package("conceptscheme")
+@Class("Concept")
+@Item
 struct Concept
 {
     string id;
@@ -399,11 +478,14 @@ struct Concept
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), ConceptScheme);
 }
 
+@Package("conceptscheme")
+@Class("ConceptScheme")
+@Type("conceptscheme")
 struct ConceptScheme
 {
     string id;
@@ -415,13 +497,16 @@ struct ConceptScheme
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     bool isPartial;
     Concept[] concepts;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
+@Package("codelist")
+@Class("Code")
+@Item
 struct Code
 {
     string id;
@@ -429,11 +514,14 @@ struct Code
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this), Codelist);
 }
 
+@Package("codelist")
+@Class("Codelist")
+@Type("codelist")
 struct Codelist
 {
     string id;
@@ -445,13 +533,16 @@ struct Codelist
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     bool isPartial;
     Code[] codes;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
+@Package("datastructure")
+@Class("Dataflow")
+@Type("dataflow")
 struct Dataflow
 {
     string id;
@@ -463,12 +554,15 @@ struct Dataflow
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     string structure;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
+@Package("categoryscheme")
+@Class("Categorisation")
+@Type("categorisation")
 struct Categorisation
 {
     string id;
@@ -480,9 +574,11 @@ struct Categorisation
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     string source;
     string target;
+
+    mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
 enum RoleType : string
@@ -514,6 +610,9 @@ struct CubeRegion
     mixin(Generate);
 }
 
+@Package("registry")
+@Class("ContentConstraint")
+@Type("contentconstraint")
 struct DataConstraint
 {
     string id;
@@ -525,12 +624,12 @@ struct DataConstraint
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Link[] links;
     Nullable!RoleType role;
     Nullable!ConstraintAttachment constraintAttachment;
     CubeRegion[] cubeRegions;
 
     mixin(Generate);
+    mixin GenerateLinks!(typeof(this));
 }
 
 struct Data
@@ -541,7 +640,7 @@ struct Data
     Codelist[] codelists;
     Dataflow[] dataflows;
     Categorisation[] categorisations;
-    DataConstraint[] dataConstraints;
+    DataConstraint[] contentConstraints;
 
     mixin(Generate);
 }
@@ -553,7 +652,6 @@ struct Error
     string[Language] titles;
     Nullable!string detail;
     Nullable!string[Language] details;
-    Link[] links;
 
     mixin(Generate);
 }
@@ -584,8 +682,8 @@ unittest
     static assert(!isIdentifiable!Bar);
 }
 
-enum bool isRetrievable(T) = isIdentifiable!T 
-    && is(typeof(T.init.version_) : string) 
+enum bool isRetrievable(T) = isIdentifiable!T
+    && is(typeof(T.init.version_) : string)
     && is(typeof(T.init.agencyId) : string);
 
 unittest
@@ -609,7 +707,7 @@ private mixin template GenerateLinks(T, ParentType = void)
     import std.format : format;
     import std.uni : toLower;
     import std.conv : to;
-    import std.traits : hasStaticMember;
+    import std.traits : hasUDA, getUDAs;
     import vulpes.core.providers : Provider;
 
     enum rootUrn = "urn:sdmx:org.sdmx.infomodel";
@@ -618,18 +716,26 @@ private mixin template GenerateLinks(T, ParentType = void)
 
     private static string getPackage() pure @safe
     {
-        static if(hasStaticMember!(T, "package_"))
-            return package_;
+        static if(hasUDA!(T, Package))
+            return getUDAs!(T, Package)[0].name;
         else
             return (Unqual!T).stringof.toLower;
     }
 
     private static string getClass() pure @safe
     {
-        static if(hasStaticMember!(T, "class_"))
-            return class_;
+        static if(hasUDA!(T, Class))
+            return getUDAs!(T, Class)[0].name;
         else
             return (Unqual!T).stringof;
+    }
+
+    private static string getType() pure @safe
+    {
+        static if(hasUDA!(T, Type))
+            return getUDAs!(T, Type)[0].name;
+        else
+            return getPackage();
     }
 
     static if(hasNoParentType && isRetrievable!T)
@@ -643,7 +749,7 @@ private mixin template GenerateLinks(T, ParentType = void)
         {
             const rootUrl = provider.rootUrl;
 
-            const href = format!"%s/%s/%s/%s/%s"(rootUrl, getPackage(), agencyId, id, version_);
+            const href = format!"%s/%s/%s/%s/%s"(rootUrl, getType(), agencyId, id, version_);
             auto s = Link(
                 href.nullable,
                 self,
@@ -663,18 +769,37 @@ private mixin template GenerateLinks(T, ParentType = void)
                 (rootUrn, getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id);
         }
 
-        Link[] links(inout ref ParentType parent) pure @safe inout @property
+        static if(hasUDA!(T, Item))
         {
-            auto s = Link(
-                (Nullable!string).init,
-                self,
-                (Nullable!string).init,
-                urn(parent).nullable,
-                getClass().toLower.nullable,
-            );
-            return [s];
+            Link[] links(inout ref Provider provider, inout ref ParentType parent) pure @safe inout @property
+            {
+                const rootUrl = provider.rootUrl;
+                const href = format!"%s/%s/%s/%s/%s/%s"
+                    (rootUrl, getType(), parent.agencyId, parent.id, parent.version_, id);
+                auto s = Link(
+                    href.nullable,
+                    self,
+                    (Nullable!string).init,
+                    urn(parent).nullable,
+                    getClass().toLower.nullable,
+                );
+                return [s];
+            }
         }
-
+        else
+        {
+            Link[] links(inout ref ParentType parent) pure @safe inout @property
+            {
+                auto s = Link(
+                    (Nullable!string).init,
+                    self,
+                    (Nullable!string).init,
+                    urn(parent).nullable,
+                    getClass().toLower.nullable,
+                );
+                return [s];
+            }
+        }
     }
 }
 
@@ -684,11 +809,11 @@ unittest
 
     const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
 
+    @Package("hello")
+    @Class("Hello")
+    @Type("bonjour")
     static struct Foo
     {
-        static immutable string package_ = "hello";
-        static immutable string class_ = "Hello";
-        
         string id;
         string version_;
         string agencyId;
@@ -702,7 +827,7 @@ unittest
     assert(foo.links(provider).length == 1);
 
     auto link = foo.links(provider)[0];
-    assert(link.href.get == "https://bar.org/hello/BAR/foo/1.0");
+    assert(link.href.get == "https://bar.org/bonjour/BAR/foo/1.0");
     assert(link.rel == "self");
     assert(link.type.get == "hello");
     assert(link.urn.get == foo.urn);
@@ -710,10 +835,6 @@ unittest
 
 unittest
 {
-    import vulpes.core.providers : Provider, Resource;
-
-    const provider = Provider("PROV", true, "https://provider.org", Nullable!(Resource[string]).init);
-
     static struct Foo
     {
         string id;
@@ -721,11 +842,10 @@ unittest
         string agencyId;
     }
 
+    @Package("foo")
+    @Class("Bar")
     static struct Bar
     {
-        static immutable string package_ = "foo";
-        static immutable string class_ = "Bar";
-        
         string id;
 
         mixin GenerateLinks!(typeof(this), Foo);
@@ -739,6 +859,47 @@ unittest
 
     auto link = bar.links(foo)[0];
     assert(link.href.isNull);
+    assert(link.rel == "self");
+    assert(link.type.get == "bar");
+    assert(link.urn.get == bar.urn(foo));
+}
+
+unittest
+{
+    import vulpes.core.providers : Provider, Resource;
+
+    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
+
+    @Package("foo")
+    @Class("Foo")
+    @Type("footype")
+    static struct Foo
+    {
+        string id;
+        string version_;
+        string agencyId;
+
+        mixin GenerateLinks!(typeof(this));
+    }
+
+    @Package("foo")
+    @Class("Bar")
+    @Item
+    static struct Bar
+    {
+        string id;
+
+        mixin GenerateLinks!(typeof(this), Foo);
+    }
+
+    const foo = Foo("foo", "1.0", "PROV");
+    const bar = Bar("bar");
+
+    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.foo.Bar=PROV:foo(1.0).bar");
+    assert(bar.links(provider, foo).length == 1);
+
+    auto link = bar.links(provider, foo)[0];
+    assert(link.href.get = "https://bar.org/footype/PROV/foo/1.0/bar");
     assert(link.rel == "self");
     assert(link.type.get == "bar");
     assert(link.urn.get == bar.urn(foo));

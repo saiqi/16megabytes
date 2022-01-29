@@ -93,7 +93,6 @@ struct SDMXDataflow
             getIntlLabels(cNames),
             getLabel(cDescriptions),
             getIntlLabels(cDescriptions),
-            [],
             urn.get
         ).nullable;
     }
