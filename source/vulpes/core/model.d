@@ -28,7 +28,15 @@ enum ClassType : string
     Categorisation = "Categorisation",
     DataStructure = "DataStructure",
     Dataflow = "Dataflow",
-    ContentConstraint = "ContentContraint"
+    ContentConstraint = "ContentContraint",
+    DataAttribute = "DataAttribute",
+    AttributeDescriptor = "AttributeDescriptor",
+    Dimension = "Dimension",
+    TimeDimension = "TimeDimension",
+    DimensionDescriptor = "DimensionDescriptor",
+    MeasureDescriptor = "MeasureDescriptor",
+    PrimaryMeasure = "PrimaryMeasure",
+    GroupDimensionDescriptor = "GroupDimensionDescriptor"
 }
 
 class UrnException : Exception
@@ -60,22 +68,22 @@ struct Urn
     this(PackageType package_, ClassType class_, string agencyId, string id, string version_)
     pure @safe inout nothrow
     {
-        package_ = package_;
-        class_ = class_;
-        agencyId = agencyId;
-        id = id;
-        version_ = version_;
+        this.package_ = package_;
+        this.class_ = class_;
+        this.agencyId = agencyId;
+        this.id = id;
+        this.version_ = version_;
     }
 
     this(PackageType package_, ClassType class_, string agencyId, string id, string version_, string item)
     pure @safe inout nothrow
     {
-        package_ = package_;
-        class_ = class_;
-        agencyId = agencyId;
-        id = id;
-        version_ = version_;
-        item = item;
+        this.package_ = package_;
+        this.class_ = class_;
+        this.agencyId = agencyId;
+        this.id = id;
+        this.version_ = version_;
+        this.item = item;
     }
 
     this(string u) @safe
@@ -281,8 +289,8 @@ struct LocalRepresentation
     mixin(Generate);
 }
 
-@Package("datastructure")
-@Class("DataAttribute")
+@Package(PackageType.datastructure)
+@Class(ClassType.DataAttribute)
 struct Attribute
 {
     string id;
@@ -296,8 +304,8 @@ struct Attribute
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("AttributeDescriptor")
+@Package(PackageType.datastructure)
+@Class(ClassType.AttributeDescriptor)
 struct AttributeList
 {
     string id;
@@ -307,8 +315,8 @@ struct AttributeList
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("Dimension")
+@Package(PackageType.datastructure)
+@Class(ClassType.Dimension)
 struct Dimension
 {
     string id;
@@ -321,8 +329,8 @@ struct Dimension
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("TimeDimension")
+@Package(PackageType.datastructure)
+@Class(ClassType.TimeDimension)
 struct TimeDimension
 {
     string id;
@@ -335,8 +343,8 @@ struct TimeDimension
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("DimensionDescriptor")
+@Package(PackageType.datastructure)
+@Class(ClassType.DimensionDescriptor)
 struct DimensionList
 {
     string id;
@@ -347,8 +355,8 @@ struct DimensionList
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("GroupDimensionDescriptor")
+@Package(PackageType.datastructure)
+@Class(ClassType.GroupDimensionDescriptor)
 struct Group
 {
     string id;
@@ -358,8 +366,8 @@ struct Group
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("PrimaryMeasure")
+@Package(PackageType.datastructure)
+@Class(ClassType.PrimaryMeasure)
 struct PrimaryMeasure
 {
     string id;
@@ -372,8 +380,8 @@ struct PrimaryMeasure
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
-@Package("datastructure")
-@Class("MeasureDescriptor")
+@Package(PackageType.datastructure)
+@Class(ClassType.MeasureDescriptor)
 struct MeasureList
 {
     string id;
@@ -403,8 +411,8 @@ struct DataStructureComponents
     mixin(Generate);
 }
 
-@Package("datastructure")
-@Class("DataStructure")
+@Package(PackageType.datastructure)
+@Class(ClassType.DataStructure)
 @Type("datastructure")
 struct DataStructure
 {
@@ -423,8 +431,8 @@ struct DataStructure
     mixin GenerateLinks!(typeof(this));
 }
 
-@Package("categoryscheme")
-@Class("Category")
+@Package(PackageType.categoryscheme)
+@Class(ClassType.Category)
 @Item
 struct Category
 {
@@ -486,8 +494,8 @@ unittest
     assert(equal(child0.flattenCategory.sort!"a.id < b.id", expected));
 }
 
-@Package("categoryscheme")
-@Class("CategoryScheme")
+@Package(PackageType.categoryscheme)
+@Class(ClassType.CategoryScheme)
 @Type("categoryscheme")
 struct CategoryScheme
 {
@@ -593,8 +601,8 @@ unittest
 
 }
 
-@Package("conceptscheme")
-@Class("Concept")
+@Package(PackageType.conceptscheme)
+@Class(ClassType.Concept)
 @Item
 struct Concept
 {
@@ -608,8 +616,8 @@ struct Concept
     mixin GenerateLinks!(typeof(this), ConceptScheme);
 }
 
-@Package("conceptscheme")
-@Class("ConceptScheme")
+@Package(PackageType.conceptscheme)
+@Class(ClassType.ConceptScheme)
 @Type("conceptscheme")
 struct ConceptScheme
 {
@@ -629,8 +637,8 @@ struct ConceptScheme
     mixin GenerateLinks!(typeof(this));
 }
 
-@Package("codelist")
-@Class("Code")
+@Package(PackageType.codelist)
+@Class(ClassType.Code)
 @Item
 struct Code
 {
@@ -644,8 +652,8 @@ struct Code
     mixin GenerateLinks!(typeof(this), Codelist);
 }
 
-@Package("codelist")
-@Class("Codelist")
+@Package(PackageType.codelist)
+@Class(ClassType.Codelist)
 @Type("codelist")
 struct Codelist
 {
@@ -665,8 +673,8 @@ struct Codelist
     mixin GenerateLinks!(typeof(this));
 }
 
-@Package("datastructure")
-@Class("Dataflow")
+@Package(PackageType.datastructure)
+@Class(ClassType.Dataflow)
 @Type("dataflow")
 struct Dataflow
 {
@@ -685,8 +693,8 @@ struct Dataflow
     mixin GenerateLinks!(typeof(this));
 }
 
-@Package("categoryscheme")
-@Class("Categorisation")
+@Package(PackageType.categoryscheme)
+@Class(ClassType.Categorisation)
 @Type("categorisation")
 struct Categorisation
 {
@@ -735,8 +743,8 @@ struct CubeRegion
     mixin(Generate);
 }
 
-@Package("registry")
-@Class("ContentConstraint")
+@Package(PackageType.registry)
+@Class(ClassType.ContentConstraint)
 @Type("contentconstraint")
 struct DataConstraint
 {
@@ -835,24 +843,23 @@ private mixin template GenerateLinks(T, ParentType = void)
     import std.traits : hasUDA, getUDAs;
     import vulpes.core.providers : Provider;
 
-    enum rootUrn = "urn:sdmx:org.sdmx.infomodel";
     enum self = "self";
     enum hasNoParentType = is(ParentType == void);
 
-    private static string getPackage() pure @safe
+    private static PackageType getPackage() pure @safe
     {
         static if(hasUDA!(T, Package))
-            return getUDAs!(T, Package)[0].name;
+            return getUDAs!(T, Package)[0].name.to!PackageType;
         else
-            return (Unqual!T).stringof.toLower;
+            return (Unqual!T).stringof.toLower.to!PackageType;
     }
 
-    private static string getClass() pure @safe
+    private static ClassType getClass() pure @safe
     {
         static if(hasUDA!(T, Class))
-            return getUDAs!(T, Class)[0].name;
+            return getUDAs!(T, Class)[0].name.to!ClassType;
         else
-            return (Unqual!T).stringof;
+            return (Unqual!T).stringof.to!ClassType;
     }
 
     private static string getType() pure @safe
@@ -860,14 +867,14 @@ private mixin template GenerateLinks(T, ParentType = void)
         static if(hasUDA!(T, Type))
             return getUDAs!(T, Type)[0].name;
         else
-            return getPackage();
+            return (Unqual!T).stringof.toLower;
     }
 
     static if(hasNoParentType && isRetrievable!T)
     {
         string urn() pure @safe inout @property
         {
-            return format!"%s.%s.%s=%s:%s(%s)"(rootUrn, getPackage(), getClass(), agencyId, id, version_);
+            return Urn(getPackage(), getClass(), agencyId, id, version_).toString;
         }
 
         Link[] links(inout ref Provider provider) pure @safe inout @property
@@ -880,7 +887,7 @@ private mixin template GenerateLinks(T, ParentType = void)
                 self,
                 DefaultLanguage.to!string.nullable,
                 urn.nullable,
-                getClass().toLower.nullable,
+                getType().nullable,
             );
 
             return [s];
@@ -890,8 +897,7 @@ private mixin template GenerateLinks(T, ParentType = void)
     {
         string urn(inout ref ParentType parent) pure @safe inout @property
         {
-            return format!"%s.%s.%s=%s:%s(%s).%s"
-                (rootUrn, getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id);
+            return Urn(getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id).toString;
         }
 
         static if(hasUDA!(T, Item))
@@ -906,7 +912,7 @@ private mixin template GenerateLinks(T, ParentType = void)
                     self,
                     (Nullable!string).init,
                     urn(parent).nullable,
-                    getClass().toLower.nullable,
+                    getType().nullable,
                 );
                 return [s];
             }
@@ -920,7 +926,7 @@ private mixin template GenerateLinks(T, ParentType = void)
                     self,
                     (Nullable!string).init,
                     urn(parent).nullable,
-                    getClass().toLower.nullable,
+                    getType().nullable,
                 );
                 return [s];
             }
@@ -934,9 +940,9 @@ unittest
 
     const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
 
-    @Package("hello")
-    @Class("Hello")
-    @Type("bonjour")
+    @Package(PackageType.base)
+    @Class(ClassType.Codelist)
+    @Type("foo")
     static struct Foo
     {
         string id;
@@ -946,15 +952,15 @@ unittest
         mixin GenerateLinks!(typeof(this));
     }
 
-    auto foo = Foo("foo", "1.0", "BAR");
-    assert(foo.urn == "urn:sdmx:org.sdmx.infomodel.hello.Hello=BAR:foo(1.0)");
+    auto foo = Foo("FOO", "1.0", "BAR");
+    assert(foo.urn == "urn:sdmx:org.sdmx.infomodel.base.Codelist=BAR:FOO(1.0)");
 
     assert(foo.links(provider).length == 1);
 
     auto link = foo.links(provider)[0];
-    assert(link.href.get == "https://bar.org/bonjour/BAR/foo/1.0");
+    assert(link.href.get == "https://bar.org/foo/BAR/FOO/1.0");
     assert(link.rel == "self");
-    assert(link.type.get == "hello");
+    assert(link.type.get == "foo");
     assert(link.urn.get == foo.urn);
 }
 
@@ -967,8 +973,8 @@ unittest
         string agencyId;
     }
 
-    @Package("foo")
-    @Class("Bar")
+    @Package(PackageType.base)
+    @Class(ClassType.Codelist)
     static struct Bar
     {
         string id;
@@ -979,7 +985,7 @@ unittest
     const foo = Foo("foo", "1.0", "PROV");
     const bar = Bar("bar");
 
-    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.foo.Bar=PROV:foo(1.0).bar");
+    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.base.Codelist=PROV:foo(1.0).bar");
     assert(bar.links(foo).length == 1);
 
     auto link = bar.links(foo)[0];
@@ -995,8 +1001,8 @@ unittest
 
     const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
 
-    @Package("foo")
-    @Class("Foo")
+    @Package(PackageType.codelist)
+    @Class(ClassType.Codelist)
     @Type("footype")
     static struct Foo
     {
@@ -1007,8 +1013,8 @@ unittest
         mixin GenerateLinks!(typeof(this));
     }
 
-    @Package("foo")
-    @Class("Bar")
+    @Package(PackageType.codelist)
+    @Class(ClassType.Code)
     @Item
     static struct Bar
     {
@@ -1020,7 +1026,7 @@ unittest
     const foo = Foo("foo", "1.0", "PROV");
     const bar = Bar("bar");
 
-    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.foo.Bar=PROV:foo(1.0).bar");
+    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.codelist.Code=PROV:foo(1.0).bar");
     assert(bar.links(provider, foo).length == 1);
 
     auto link = bar.links(provider, foo)[0];
