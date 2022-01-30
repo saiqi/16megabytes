@@ -5,6 +5,131 @@ import std.traits : Unqual;
 import vulpes.lib.boilerplate : Generate;
 
 enum Unknown = "Unknown";
+enum DefaultVersion = "latest";
+
+enum PackageType : string
+{
+    codelist = "codelist",
+    conceptscheme = "conceptscheme",
+    categoryscheme = "categoryscheme",
+    datastructure = "datastructure",
+    registry = "registry",
+    base = "base"
+}
+
+enum ClassType : string
+{
+    Codelist = "Codelist",
+    Code = "Code",
+    ConceptScheme = "ConceptScheme",
+    Concept = "Concept",
+    Category = "Category",
+    CategoryScheme = "CategoryScheme",
+    Categorisation = "Categorisation",
+    DataStructure = "DataStructure",
+    Dataflow = "Dataflow",
+    ContentConstraint = "ContentContraint"
+}
+
+class UrnException : Exception
+{
+    @safe:
+    ///ditto
+    this(string msg, string file = __FILE__, size_t line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
+struct Urn
+{
+    private static enum root = "urn";
+    private static enum nid = "sdmx";
+    private static enum pkgPrefix = "org.sdmx.infomodel";
+    private static enum pattern = root ~ ":" ~ nid ~ ":" ~ pkgPrefix
+        ~ ".(?P<package>[a-z]+).(?P<class>[a-zA-Z]+)=(?P<agency>[A-Za-z0-9_\\-]+):(?P<resource>[A-Za-z0-9_\\-]+)"
+        ~ "\\((?P<version>[A-Za-z0-9_\\-\\.]+)\\)?(.(?P<item>[A-Za-z0-9_\\-]+))?";
+
+    private PackageType package_;
+    private ClassType class_;
+    private string id;
+    private string agencyId;
+    private string version_;
+    private Nullable!string item;
+
+    this(PackageType package_, ClassType class_, string agencyId, string id, string version_)
+    pure @safe inout nothrow
+    {
+        package_ = package_;
+        class_ = class_;
+        agencyId = agencyId;
+        id = id;
+        version_ = version_;
+    }
+
+    this(PackageType package_, ClassType class_, string agencyId, string id, string version_, string item)
+    pure @safe inout nothrow
+    {
+        package_ = package_;
+        class_ = class_;
+        agencyId = agencyId;
+        id = id;
+        version_ = version_;
+        item = item;
+    }
+
+    this(string u) @safe
+    {
+        import std.regex : matchFirst;
+        import std.conv : to;
+        import std.exception : enforce;
+        import std.algorithm : equal, sort;
+
+        auto m = matchFirst(u, pattern);
+
+        enforce!UrnException(!m.empty, "Bad formatted URN");
+
+        package_ = m["package"].to!PackageType;
+        class_ = m["class"].to!ClassType;
+        agencyId = m["agency"];
+        id = m["resource"];
+        version_ = m["version"];
+
+        if(m["item"]) item = m["item"];
+    }
+
+    string toString() pure @safe inout
+    {
+        import std.format : format;
+
+        if(item.isNull)
+            return format!"%s:%s:%s.%s.%s=%s:%s(%s)"
+                (root, nid, pkgPrefix, package_, class_, agencyId, id, version_);
+
+        return format!"%s:%s:%s.%s.%s=%s:%s(%s).%s"
+            (root, nid, pkgPrefix, package_, class_, agencyId, id, version_, item.get);
+    }
+}
+
+unittest
+{
+    const str = "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=ABC:ABC(1.0).ABC";
+    auto urn = Urn(str);
+    assert(urn.toString == str);
+}
+
+unittest
+{
+    const str = "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=FR1:CHOMAGE-TRIM-NATIONAL(1.0)";
+    assert(Urn(str).toString == str);
+}
+
+unittest
+{
+    import std.exception : assertThrown;
+    const str = "unmatched";
+    assertThrown(Urn(str));
+}
 
 enum Item;
 

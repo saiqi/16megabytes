@@ -2,6 +2,7 @@ module vulpes.datasources.sdmx.xml20;
 
 import std.typecons : Nullable;
 import vulpes.lib.xml;
+import vulpes.datasources.sdmx.common : RootUrn;
 
 package:
 
@@ -27,6 +28,15 @@ struct SDMX20KeyFamilyRef
 
     @xmlElement("KeyFamilyAgencyID")
     SDMX20KeyFamilyAgencyID keyFamilyAgencyId;
+
+    // inout(Nullable!string) urn() pure @safe inout nothrow
+    // {
+    //     scope(failure) return typeof(return).init;
+
+    //     import std.format : format;
+
+    //     return format!"%s.%s.%s=%s:%s(%s)"();
+    // }
 }
 
 @xmlRoot("Name")

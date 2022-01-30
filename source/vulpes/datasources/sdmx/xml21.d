@@ -2,8 +2,8 @@ module vulpes.datasources.sdmx.xml21;
 
 import std.typecons : Nullable, nullable;
 import vulpes.lib.xml;
-import vulpes.core.model : Dataflow, Language, Unknown;
-import vulpes.datasources.sdmx.common : getIntlLabels, getLabel;
+import vulpes.core.model : Dataflow, Language, DefaultVersion;
+import vulpes.datasources.sdmx.common : getIntlLabels, getLabel, RootUrn;
 
 package:
 
@@ -66,7 +66,7 @@ struct SDMX21Dataflow
     {
         scope(failure) return typeof(return).init;
 
-        if(id.isNull || agencyId.isNull || urn.isNull || structure.isNull)
+        if(id.isNull || agencyId.isNull || structure.isNull)
             return typeof(return).init;
 
         auto cNames = names.dup;
@@ -77,14 +77,14 @@ struct SDMX21Dataflow
         if(name.isNull)
             return typeof(return).init;
 
-        auto urn = structure.get.ref_.urn;
+        auto structureUrn = structure.get.ref_.urn;
 
-        if(urn.isNull)
+        if(structureUrn.isNull)
             return typeof(return).init;
 
         return Dataflow(
             id.get,
-            version_.get(Unknown),
+            version_.get(DefaultVersion),
             agencyId.get,
             true,
             isFinal.get(true),
@@ -92,7 +92,7 @@ struct SDMX21Dataflow
             getIntlLabels(cNames),
             getLabel(cDescriptions),
             getIntlLabels(cDescriptions),
-            urn.get
+            structureUrn.get
         ).nullable;
     }
 }
@@ -140,8 +140,6 @@ struct SDMX21Structure
     @xmlElement("Ref")
     SDMX21Ref ref_;
 }
-
-enum RootUrn = "urn:sdmx:org.sdmx.infomodel";
 
 @xmlRoot("Ref")
 struct SDMX21Ref
