@@ -2,8 +2,8 @@ module vulpes.datasources.sdmx.xml21;
 
 import std.typecons : Nullable, nullable;
 import vulpes.lib.xml;
-import vulpes.core.model : Dataflow, Language, DefaultVersion;
-import vulpes.datasources.sdmx.common : getIntlLabels, getLabel, RootUrn;
+import vulpes.core.model : Dataflow, Language, DefaultVersion, Urn;
+import vulpes.datasources.sdmx.common : getIntlLabels, getLabel;
 
 package:
 
@@ -66,8 +66,10 @@ struct SDMX21Dataflow
     {
         scope(failure) return typeof(return).init;
 
-        if(id.isNull || agencyId.isNull || structure.isNull)
+        if(id.isNull || agencyId.isNull || structure.isNull || structure.get.ref_.urn.isNull)
             return typeof(return).init;
+
+        auto structureUrn = structure.get.ref_.urn.get;
 
         auto cNames = names.dup;
         auto cDescriptions = descriptions.dup;
@@ -75,11 +77,6 @@ struct SDMX21Dataflow
         auto name = getLabel(cNames);
 
         if(name.isNull)
-            return typeof(return).init;
-
-        auto structureUrn = structure.get.ref_.urn;
-
-        if(structureUrn.isNull)
             return typeof(return).init;
 
         return Dataflow(
@@ -92,7 +89,7 @@ struct SDMX21Dataflow
             getIntlLabels(cNames),
             getLabel(cDescriptions),
             getIntlLabels(cDescriptions),
-            structureUrn.get
+            structureUrn.toString
         ).nullable;
     }
 }
@@ -111,7 +108,7 @@ unittest
     assert(df.get.names.get[Language.fr] == "Balance des paiements");
     assert(df.get.description.isNull);
     assert(df.get.descriptions.isNull);
-    assert(df.get.structure == sdmxDf.structure.get.ref_.urn);
+    assert(df.get.structure == sdmxDf.structure.get.ref_.urn.toString);
 }
 
 @xmlRoot("Name")
@@ -165,24 +162,18 @@ struct SDMX21Ref
     @attr("class")
     Nullable!string class_;
 
-    inout(Nullable!string) urn() pure @safe inout nothrow
+    inout(Nullable!Urn) urn() pure @safe inout nothrow
     {
         scope(failure) return typeof(return).init;
 
-        import std.format : format;
+        import std.conv : to;
+        import vulpes.core.model : PackageType, ClassType;
 
         if(package_.isNull || class_.isNull || version_.isNull || agencyId.isNull)
             return typeof(return).init;
 
-        return format!"%s.%s.%s=%s:%s(%s)"(
-            RootUrn,
-            package_.get,
-            class_.get,
-            agencyId.get,
-            id,
-            version_.get
-        ).nullable;
-
+        Nullable!Urn urn = Urn(package_.get.to!PackageType, class_.get.to!ClassType, agencyId.get, id, version_.get);
+        return urn;
     }
 }
 
@@ -195,11 +186,11 @@ unittest
         (Nullable!string).init,
         (Nullable!string).init,
         "BAR".nullable,
-        "pkg".nullable,
-        "class".nullable
+        "datastructure".nullable,
+        "DataStructure".nullable
     );
-    const expected = "urn:sdmx:org.sdmx.infomodel.pkg.class=BAR:FOO(1.0)";
-    assert(ref_.urn.get == expected);
+    const expected = "urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=BAR:FOO(1.0)";
+    assert(ref_.urn.get.toString == expected);
 }
 
 @xmlRoot("ConceptIdentity")

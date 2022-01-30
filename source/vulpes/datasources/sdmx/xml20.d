@@ -1,8 +1,8 @@
 module vulpes.datasources.sdmx.xml20;
 
-import std.typecons : Nullable;
+import std.typecons : Nullable, nullable;
 import vulpes.lib.xml;
-import vulpes.datasources.sdmx.common : RootUrn;
+import vulpes.core.model : Urn, Dataflow, Language;
 
 package:
 
@@ -29,14 +29,19 @@ struct SDMX20KeyFamilyRef
     @xmlElement("KeyFamilyAgencyID")
     SDMX20KeyFamilyAgencyID keyFamilyAgencyId;
 
-    // inout(Nullable!string) urn() pure @safe inout nothrow
-    // {
-    //     scope(failure) return typeof(return).init;
+    inout(Urn) urn() pure @safe inout nothrow
+    {
+        scope(failure) return typeof(return).init;
 
-    //     import std.format : format;
-
-    //     return format!"%s.%s.%s=%s:%s(%s)"();
-    // }
+        import vulpes.core.model : PackageType, ClassType, DefaultVersion;
+        return Urn(
+            PackageType.datastructure,
+            ClassType.DataStructure,
+            keyFamilyAgencyId.agencyId,
+            keyFamilyId.id,
+            DefaultVersion
+        );
+    }
 }
 
 @xmlRoot("Name")
@@ -69,6 +74,49 @@ struct SDMX20Dataflow
 
     @xmlElementList("Name")
     SDMX20Name[] names;
+
+    Nullable!Dataflow dataflow() pure @safe inout nothrow
+    {
+        scope(failure) return typeof(return).init;
+
+        import vulpes.datasources.sdmx.common : getLabel, getIntlLabels;
+
+        auto cNames = names.dup;
+
+        auto name = getLabel(cNames);
+
+        if(name.isNull) return typeof(return).init;
+
+        return Dataflow(
+            id,
+            version_,
+            agencyId,
+            true,
+            isFinal.get(true),
+            name.get,
+            getIntlLabels(cNames),
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init,
+            keyFamilyRef.urn.toString
+        ).nullable;
+
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    const str = readText("fixtures/sdmx20/structure_dataflows.xml");
+    const SDMX20Dataflow sdmxDf = str.deserializeAs!SDMX20Dataflows.dataflows[0];
+    const df = sdmxDf.dataflow;
+    assert(!df.isNull);
+    assert(df.get.id == "DS-BOP_2017M06");
+    assert(df.get.agencyId == "IMF");
+    assert(df.get.version_ == "1.0");
+    assert(df.get.name == "Balance of Payments (BOP), 2017 M06");
+    assert(!df.get.names.isNull);
+    assert(df.get.name == df.get.names.get[Language.en]);
+    assert(df.get.structure == sdmxDf.keyFamilyRef.urn.toString);
 }
 
 @xmlRoot("Dataflows")

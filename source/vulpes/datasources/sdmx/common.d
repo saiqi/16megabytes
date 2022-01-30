@@ -4,8 +4,6 @@ import std.typecons : Nullable, nullable;
 import std.range : isInputRange, ElementType;
 import vulpes.core.model : DefaultLanguage, Language;
 
-enum RootUrn = "urn:sdmx:org.sdmx.infomodel";
-
 enum bool isLabelizable(T) = is(typeof(T.init.lang) : string) && is(typeof(T.init.content) : string);
 
 Nullable!string getLabel(T)(in T resources) pure @safe
