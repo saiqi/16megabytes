@@ -98,6 +98,23 @@ struct SDMXDataflow
     }
 }
 
+unittest
+{
+    import std.file : readText;
+    const xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+    const sdmxDf = xmlStr.deserializeAs!SDMXStructures.dataflows.get.dataflows[0];
+    const df = sdmxDf.dataflow();
+    assert(!df.isNull);
+    assert(df.get.id == "BALANCE-PAIEMENTS");
+    assert(df.get.version_ == "1.0");
+    assert(df.get.agencyId == "FR1");
+    assert(df.get.name == "Balance of payments");
+    assert(df.get.names.get[Language.fr] == "Balance des paiements");
+    assert(df.get.description.isNull);
+    assert(df.get.descriptions.isNull);
+    assert(df.get.structure == sdmxDf.structure.get.ref_.urn);
+}
+
 @xmlRoot("Name")
 struct SDMXName
 {
@@ -155,8 +172,11 @@ if(isInputRange!T && isLabel!(ElementType!T))
     import std.typecons : tuple;
     import std.algorithm : map;
     import std.conv : to;
+    import std.range;
 
     scope(failure) return typeof(return).init;
+
+    if(resources.empty) return typeof(return).init;
 
     return resources
         .map!(a => tuple(a.lang.to!Language, a.content))
@@ -232,6 +252,17 @@ struct SDMXRef
 unittest
 {
     assert(SDMXRef().urn.isNull);
+    const ref_ = SDMXRef(
+        "FOO",
+        "1.0".nullable,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        "BAR".nullable,
+        "pkg".nullable,
+        "class".nullable
+    );
+    const expected = "urn:sdmx:org.sdmx.infomodel.pkg.class=BAR:FOO(1.0)";
+    assert(ref_.urn.get == expected);
 }
 
 @xmlRoot("ConceptIdentity")
