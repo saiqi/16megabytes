@@ -117,6 +117,15 @@ struct Urn
         return format!"%s:%s:%s.%s.%s=%s:%s(%s).%s"
             (root, nid, pkgPrefix, package_, class_, agencyId, id, version_, item.get);
     }
+
+    static Nullable!Urn safeParse(inout string u) @safe nothrow
+    {
+        scope(failure) return typeof(return).init;
+        
+        Nullable!Urn urn = Urn(u);
+
+        return urn;
+    }
 }
 
 unittest
@@ -137,6 +146,20 @@ unittest
     import std.exception : assertThrown;
     const str = "unmatched";
     assertThrown(Urn(str));
+}
+
+unittest
+{
+    const str = "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=ABC:ABC(1.0).ABC";
+    auto urn = Urn.safeParse(str);
+    assert(!urn.isNull);
+    assert(urn.get.toString == str);
+}
+
+unittest
+{
+    assert(Urn.safeParse("foo").isNull);
+    assert(Urn.safeParse("urn:sdmx:org.sdmx.infomodel.impo.Ssible=ABC:ABC(1.0).ABC").isNull);
 }
 
 enum Item;
