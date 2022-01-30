@@ -1,40 +1,39 @@
-module vulpes.datasources.sdmxml21;
+module vulpes.datasources.sdmx.xml21;
 
-import std.typecons : Nullable, nullable, Tuple, apply;
-import std.range : isInputRange, isRandomAccessRange, ElementType;
-import std.traits : Unqual;
+import std.typecons : Nullable, nullable;
 import vulpes.lib.xml;
-import vulpes.core.model : Dataflow, Language, Unknown, DefaultLanguage;
+import vulpes.core.model : Dataflow, Language, Unknown;
+import vulpes.datasources.sdmx.common : getIntlLabels, getLabel;
 
 package:
 
 @xmlRoot("Text")
-struct SDMXText
+struct SDMX21Text
 {
     @text
     Nullable!string content;
 }
 
 @xmlRoot("ErrorMessage")
-struct SDMXErrorMessage
+struct SDMX21ErrorMessage
 {
     @attr("code")
     Nullable!string code;
 
     @xmlElement("Text")
-    Nullable!SDMXText text_;
+    Nullable!SDMX21Text text_;
 
 }
 
 @xmlRoot("Error")
-struct SDMXError_
+struct SDMX21Error_
 {
     @xmlElement("ErrorMessage")
-    Nullable!SDMXErrorMessage errorMessage;
+    Nullable!SDMX21ErrorMessage errorMessage;
 }
 
 @xmlRoot("Dataflow")
-struct SDMXDataflow
+struct SDMX21Dataflow
 {
     @attr("id")
     Nullable!string id;
@@ -52,16 +51,16 @@ struct SDMXDataflow
     Nullable!bool isFinal;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElement("Structure")
-    Nullable!SDMXStructure structure;
+    Nullable!SDMX21Structure structure;
 
     @xmlElement("Ref")
-    Nullable!SDMXRef ref_;
+    Nullable!SDMX21Ref ref_;
 
     Nullable!Dataflow dataflow() pure @safe inout nothrow
     {
@@ -102,7 +101,7 @@ unittest
 {
     import std.file : readText;
     const xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
-    const sdmxDf = xmlStr.deserializeAs!SDMXStructures.dataflows.get.dataflows[0];
+    const sdmxDf = xmlStr.deserializeAs!SDMX21Structures.dataflows.get.dataflows[0];
     const df = sdmxDf.dataflow();
     assert(!df.isNull);
     assert(df.get.id == "BALANCE-PAIEMENTS");
@@ -116,7 +115,7 @@ unittest
 }
 
 @xmlRoot("Name")
-struct SDMXName
+struct SDMX21Name
 {
     @attr("lang")
     string lang;
@@ -126,7 +125,7 @@ struct SDMXName
 }
 
 @xmlRoot("Description")
-struct SDMXDescription
+struct SDMX21Description
 {
     @attr("lang")
     string lang;
@@ -135,77 +134,17 @@ struct SDMXDescription
     string content;
 }
 
-enum isLabel(T) = (is(Unqual!T == SDMXName) || is(Unqual!T == SDMXDescription));
-
-Nullable!string getLabel(T)(in T resources) pure @safe
-if(isInputRange!T && isLabel!(ElementType!T))
-{
-    import std.algorithm : map, filter;
-    import std.conv : to;
-
-    auto r = resources
-        .filter!(a => a.lang.to!Language == DefaultLanguage)
-        .map!(a => a.content);
-
-    if(r.empty) return typeof(return).init;
-
-    return r.front.nullable;
-}
-
-unittest
-{
-    auto l1 = getLabel([SDMXName(DefaultLanguage, "Foo"), SDMXName("fr", "Fou")]);
-    assert(!l1.isNull);
-    assert(l1.get == "Foo");
-
-    SDMXName[] eNames;
-    assert(getLabel(eNames).isNull);
-
-    auto l2 = getLabel([SDMXName("de", "Foo"), SDMXName("fr", "Fou")]);
-    assert(l2.isNull);
-}
-
-Nullable!(string[Language]) getIntlLabels(T)(in T resources) pure @safe nothrow
-if(isInputRange!T && isLabel!(ElementType!T))
-{
-    import std.array : assocArray;
-    import std.typecons : tuple;
-    import std.algorithm : map;
-    import std.conv : to;
-    import std.range;
-
-    scope(failure) return typeof(return).init;
-
-    if(resources.empty) return typeof(return).init;
-
-    return resources
-        .map!(a => tuple(a.lang.to!Language, a.content))
-        .assocArray
-        .nullable;
-}
-
-unittest
-{
-    import std.algorithm : equal;
-    const names = [SDMXName("en", "Foo"), SDMXName("fr", "Fou")];
-    auto r = getIntlLabels(names).get;
-    assert(equal(r[Language.en], "Foo"));
-    assert(equal(r[Language.fr], "Fou"));
-
-    assert(getIntlLabels([SDMXName("unknown", "")]).isNull);
-}
-
 @xmlRoot("Structure")
-struct SDMXStructure
+struct SDMX21Structure
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 enum RootUrn = "urn:sdmx:org.sdmx.infomodel";
 
 @xmlRoot("Ref")
-struct SDMXRef
+struct SDMX21Ref
 {
     @attr("id")
     string id;
@@ -251,8 +190,8 @@ struct SDMXRef
 
 unittest
 {
-    assert(SDMXRef().urn.isNull);
-    const ref_ = SDMXRef(
+    assert(SDMX21Ref().urn.isNull);
+    const ref_ = SDMX21Ref(
         "FOO",
         "1.0".nullable,
         (Nullable!string).init,
@@ -266,14 +205,14 @@ unittest
 }
 
 @xmlRoot("ConceptIdentity")
-struct SDMXConceptIdentity
+struct SDMX21ConceptIdentity
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 @xmlRoot("TextFormat")
-struct SDMXTextFormat
+struct SDMX21TextFormat
 {
     @attr("textType")
     Nullable!string textType;
@@ -289,24 +228,24 @@ struct SDMXTextFormat
 }
 
 @xmlRoot("Enumeration")
-struct SDMXEnumeration
+struct SDMX21Enumeration
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 @xmlRoot("LocalRepresentation")
-struct SDMXLocalRepresentation
+struct SDMX21LocalRepresentation
 {
     @xmlElement("TextFormat")
-    Nullable!SDMXTextFormat textFormat;
+    Nullable!SDMX21TextFormat textFormat;
 
     @xmlElement("Enumeration")
-    Nullable!SDMXEnumeration enumeration;
+    Nullable!SDMX21Enumeration enumeration;
 }
 
 @xmlRoot("TimeDimension")
-struct SDMXTimeDimension
+struct SDMX21TimeDimension
 {
     @attr("id")
     Nullable!string id;
@@ -318,14 +257,14 @@ struct SDMXTimeDimension
     Nullable!int position;
 
     @xmlElement("ConceptIdentity")
-    Nullable!SDMXConceptIdentity conceptIdentity;
+    Nullable!SDMX21ConceptIdentity conceptIdentity;
 
     @xmlElement("LocalRepresentation")
-    Nullable!SDMXLocalRepresentation localRepresentation;
+    Nullable!SDMX21LocalRepresentation localRepresentation;
 }
 
 @xmlRoot("Dimension")
-struct SDMXDimension
+struct SDMX21Dimension
 {
     @attr("id")
     Nullable!string id;
@@ -337,17 +276,17 @@ struct SDMXDimension
     Nullable!int position;
 
     @xmlElement("ConceptIdentity")
-    Nullable!SDMXConceptIdentity conceptIdentity;
+    Nullable!SDMX21ConceptIdentity conceptIdentity;
 
     @xmlElement("LocalRepresentation")
-    Nullable!SDMXLocalRepresentation localRepresentation;
+    Nullable!SDMX21LocalRepresentation localRepresentation;
 
     @xmlElement("Ref")
-    Nullable!SDMXRef ref_;
+    Nullable!SDMX21Ref ref_;
 }
 
 @xmlRoot("DimensionList")
-struct SDMXDimensionList
+struct SDMX21DimensionList
 {
     @attr("id")
     string id;
@@ -356,24 +295,24 @@ struct SDMXDimensionList
     Nullable!string urn;
 
     @xmlElement("TimeDimension")
-    SDMXTimeDimension timeDimension;
+    SDMX21TimeDimension timeDimension;
 
     @xmlElementList("Dimension")
-    SDMXDimension[] dimensions;
+    SDMX21Dimension[] dimensions;
 }
 
 @xmlRoot("AttributeRelationship")
-struct SDMXAttributeRelationship
+struct SDMX21AttributeRelationship
 {
     @xmlElementList("Dimension")
-    SDMXDimension[] dimensions;
+    SDMX21Dimension[] dimensions;
 
     @xmlElement("PrimaryMeasure")
-    Nullable!SDMXPrimaryMeasure primaryMeasure;
+    Nullable!SDMX21PrimaryMeasure primaryMeasure;
 }
 
 @xmlRoot("Attribute")
-struct SDMXAttribute
+struct SDMX21Attribute
 {
     @attr("id")
     Nullable!string id;
@@ -385,17 +324,17 @@ struct SDMXAttribute
     Nullable!string assignementStatus;
 
     @xmlElement("ConceptIdentity")
-    Nullable!SDMXConceptIdentity conceptIdentity;
+    Nullable!SDMX21ConceptIdentity conceptIdentity;
 
     @xmlElement("LocalRepresentation")
-    Nullable!SDMXLocalRepresentation localRepresentation;
+    Nullable!SDMX21LocalRepresentation localRepresentation;
 
     @xmlElement("AttributeRelationship")
-    Nullable!SDMXAttributeRelationship attributeRelationship;
+    Nullable!SDMX21AttributeRelationship attributeRelationship;
 }
 
 @xmlRoot("AttributeList")
-struct SDMXAttributeList
+struct SDMX21AttributeList
 {
     @attr("id")
     string id;
@@ -404,25 +343,25 @@ struct SDMXAttributeList
     Nullable!string urn;
 
     @xmlElementList("Attribute")
-    SDMXAttribute[] attributes;
+    SDMX21Attribute[] attributes;
 }
 
 @xmlRoot("DimensionReference")
-struct SDMXDimensionReference
+struct SDMX21DimensionReference
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 @xmlRoot("GroupDimension")
-struct SDMXGroupDimension
+struct SDMX21GroupDimension
 {
     @xmlElementList("DimensionReference")
-    SDMXDimensionReference[] dimensionReference;
+    SDMX21DimensionReference[] dimensionReference;
 }
 
 @xmlRoot("Group")
-struct SDMXGroup
+struct SDMX21Group
 {
     @attr("urn")
     Nullable!string urn;
@@ -431,11 +370,11 @@ struct SDMXGroup
     string id;
 
     @xmlElementList("GroupDimension")
-    SDMXGroupDimension[] groupDimesions;
+    SDMX21GroupDimension[] groupDimesions;
 }
 
 @xmlRoot("PrimaryMeasure")
-struct SDMXPrimaryMeasure
+struct SDMX21PrimaryMeasure
 {
     @attr("id")
     Nullable!string id;
@@ -444,11 +383,11 @@ struct SDMXPrimaryMeasure
     Nullable!string urn;
 
     @xmlElement("ConceptIdentity")
-    Nullable!SDMXConceptIdentity conceptIdentity;
+    Nullable!SDMX21ConceptIdentity conceptIdentity;
 }
 
 @xmlRoot("MeasureList")
-struct SDMXMeasureList
+struct SDMX21MeasureList
 {
     @attr("id")
     string id;
@@ -457,27 +396,27 @@ struct SDMXMeasureList
     Nullable!string urn;
 
     @xmlElement("PrimaryMeasure")
-    SDMXPrimaryMeasure primaryMeasure;
+    SDMX21PrimaryMeasure primaryMeasure;
 }
 
 @xmlRoot("DataStructureComponents")
-struct SDMXDataStructureComponents
+struct SDMX21DataStructureComponents
 {
     @xmlElement("DimensionList")
-    SDMXDimensionList dimensionList;
+    SDMX21DimensionList dimensionList;
 
     @xmlElement("AttributeList")
-    SDMXAttributeList attributeList;
+    SDMX21AttributeList attributeList;
 
     @xmlElement("MeasureList")
-    SDMXMeasureList measureList;
+    SDMX21MeasureList measureList;
 
     @xmlElement("Group")
-    Nullable!SDMXGroup group;
+    Nullable!SDMX21Group group;
 }
 
 @xmlRoot("DataStructure")
-struct SDMXDataStructure
+struct SDMX21DataStructure
 {
     @attr("id")
     string id;
@@ -492,17 +431,17 @@ struct SDMXDataStructure
     string version_;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElement("DataStructureComponents")
-    SDMXDataStructureComponents dataStructureComponents;
+    SDMX21DataStructureComponents dataStructureComponents;
 }
 
 @xmlRoot("Code")
-struct SDMXCode
+struct SDMX21Code
 {
     @attr("id")
     string id;
@@ -511,14 +450,14 @@ struct SDMXCode
     Nullable!string urn;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 }
 
 @xmlRoot("Codelist")
-struct SDMXCodelist
+struct SDMX21Codelist
 {
     @attr("id")
     string id;
@@ -533,17 +472,17 @@ struct SDMXCodelist
     string version_;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElementList("Code")
-    SDMXCode[] codes;
+    SDMX21Code[] codes;
 }
 
 @xmlRoot("Concept")
-struct SDMXConcept
+struct SDMX21Concept
 {
     @attr("id")
     string id;
@@ -552,14 +491,14 @@ struct SDMXConcept
     Nullable!string urn;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 }
 
 @xmlRoot("ConceptScheme")
-struct SDMXConceptScheme
+struct SDMX21ConceptScheme
 {
     @attr("id")
     string id;
@@ -574,17 +513,17 @@ struct SDMXConceptScheme
     string version_;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElementList("Concept")
-    SDMXConcept[] concepts;
+    SDMX21Concept[] concepts;
 }
 
 @xmlRoot("Category")
-struct SDMXCategory
+struct SDMX21Category
 {
     @attr("id")
     Nullable!string id;
@@ -593,17 +532,17 @@ struct SDMXCategory
     Nullable!string urn;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElementList("Category")
-    SDMXCategory[] children;
+    SDMX21Category[] children;
 }
 
 @xmlRoot("CategoryScheme")
-struct SDMXCategoryScheme
+struct SDMX21CategoryScheme
 {
     @attr("id")
     Nullable!string id;
@@ -618,31 +557,31 @@ struct SDMXCategoryScheme
     Nullable!string version_;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElementList("Category")
-    SDMXCategory[] categories;
+    SDMX21Category[] categories;
 }
 
 @xmlRoot("Source")
-struct SDMXSource
+struct SDMX21Source
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 @xmlRoot("Target")
-struct SDMXTarget
+struct SDMX21Target
 {
     @xmlElement("Ref")
-    SDMXRef ref_;
+    SDMX21Ref ref_;
 }
 
 @xmlRoot("Categorisation")
-struct SDMXCategorisation
+struct SDMX21Categorisation
 {
     @attr("id")
     string id;
@@ -657,89 +596,89 @@ struct SDMXCategorisation
     string version_;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElement("Source")
-    SDMXSource source;
+    SDMX21Source source;
 
     @xmlElement("Target")
-    SDMXTarget target;
+    SDMX21Target target;
 }
 
 @xmlRoot("Categorisations")
-struct SDMXCategorisations
+struct SDMX21Categorisations
 {
     @xmlElementList("Categorisation")
-    SDMXCategorisation[] categorisations;
+    SDMX21Categorisation[] categorisations;
 }
 
 @xmlRoot("Codelists")
-struct SDMXCodelists
+struct SDMX21Codelists
 {
     @xmlElementList("Codelist")
-    SDMXCodelist[] codelists;
+    SDMX21Codelist[] codelists;
 }
 
 @xmlRoot("Concepts")
-struct SDMXConcepts
+struct SDMX21Concepts
 {
     @xmlElementList("ConceptScheme")
-    SDMXConceptScheme[] conceptSchemes;
+    SDMX21ConceptScheme[] conceptSchemes;
 }
 
 @xmlRoot("DataStructures")
-struct SDMXDataStructures
+struct SDMX21DataStructures
 {
     @xmlElementList("DataStructure")
-    SDMXDataStructure[] dataStructures;
+    SDMX21DataStructure[] dataStructures;
 }
 
 @xmlRoot("Dataflows")
-struct SDMXDataflows
+struct SDMX21Dataflows
 {
     @xmlElementList("Dataflow")
-    SDMXDataflow[] dataflows;
+    SDMX21Dataflow[] dataflows;
 }
 
 @xmlRoot("CategorySchemes")
-struct SDMXCategorySchemes
+struct SDMX21CategorySchemes
 {
     @xmlElementList("CategoryScheme")
-    SDMXCategoryScheme[] categorySchemes;
+    SDMX21CategoryScheme[] categorySchemes;
 }
 
 @xmlRoot("KeyValue")
-struct SDMXKeyValue
+struct SDMX21KeyValue
 {
     @attr("id")
     string id;
 
     @xmlElementList("Value")
-    SDMXValue[] values;
+    SDMX21Value[] values;
 }
 
 @xmlRoot("ConstraintAttachment")
-struct SDMXConstraintAttachment
+struct SDMX21ConstraintAttachment
 {
     @xmlElement("Dataflow")
-    Nullable!SDMXDataflow dataflow;
+    Nullable!SDMX21Dataflow dataflow;
 }
 
 @xmlRoot("CubeRegion")
-struct SDMXCubeRegion
+struct SDMX21CubeRegion
 {
     @attr("include")
     Nullable!bool include;
 
     @xmlElementList("KeyValue")
-    SDMXKeyValue[] keyValues;
+    SDMX21KeyValue[] keyValues;
 }
 
 @xmlRoot("ContentConstraint")
-struct SDMXContentConstraint
+struct SDMX21ContentConstraint
 {
     @attr("id")
     Nullable!string id;
@@ -760,53 +699,53 @@ struct SDMXContentConstraint
     Nullable!string type;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX21Name[] names;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX21Description[] descriptions;
 
     @xmlElement("ConstraintAttachment")
-    Nullable!SDMXConstraintAttachment constraintAttachment;
+    Nullable!SDMX21ConstraintAttachment constraintAttachment;
 
     @xmlElement("CubeRegion")
-    Nullable!SDMXCubeRegion cubeRegion;
+    Nullable!SDMX21CubeRegion cubeRegion;
 }
 
 @xmlRoot("Constraints")
-struct SDMXConstraints
+struct SDMX21Constraints
 {
     @xmlElementList("ContentConstraint")
-    SDMXContentConstraint[] constraints;
+    SDMX21ContentConstraint[] constraints;
 }
 
 @xmlRoot("Structures")
-struct SDMXStructures
+struct SDMX21Structures
 {
     @xmlElement("Codelists")
-    Nullable!SDMXCodelists codelists;
+    Nullable!SDMX21Codelists codelists;
 
     @xmlElement("Concepts")
-    Nullable!SDMXConcepts concepts;
+    Nullable!SDMX21Concepts concepts;
 
     @xmlElement("DataStructures")
-    Nullable!SDMXDataStructures dataStructures;
+    Nullable!SDMX21DataStructures dataStructures;
 
     @xmlElement("Dataflows")
-    Nullable!SDMXDataflows dataflows;
+    Nullable!SDMX21Dataflows dataflows;
 
     @xmlElement("CategorySchemes")
-    Nullable!SDMXCategorySchemes categorySchemes;
+    Nullable!SDMX21CategorySchemes categorySchemes;
 
     @xmlElement("Constraints")
-    Nullable!SDMXConstraints constraints;
+    Nullable!SDMX21Constraints constraints;
 
     @xmlElement("Categorisations")
-    Nullable!SDMXCategorisations categorisations;
+    Nullable!SDMX21Categorisations categorisations;
 
 }
 
 @xmlRoot("Value")
-struct SDMXValue
+struct SDMX21Value
 {
     @attr("id")
     Nullable!string id;
@@ -819,73 +758,73 @@ struct SDMXValue
 }
 
 @xmlRoot("SeriesKey")
-struct SDMXSeriesKey
+struct SDMX21SeriesKey
 {
     @xmlElementList("Value")
-    SDMXValue[] values;
+    SDMX21Value[] values;
 }
 
 @xmlRoot("Attributes")
-struct SDMXAttributes
+struct SDMX21Attributes
 {
     @xmlElementList("Value")
-    SDMXValue[] values;
+    SDMX21Value[] values;
 }
 
 @xmlRoot("ObsDimension")
-struct SDMXObsDimension
+struct SDMX21ObsDimension
 {
     @attr("value")
     string value;
 }
 
 @xmlRoot("ObsValue")
-struct SDMXObsValue
+struct SDMX21ObsValue
 {
     @attr("value")
     Nullable!double value;
 }
 
 @xmlRoot("Obs")
-struct SDMXObs
+struct SDMX21Obs
 {
     @xmlElement("ObsDimension")
-    Nullable!SDMXObsDimension obsDimension;
+    Nullable!SDMX21ObsDimension obsDimension;
 
     @xmlElement("ObsValue")
-    Nullable!SDMXObsValue obsValue;
+    Nullable!SDMX21ObsValue obsValue;
 
     @xmlElement("Attributes")
-    Nullable!SDMXAttributes attributes;
+    Nullable!SDMX21Attributes attributes;
 
     @allAttr
     string[string] structureAttributes;
 }
 
 @xmlRoot("Series")
-struct SDMXSeries
+struct SDMX21Series
 {
     @xmlElement("SeriesKey")
-    Nullable!SDMXSeriesKey seriesKey;
+    Nullable!SDMX21SeriesKey seriesKey;
 
     @xmlElement("Attributes")
-    Nullable!SDMXAttributes attributes;
+    Nullable!SDMX21Attributes attributes;
 
     @xmlElementList("Obs")
-    SDMXObs[] observations;
+    SDMX21Obs[] observations;
 
     @allAttr
     string[string] structureKeys;
 }
 
 @xmlRoot("DataSet")
-struct SDMXDataSet
+struct SDMX21DataSet
 {
     @attr("structureRef")
     Nullable!string structureRef;
 
     @xmlElementList("Series")
-    SDMXSeries[] series;
+    SDMX21Series[] series;
 }
 
 unittest
@@ -893,7 +832,7 @@ unittest
     import std.file : readText;
 
     const structures = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
-        .deserializeAs!SDMXStructures;
+        .deserializeAs!SDMX21Structures;
 
     assert(structures.categorySchemes.isNull);
     assert(!structures.codelists.isNull);
@@ -911,7 +850,7 @@ unittest
     assert(!dataflow.agencyId.isNull);
     assert(dataflow.agencyId.get == "IMF");
     assert(dataflow.names.length == 1);
-    assert(dataflow.names[0] == SDMXName(
+    assert(dataflow.names[0] == SDMX21Name(
         "en", "Exchange Rates and International Reserves (01R) for Collection"));
     assert(!dataflow.structure.isNull);
     assert(dataflow.structure.get.ref_.id == "ECOFIN_DSD");
@@ -924,7 +863,7 @@ unittest
     assert(!contentConstraint.id.isNull);
     assert(contentConstraint.id.get == "01R_CONSTRAINT");
     assert(contentConstraint.names.length == 1);
-    assert(contentConstraint.names[0] == SDMXName("en", "01R_CONSTRAINT"));
+    assert(contentConstraint.names[0] == SDMX21Name("en", "01R_CONSTRAINT"));
     assert(!contentConstraint.constraintAttachment.isNull);
     assert(!contentConstraint.constraintAttachment.get.dataflow.isNull);
     assert(contentConstraint.constraintAttachment.get.dataflow.get.ref_.get.id == "01R");
@@ -945,7 +884,7 @@ unittest
     import std.file : readText;
 
     const structures = readText("./fixtures/sdmx21/structure_dsd_codelist_conceptscheme.xml")
-        .deserializeAs!SDMXStructures;
+        .deserializeAs!SDMX21Structures;
 
     assert(structures.categorySchemes.isNull);
     assert(!structures.codelists.isNull);
@@ -959,22 +898,22 @@ unittest
     assert(codelists.codelists[0].id == "CL_FREQ");
     assert(codelists.codelists[0].agencyId == "ESTAT");
     assert(codelists.codelists[0].names.length == 1);
-    assert(codelists.codelists[0].names[0] == SDMXName("en", "FREQ"));
+    assert(codelists.codelists[0].names[0] == SDMX21Name("en", "FREQ"));
     assert(codelists.codelists[0].codes.length == 7);
     assert(codelists.codelists[0].codes[0].id == "D");
     assert(codelists.codelists[0].codes[0].names.length == 1);
-    assert(codelists.codelists[0].codes[0].names[0] == SDMXName("en", "Daily"));
+    assert(codelists.codelists[0].codes[0].names[0] == SDMX21Name("en", "Daily"));
 
     const concepts = structures.concepts.get;
     assert(concepts.conceptSchemes.length == 1);
     assert(concepts.conceptSchemes[0].id == "CS_DSD_nama_10_gdp");
     assert(concepts.conceptSchemes[0].agencyId == "ESTAT");
     assert(concepts.conceptSchemes[0].names.length == 1);
-    assert(concepts.conceptSchemes[0].names[0] == SDMXName("en", "Concept Scheme for DSD_nama_10_gdp"));
+    assert(concepts.conceptSchemes[0].names[0] == SDMX21Name("en", "Concept Scheme for DSD_nama_10_gdp"));
     assert(concepts.conceptSchemes[0].concepts.length == 9);
     assert(concepts.conceptSchemes[0].concepts[0].id == "FREQ");
     assert(concepts.conceptSchemes[0].concepts[0].names.length == 1);
-    assert(concepts.conceptSchemes[0].concepts[0].names[0] == SDMXName("en", "FREQ"));
+    assert(concepts.conceptSchemes[0].concepts[0].names[0] == SDMX21Name("en", "FREQ"));
     assert(concepts.conceptSchemes[0].concepts[0].descriptions.length == 1);
 
     const dataStructures = structures.dataStructures.get;
@@ -984,7 +923,7 @@ unittest
     assert(dataStructure.id == "DSD_nama_10_gdp");
     assert(dataStructure.agencyId == "ESTAT");
     assert(dataStructure.names.length == 1);
-    assert(dataStructure.names[0] == SDMXName("en", "DSWS Data Structure Definition"));
+    assert(dataStructure.names[0] == SDMX21Name("en", "DSWS Data Structure Definition"));
 
     assert(dataStructure.dataStructureComponents.dimensionList.dimensions.length == 4);
     assert(dataStructure.dataStructureComponents.dimensionList.dimensions[0].id == "FREQ");
@@ -1037,7 +976,7 @@ unittest
     import std.file : readText;
 
     const structures = readText("./fixtures/sdmx21/structure_category.xml")
-        .deserializeAs!SDMXStructures;
+        .deserializeAs!SDMX21Structures;
 
     assert(!structures.categorySchemes.isNull);
     assert(structures.codelists.isNull);
@@ -1053,7 +992,7 @@ unittest
     assert(categorySchemes
         .categorySchemes[0]
         .categories[0]
-        .names[0] == SDMXName("fr", "Économie – Conjoncture – Comptes nationaux"));
+        .names[0] == SDMX21Name("fr", "Économie – Conjoncture – Comptes nationaux"));
     assert(categorySchemes.categorySchemes[0].categories[0].children.length == 6);
 }
 
@@ -1062,7 +1001,7 @@ unittest
     import std.file : readText;
 
     const structures = readText("./fixtures/sdmx21/structure_dataflow_categorisation.xml")
-        .deserializeAs!SDMXStructures;
+        .deserializeAs!SDMX21Structures;
 
     assert(structures.categorySchemes.isNull);
     assert(structures.codelists.isNull);
@@ -1085,20 +1024,20 @@ unittest
     import std.typecons : nullable;
 
     const dataset = readText("./fixtures/sdmx21/data_generic.xml")
-        .deserializeAs!SDMXDataSet;
+        .deserializeAs!SDMX21DataSet;
 
     assert(!dataset.structureRef.isNull);
     assert(dataset.series.length == 3);
     assert(dataset.series[0].seriesKey.get.values.length == 10);
-    assert(dataset.series[0].seriesKey.get.values[0] == SDMXValue("BASIND".nullable, "SO".nullable));
+    assert(dataset.series[0].seriesKey.get.values[0] == SDMX21Value("BASIND".nullable, "SO".nullable));
     assert(dataset.series[0].attributes.get.values.length == 5);
-    assert(dataset.series[0].attributes.get.values[0] == SDMXValue("IDBANK".nullable, "001694113".nullable));
+    assert(dataset.series[0].attributes.get.values[0] == SDMX21Value("IDBANK".nullable, "001694113".nullable));
     assert(dataset.series[0].observations.length == 10);
     assert(dataset.series[0].observations[0].obsDimension.get.value == "2020-10");
     assert(dataset.series[0].observations[0].obsValue.get.value.get == 4027.0);
     assert(!dataset.series[0].observations[0].attributes.isNull);
     assert(dataset.series[0].observations[0].attributes.get.values.length == 3);
-    assert(dataset.series[0].observations[0].attributes.get.values[0] == SDMXValue(
+    assert(dataset.series[0].observations[0].attributes.get.values[0] == SDMX21Value(
         "OBS_STATUS".nullable, "A".nullable));
 }
 
@@ -1108,7 +1047,7 @@ unittest
     import std.typecons : nullable;
 
     const dataset = readText("./fixtures/sdmx21/data_specific.xml")
-        .deserializeAs!SDMXDataSet;
+        .deserializeAs!SDMX21DataSet;
 
     assert(dataset.structureRef.isNull);
     assert(dataset.series);

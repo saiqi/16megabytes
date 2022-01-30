@@ -1,4 +1,4 @@
-module vulpes.datasources.sdmxml20;
+module vulpes.datasources.sdmx.xml20;
 
 import std.typecons : Nullable;
 import vulpes.lib.xml;
@@ -6,31 +6,31 @@ import vulpes.lib.xml;
 package:
 
 @xmlRoot("KeyFamilyID")
-struct SDMXKeyFamilyID
+struct SDMX20KeyFamilyID
 {
     @text
     string id;
 }
 
 @xmlRoot("KeyFamilyAgencyID")
-struct SDMXKeyFamilyAgencyID
+struct SDMX20KeyFamilyAgencyID
 {
     @text
     string agencyId;
 }
 
 @xmlRoot("KeyFamilyRef")
-struct SDMXKeyFamilyRef
+struct SDMX20KeyFamilyRef
 {
     @xmlElement("KeyFamilyID")
-    SDMXKeyFamilyID keyFamilyId;
+    SDMX20KeyFamilyID keyFamilyId;
 
     @xmlElement("KeyFamilyAgencyID")
-    SDMXKeyFamilyAgencyID keyFamilyAgencyId;
+    SDMX20KeyFamilyAgencyID keyFamilyAgencyId;
 }
 
 @xmlRoot("Name")
-struct SDMXName
+struct SDMX20Name
 {
     @attr("lang")
     string lang;
@@ -40,7 +40,7 @@ struct SDMXName
 }
 
 @xmlRoot("Dataflow")
-struct SDMXDataflow
+struct SDMX20Dataflow
 {
     @attr("id")
     string id;
@@ -55,24 +55,24 @@ struct SDMXDataflow
     Nullable!bool isFinal;
 
     @xmlElement("KeyFamilyRef")
-    SDMXKeyFamilyRef keyFamilyRef;
+    SDMX20KeyFamilyRef keyFamilyRef;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX20Name[] names;
 }
 
 @xmlRoot("Dataflows")
-struct SDMXDataflows
+struct SDMX20Dataflows
 {
     @xmlElementList("Dataflow")
-    SDMXDataflow[] dataflows;
+    SDMX20Dataflow[] dataflows;
 }
 
 unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_dataflows.xml");
-    auto dfs = message.deserializeAsRangeOf!SDMXDataflow;
+    auto dfs = message.deserializeAsRangeOf!SDMX20Dataflow;
     assert(!dfs.empty);
     assert(dfs.front.id == "DS-BOP_2017M06");
     assert(dfs.front.version_ == "1.0");
@@ -84,7 +84,7 @@ unittest
 }
 
 @xmlRoot("Dimension")
-struct SDMXDimension
+struct SDMX20Dimension
 {
     @attr("codelist")
     Nullable!string codelist;
@@ -94,7 +94,7 @@ struct SDMXDimension
 }
 
 @xmlRoot("TimeDimension")
-struct SDMXTimeDimension
+struct SDMX20TimeDimension
 {
     @attr("codelist")
     Nullable!string codelist;
@@ -104,24 +104,24 @@ struct SDMXTimeDimension
 }
 
 @xmlRoot("TextFormat")
-struct SDMXTextFormat
+struct SDMX20TextFormat
 {
     @attr("textType")
     Nullable!string textType;
 }
 
 @xmlRoot("PrimaryMeasure")
-struct SDMXPrimaryMeasure
+struct SDMX20PrimaryMeasure
 {
     @attr("conceptRef")
     Nullable!string conceptRef;
 
     @xmlElement("TextFormat")
-    Nullable!SDMXTextFormat textFormat;
+    Nullable!SDMX20TextFormat textFormat;
 }
 
 @xmlRoot("Attribute")
-struct SDMXAttribute
+struct SDMX20Attribute
 {
     @attr("codelist")
     Nullable!string codelist;
@@ -137,23 +137,23 @@ struct SDMXAttribute
 }
 
 @xmlRoot("Components")
-struct SDMXComponents
+struct SDMX20Components
 {
     @xmlElementList("Dimension")
-    SDMXDimension[] dimensions;
+    SDMX20Dimension[] dimensions;
 
     @xmlElement("TimeDimension")
-    SDMXTimeDimension timeDimension;
+    SDMX20TimeDimension timeDimension;
 
     @xmlElement("PrimaryMeasure")
-    SDMXPrimaryMeasure primaryMeasure;
+    SDMX20PrimaryMeasure primaryMeasure;
 
     @xmlElementList("Attribute")
-    SDMXAttribute[] attributes;
+    SDMX20Attribute[] attributes;
 }
 
 @xmlRoot("KeyFamily")
-struct SDMXKeyFamily
+struct SDMX20KeyFamily
 {
     @attr("id")
     string id;
@@ -162,24 +162,24 @@ struct SDMXKeyFamily
     string agencyId;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX20Name[] names;
 
     @xmlElement("Components")
-    SDMXComponents components;
+    SDMX20Components components;
 }
 
 @xmlRoot("KeyFamilies")
-struct SDMXKeyFamilies
+struct SDMX20KeyFamilies
 {
     @xmlElementList("KeyFamily")
-    SDMXKeyFamily[] keyFamilies;
+    SDMX20KeyFamily[] keyFamilies;
 }
 
 unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_keyfamilies.xml");
-    auto kfs = message.deserializeAsRangeOf!SDMXKeyFamily;
+    auto kfs = message.deserializeAsRangeOf!SDMX20KeyFamily;
     assert(!kfs.empty);
     assert(kfs.front.id == "QNA");
     assert(kfs.front.agencyId == "OECD");
@@ -192,7 +192,7 @@ unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml");
-    auto kf = message.deserializeAsRangeOf!SDMXKeyFamily.front;
+    auto kf = message.deserializeAsRangeOf!SDMX20KeyFamily.front;
     assert(kf.id == "QNA");
     assert(kf.agencyId == "OECD");
     assert(kf.names.length == 2);
@@ -211,7 +211,7 @@ unittest
 }
 
 @xmlRoot("Description")
-struct SDMXDescription
+struct SDMX20Description
 {
     @attr("lang")
     string lang;
@@ -221,23 +221,23 @@ struct SDMXDescription
 }
 
 @xmlRoot("Code")
-struct SDMXCode
+struct SDMX20Code
 {
     @attr("value")
     string value;
 
     @xmlElementList("Description")
-    SDMXDescription[] descriptions;
+    SDMX20Description[] descriptions;
 }
 
 @xmlRoot("CodeList")
-struct SDMXCodelist
+struct SDMX20Codelist
 {
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX20Name[] names;
 
     @xmlElementList("Code")
-    SDMXCode[] codes;
+    SDMX20Code[] codes;
 
     @attr("id")
     string id;
@@ -247,17 +247,17 @@ struct SDMXCodelist
 }
 
 @xmlRoot("CodeLists")
-struct SDMXCodelists
+struct SDMX20Codelists
 {
     @xmlElementList("Codelist")
-    SDMXCodelist[] codelists;
+    SDMX20Codelist[] codelists;
 }
 
 unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml");
-    auto cl = message.deserializeAsRangeOf!SDMXCodelist.front;
+    auto cl = message.deserializeAsRangeOf!SDMX20Codelist.front;
     assert(cl.id == "CL_QNA_LOCATION");
     assert(cl.agencyId == "OECD");
     assert(cl.names.length == 2);
@@ -269,7 +269,7 @@ unittest
 }
 
 @xmlRoot("Concept")
-struct SDMXConcept
+struct SDMX20Concept
 {
     @attr("id")
     string id;
@@ -278,21 +278,21 @@ struct SDMXConcept
     string agencyId;
 
     @xmlElementList("Name")
-    SDMXName[] names;
+    SDMX20Name[] names;
 }
 
 @xmlRoot("Concepts")
-struct SDMXConcepts
+struct SDMX20Concepts
 {
     @xmlElementList("Concept")
-    SDMXConcept[] concepts;
+    SDMX20Concept[] concepts;
 }
 
 unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml");
-    auto s = message.deserializeAsRangeOf!SDMXConcept.front;
+    auto s = message.deserializeAsRangeOf!SDMX20Concept.front;
     assert(s.id == "LOCATION");
     assert(s.agencyId == "OECD");
     assert(s.names.length == 2);
@@ -301,26 +301,26 @@ unittest
 }
 
 @xmlRoot("Structure")
-struct SDMXStructure
+struct SDMX20Structure
 {
     @xmlElement("Dataflows")
-    Nullable!SDMXDataflows dataflows;
+    Nullable!SDMX20Dataflows dataflows;
 
     @xmlElement("KeyFamilies")
-    Nullable!SDMXKeyFamilies keyFamilies;
+    Nullable!SDMX20KeyFamilies keyFamilies;
 
     @xmlElement("CodeLists")
-    Nullable!SDMXCodelists codelists;
+    Nullable!SDMX20Codelists codelists;
 
     @xmlElement("Concepts")
-    Nullable!SDMXConcepts concepts;
+    Nullable!SDMX20Concepts concepts;
 }
 
 unittest
 {
     import std.file : readText;
     auto message = readText("fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml");
-    auto s = message.deserializeAs!SDMXStructure;
+    auto s = message.deserializeAs!SDMX20Structure;
     assert(s.dataflows.isNull);
     assert(!s.keyFamilies.isNull);
     assert(!s.codelists.isNull);
