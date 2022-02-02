@@ -3,7 +3,7 @@ module vulpes.core.search;
 import std.range : isInputRange, ElementType;
 import vulpes.core.model : isNamed;
 
-string[] collectSearchItems(T)(in T resource) pure @safe nothrow
+private string[] collectSearchItems(T)(in T resource) pure @safe nothrow
 if(isNamed!T)
 {
     import std.array : appender, array;
