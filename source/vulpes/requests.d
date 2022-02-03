@@ -1,4 +1,4 @@
-module vulpes.lib.requests;
+module vulpes.requests;
 
 import std.typecons : Flag, Tuple;
 import std.traits : isCallable, ReturnType, isSomeChar, Parameters, isAssociativeArray, isSomeString, TemplateOf;
@@ -22,9 +22,9 @@ struct Response
     string content;
 }
 
-Response doRequest(Flag!"raiseForStatus" raiseForStatus)(string url,
-                                                         string[string] headers,
-                                                         string[string] params = null)
+Response doRequest(Flag!"raiseForStatus" raiseForStatus)(in string url,
+                                                         in string[string] headers,
+                                                         in string[string] params = null) @safe
 {
     import std.array : join, array, byPair;
     import std.algorithm : map;
@@ -101,7 +101,7 @@ unittest
     assertThrown!RequestException(doRequest!(Yes.raiseForStatus)(url, headers));
 }
 
-auto doAsyncRequest(string url, string[string] headers, string[string] params = null)
+Future!Response doAsyncRequest(in string url, in string[string] headers, in string[string] params = null)
 {
     import std.typecons : Yes;
     import vibe.core.concurrency : async;
@@ -120,7 +120,7 @@ unittest
     assert(res.content.length);
 }
 
-auto getResultOrFail(alias E = RequestException, T)(Future!T fut)
+auto getResultOrFail(alias E = RequestException, T)(Future!T fut) @safe
 {
     import std.exception : enforce;
 
@@ -145,7 +145,7 @@ unittest
         doAsyncRequest("https://httpbin.org/get", headers).getResultOrFail);
 }
 
-auto getResultOrNullable(T)(Future!T fut)
+auto getResultOrNullable(T)(Future!T fut) @safe
 {
     import std.typecons : nullable, Nullable;
     scope(failure) return (Nullable!T).init;

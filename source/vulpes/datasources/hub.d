@@ -49,6 +49,6 @@ unittest
     import std.sumtype : match;
     import vulpes.core.providers : Resource;
     
-    const p = Provider("Foo", true, "https://foo.org", Nullable!(Resource[string]).init);
+    const p = Provider("Foo", true, "https://foo.org", Nullable!(Resource[][string]).init);
     assert(isError(getDataflows(p)));
 }

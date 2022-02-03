@@ -5,9 +5,11 @@ import vulpes.lib.boilerplate : Generate;
 
 struct Resource
 {
+    string name;
     string pathTemplate;
     Nullable!(string[string]) queryTemplate;
     Nullable!(string[string]) headerTemplate;
+    bool mandatory;
 
     mixin(Generate);
 }
@@ -17,7 +19,7 @@ struct Provider
     string id;
     bool isPublic;
     string rootUrl;
-    Nullable!(Resource[string]) resources;
+    Nullable!(Resource[][string]) resources;
 
     bool hasResource(in string resourceName) pure nothrow @safe inout
     {
@@ -33,7 +35,7 @@ struct Provider
 
 unittest
 {
-    auto p = Provider("myid", true, "http://foo.bar", ["foo": Resource()].nullable);
+    auto p = Provider("myid", true, "http://foo.bar", ["foo": [Resource()]].nullable);
     assert(!p.hasResource("bar"));
     assert(p.hasResource("foo"));
 }

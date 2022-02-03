@@ -993,7 +993,7 @@ unittest
 {
     import vulpes.core.providers : Provider, Resource;
 
-    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
+    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[][string]).init);
 
     @Package(PackageType.base)
     @Class(ClassType.Codelist)
@@ -1054,7 +1054,7 @@ unittest
 {
     import vulpes.core.providers : Provider, Resource;
 
-    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[string]).init);
+    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[][string]).init);
 
     @Package(PackageType.codelist)
     @Class(ClassType.Codelist)
