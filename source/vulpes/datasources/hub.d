@@ -29,7 +29,7 @@ SumType!(Error_, Dataflow[]) getDataflows(in Provider provider)
 {
     import std.format : format;
     
-    SumType!(Error_, Dataflow) result;
+    SumType!(Error_, Dataflow[]) result;
     // HTTP query ?
     // Deserialization ?
 
