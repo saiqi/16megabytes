@@ -16,11 +16,7 @@ class RequestException : Exception
     }
 }
 
-alias RaiseForStatus = Flag!"raiseForStatus";
-
-alias RequestParameter = Tuple!(string, "url", string[string], "headers", string[string], "params");
-
-auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers, string[string] params = null)
+auto doRequest(Flag!"raiseForStatus" raiseForStatus)(string url, string[string] headers, string[string] params = null)
 {
     import std.array : join, array, byPair;
     import std.algorithm : map;
@@ -41,7 +37,7 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
                 req.headers[k] = v;
         },
         (scope resp) {
-            static if(raiseForStatus == RaiseForStatus.yes)
+            static if(raiseForStatus)
             {
                 enforce!RequestException(resp.statusCode < 400,
                                          format!"%s returned HTTP %s code"(url, resp.statusCode));
@@ -53,64 +49,53 @@ auto doRequest(RaiseForStatus raiseForStatus)(string url, string[string] headers
     return content;
 }
 
-auto doRequestFromParameter(RaiseForStatus raiseForStatus)(RequestParameter p)
-{
-    return doRequest!raiseForStatus(p.url, p.headers, p.params);
-}
-
 unittest
 {
+    import std.typecons : Yes;
     auto url = "https://httpbin.org/get";
     auto headers = ["Accept": "application/json"];
 
-    auto resp = doRequest!(RaiseForStatus.yes)(url, headers);
+    auto resp = doRequest!(Yes.raiseForStatus)(url, headers);
     assert(resp.length);
 }
 
 unittest
 {
+    import std.typecons : Yes;
     auto url = "https://httpbin.org/get";
     auto headers = ["Accept": "application/json"];
-    auto params = ["args": "foo"];
 
-    auto t = Tuple!(string, "url", string[string], "headers", string[string], "params")(url, headers, params);
-    auto resp = doRequestFromParameter!(RaiseForStatus.yes)(t);
+    auto resp = doRequest!(Yes.raiseForStatus)(url, headers, ["foo": "bar"]);
     assert(resp.length);
 }
 
 unittest
 {
-    auto url = "https://httpbin.org/get";
-    auto headers = ["Accept": "application/json"];
-
-    auto resp = doRequest!(RaiseForStatus.yes)(url, headers, ["foo": "bar"]);
-    assert(resp.length);
-}
-
-unittest
-{
+    import std.typecons : No;
     auto url = "https://httpbin.org/status/400";
     auto headers = ["Accept": "application/json"];
 
-    auto resp = doRequest!(RaiseForStatus.no)(url, headers);
+    auto resp = doRequest!(No.raiseForStatus)(url, headers);
     assert(!resp.length);
 }
 
 unittest
 {
     import std.exception : assertThrown;
+    import std.typecons : Yes;
 
     auto url = "https://httpbin.org/status/400";
     auto headers = ["Accept": "application/json"];
 
-    assertThrown!RequestException(doRequest!(RaiseForStatus.yes)(url, headers));
+    assertThrown!RequestException(doRequest!(Yes.raiseForStatus)(url, headers));
 }
 
 auto doAsyncRequest(string url, string[string] headers, string[string] params = null)
 {
+    import std.typecons : Yes;
     import vibe.core.concurrency : async;
     return async({
-        return doRequest!(RaiseForStatus.yes)(url, headers, params);
+        return doRequest!(Yes.raiseForStatus)(url, headers, params);
     });
 }
 
