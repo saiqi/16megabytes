@@ -16,7 +16,15 @@ class RequestException : Exception
     }
 }
 
-auto doRequest(Flag!"raiseForStatus" raiseForStatus)(string url, string[string] headers, string[string] params = null)
+struct Response
+{
+    int statusCode;
+    string content;
+}
+
+Response doRequest(Flag!"raiseForStatus" raiseForStatus)(string url,
+                                                         string[string] headers,
+                                                         string[string] params = null)
 {
     import std.array : join, array, byPair;
     import std.algorithm : map;
@@ -29,7 +37,7 @@ auto doRequest(Flag!"raiseForStatus" raiseForStatus)(string url, string[string] 
 
     auto pUrl = URL(url);
     pUrl.queryString = params.byPair.map!(t => t[0] ~ "=" ~ t[1]).array.join("&");
-    string content;
+    Response r;
     logDebug("Requesting: %s headers: %s", pUrl.toString, headers);
     requestHTTP(pUrl,
         (scope req) {
@@ -42,11 +50,11 @@ auto doRequest(Flag!"raiseForStatus" raiseForStatus)(string url, string[string] 
                 enforce!RequestException(resp.statusCode < 400,
                                          format!"%s returned HTTP %s code"(url, resp.statusCode));
             }
-            content = resp.bodyReader.readAllUTF8;
+            r = Response(resp.statusCode, resp.bodyReader.readAllUTF8);
             logDebug("%s: %s", pUrl.toString, resp.statusCode);
         }
     );
-    return content;
+    return r;
 }
 
 unittest
@@ -56,7 +64,8 @@ unittest
     auto headers = ["Accept": "application/json"];
 
     auto resp = doRequest!(Yes.raiseForStatus)(url, headers);
-    assert(resp.length);
+    assert(resp.statusCode == 200);
+    assert(resp.content.length);
 }
 
 unittest
@@ -66,7 +75,8 @@ unittest
     auto headers = ["Accept": "application/json"];
 
     auto resp = doRequest!(Yes.raiseForStatus)(url, headers, ["foo": "bar"]);
-    assert(resp.length);
+    assert(resp.statusCode == 200);
+    assert(resp.content.length);
 }
 
 unittest
@@ -76,7 +86,8 @@ unittest
     auto headers = ["Accept": "application/json"];
 
     auto resp = doRequest!(No.raiseForStatus)(url, headers);
-    assert(!resp.length);
+    assert(resp.statusCode == 400);
+    assert(!resp.content.length);
 }
 
 unittest
@@ -104,7 +115,9 @@ unittest
     auto url = "https://httpbin.org/get";
     auto headers = ["Accept": "application/json"];
     auto fut = doAsyncRequest(url, headers);
-    assert(fut.getResult.length);
+    auto res = fut.getResult;
+    assert(res.statusCode == 200);
+    assert(res.content.length);
 }
 
 auto getResultOrFail(alias E = RequestException, T)(Future!T fut)

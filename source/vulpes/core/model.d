@@ -807,7 +807,11 @@ enum ErrorStatusCode
     unauthorized = 110u,
     responseTooLarge = 130u,
     syntaxError = 140u,
-    sematicError = 150u
+    sematicError = 150u,
+    internalServerError = 500u,
+    notImplemented = 501u,
+    serviceNotAvailable = 503u,
+    responseSizeExceedsServiceLimit = 510u
 }
 
 struct Error_
