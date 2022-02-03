@@ -15,7 +15,7 @@ class TemplateException : Exception
 }
 
 
-T resolveRequestTemplate(T)(in T template_, in string[string] values)
+T resolve(T)(in T template_, in string[string] values)
 if(isSomeString!T || (isAssociativeArray!T && isSomeString!(ElementType!(typeof(T.init.values)))))
 {
     static if(isSomeString!T)
@@ -52,15 +52,15 @@ unittest
 {
     import std.exception : assertThrown;
     import std.algorithm : equal;
-    assert(resolveRequestTemplate("/foo/{id}/bar/", ["id": "1"]) == "/foo/1/bar/");
-    assert(resolveRequestTemplate("/{foo}/{id}/{bar}/", ["foo": "foo", "bar": "bar", "id": "1"]) == "/foo/1/bar/");
-    assertThrown!TemplateException(resolveRequestTemplate("/foo/{id}/bar/", ["foo": "1"]));
+    assert(resolve("/foo/{id}/bar/", ["id": "1"]) == "/foo/1/bar/");
+    assert(resolve("/{foo}/{id}/{bar}/", ["foo": "foo", "bar": "bar", "id": "1"]) == "/foo/1/bar/");
+    assertThrown!TemplateException(resolve("/foo/{id}/bar/", ["foo": "1"]));
 
-    auto rAA = resolveRequestTemplate(["ref": "{refId}"], ["refId": "1"]);
+    auto rAA = resolve(["ref": "{refId}"], ["refId": "1"]);
     assert(rAA.keys.equal(["ref"]));
     assert(rAA.values.equal(["1"]));
 
-    auto rWithoutVar = resolveRequestTemplate(["ref": "foo"], null);
+    auto rWithoutVar = resolve(["ref": "foo"], null);
     assert(rWithoutVar.keys.equal(["ref"]));
     assert(rWithoutVar.values.equal(["foo"]));
 }
