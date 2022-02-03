@@ -801,22 +801,50 @@ struct Data
     mixin(Generate);
 }
 
-struct Error
+enum ErrorStatusCode
 {
-    uint code;
+    notFound = 100u,
+    unauthorized = 110u,
+    responseTooLarge = 130u,
+    syntaxError = 140u,
+    sematicError = 150u
+}
+
+struct Error_
+{
+    ErrorStatusCode code;
     string title;
     string[Language] titles;
     Nullable!string detail;
-    Nullable!string[Language] details;
+    Nullable!(string[Language]) details;
+
+    static Error_ build(in ErrorStatusCode code, in string message) pure @safe nothrow
+    {
+        return Error_(
+            code,
+            message, 
+            [DefaultLanguage : message], 
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init
+        );
+    }
 
     mixin(Generate);
+}
+
+unittest
+{
+    auto err = Error_.build(ErrorStatusCode.notFound, "Not found");
+    assert(err.code == ErrorStatusCode.notFound);
+    assert(err.title == "Not found");
+    assert(err.titles[DefaultLanguage] == "Not found");
 }
 
 struct Message
 {
     Meta meta;
     Nullable!Data data;
-    Error[] errors;
+    Error_[] errors;
 
     mixin(Generate);
 }

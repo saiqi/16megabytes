@@ -19,21 +19,21 @@ struct Provider
     string rootUrl;
     Nullable!(Resource[string]) resources;
 
+    bool hasResource(in string resourceName) pure nothrow @safe inout
+    {
+        if(this.resources.isNull) return false;
+
+        if(resourceName in this.resources.get) return true;
+
+        return false;
+    }
+
     mixin(Generate);
-}
-
-bool hasResource(in Provider provider, in string resourceName) pure nothrow @safe
-{
-    if(provider.resources.isNull) return false;
-
-    if(resourceName in provider.resources.get) return true;
-
-    return false;
 }
 
 unittest
 {
     auto p = Provider("myid", true, "http://foo.bar", ["foo": Resource()].nullable);
-    assert(!hasResource(p, "bar"));
-    assert(hasResource(p, "foo"));
+    assert(!p.hasResource("bar"));
+    assert(p.hasResource("foo"));
 }
