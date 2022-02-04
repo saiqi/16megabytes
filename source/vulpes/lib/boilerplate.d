@@ -164,12 +164,30 @@ unittest
         mixin(Generate);
     }
 
-    static assert(hasMember!(A, "ids"));
-    static assert(hasMember!(A, "bs"));
-    static assert(hasMember!(B, "v"));
-    static assert(hasMember!(B, "c"));
-    static assert(hasMember!(C, "r"));
+    assert(hasMember!(A, "ids"));
+    assert(hasMember!(A, "bs"));
+    assert(hasMember!(B, "v"));
+    assert(hasMember!(B, "c"));
+    assert(hasMember!(C, "r"));
 }
+
+unittest
+{
+    static struct A
+    {
+        int[] v;
+
+        mixin GenerateMembers;
+        mixin(typeof(this).generatePostblitCtor());
+    }
+
+    auto vs = [1, 2, 3];
+    auto a = A(vs);
+    auto aa = a;
+    vs[0] = -1;
+    assert(aa.v[0] == 1);
+}
+
 
 unittest
 {
@@ -203,24 +221,6 @@ unittest
     auto b = a;
     v[1] = -1;
     assert(b.values[1] == 1);
-}
-
-unittest
-{
-    static struct A
-    {
-        int[int] values;
-
-        mixin(Generate);
-
-    }
-
-    static struct B
-    {
-        A[] a;
-
-        mixin(Generate);
-    }
 }
 
 enum Generate = q{
