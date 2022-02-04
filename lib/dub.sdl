@@ -1,5 +1,0 @@
-name "lib"
-authors "saiqi"
-copyright "Copyright © 2022, saiqi"
-targetType "library"
-dependency "dxml" version="0.4.3"
