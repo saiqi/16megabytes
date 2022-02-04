@@ -42,7 +42,7 @@ if(isSomeString!T || (isAssociativeArray!T && isSomeString!(ElementType!(typeof(
         ElementT[ElementT] result;
         foreach(k; template_.keys)
         {
-            result[k] = resolveRequestTemplate(template_[k], values);
+            result[k] = resolve(template_[k], values);
         }
         return result;
     }
