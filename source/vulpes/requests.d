@@ -1,8 +1,6 @@
 module vulpes.requests;
 
-import std.typecons : Flag, Tuple;
-import std.traits : isCallable, ReturnType, isSomeChar, Parameters, isAssociativeArray, isSomeString, TemplateOf;
-import std.range : isForwardRange, ElementType;
+import std.typecons : Flag;
 import vibe.core.concurrency : Future;
 
 ///Dedicated module `Exception`

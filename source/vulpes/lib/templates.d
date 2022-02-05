@@ -1,6 +1,6 @@
 module vulpes.lib.templates;
 
-import std.traits : isSomeString, isAssociativeArray;
+import std.traits : isSomeString;
 import std.range : ElementType;
 
 ///Dedicated module `Exception`
@@ -14,9 +14,17 @@ class TemplateException : Exception
     }
 }
 
+enum bool isTemplate(T) = isSomeString!T || is(T == V[K], K : string, V : string);
 
-T resolve(T)(in T template_, in string[string] values)
-if(isSomeString!T || (isAssociativeArray!T && isSomeString!(ElementType!(typeof(T.init.values)))))
+unittest
+{
+    static assert(isTemplate!string);
+    static assert(isTemplate!(const(string)));
+    static assert(isTemplate!(inout(string)));
+}
+
+auto resolve(T)(T template_, in string[string] values) @safe
+if(isTemplate!T)
 {
     static if(isSomeString!T)
     {
@@ -35,11 +43,11 @@ if(isSomeString!T || (isAssociativeArray!T && isSomeString!(ElementType!(typeof(
                                  format!"Serveral templated items have not been replace in %s"(result));
         return result;
     }
-    else
+    else static if(is(T == V[K], K, V))
     {
         import std.traits : Unqual;
-        alias ElementT = Unqual!(ElementType!(typeof(T.init.values)));
-        ElementT[ElementT] result;
+
+        Unqual!V[K] result;
         foreach(k; template_.keys)
         {
             result[k] = resolve(template_[k], values);
@@ -63,4 +71,20 @@ unittest
     auto rWithoutVar = resolve(["ref": "foo"], null);
     assert(rWithoutVar.keys.equal(["ref"]));
     assert(rWithoutVar.values.equal(["foo"]));
+}
+
+unittest
+{
+    static struct A
+    {
+        string[string] tmpl;
+
+        string[string] func(const(string[string]) vars) @safe inout
+        {
+            return resolve(this.tmpl, vars);
+        }
+    }
+
+    const ac = A(["a": "{var}"]);
+    assert(ac.func(["var": "1"])["a"] == "1");
 }

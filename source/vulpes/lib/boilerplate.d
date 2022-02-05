@@ -16,7 +16,7 @@ mixin template GenerateMembers()
     import std.algorithm : filter;
     import std.array : array, join;
 
-    private enum isNullable(T) = is(T: Nullable!Arg, Arg);
+    private enum bool isNullable(T) = is(T: Nullable!Arg, Arg);
 
     private enum dupNeeded(T) = (isAssociativeArray!(T)
         || isArray!T

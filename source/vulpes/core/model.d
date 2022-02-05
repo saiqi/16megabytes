@@ -7,6 +7,17 @@ import vulpes.lib.boilerplate : Generate;
 enum Unknown = "Unknown";
 enum DefaultVersion = "latest";
 
+enum ResourceType : string
+{
+    codelist = "codelist",
+    conceptscheme = "conceptscheme",
+    categoryscheme = "categoryscheme",
+    datastructure = "datastructure",
+    dataflow = "dataflow",
+    contentcontrainst = "contentconstraint",
+    categorisation = "categorisation"
+}
+
 enum PackageType : string
 {
     codelist = "codelist",
@@ -121,7 +132,7 @@ struct Urn
     static Nullable!Urn safeParse(inout string u) @safe nothrow
     {
         scope(failure) return typeof(return).init;
-        
+
         Nullable!Urn urn = Urn(u);
 
         return urn;
@@ -436,7 +447,7 @@ struct DataStructureComponents
 
 @Package(PackageType.datastructure)
 @Class(ClassType.DataStructure)
-@Type("datastructure")
+@Type(ResourceType.datastructure)
 struct DataStructure
 {
     string id;
@@ -519,7 +530,7 @@ unittest
 
 @Package(PackageType.categoryscheme)
 @Class(ClassType.CategoryScheme)
-@Type("categoryscheme")
+@Type(ResourceType.categoryscheme)
 struct CategoryScheme
 {
     string id;
@@ -641,7 +652,7 @@ struct Concept
 
 @Package(PackageType.conceptscheme)
 @Class(ClassType.ConceptScheme)
-@Type("conceptscheme")
+@Type(ResourceType.conceptscheme)
 struct ConceptScheme
 {
     string id;
@@ -677,7 +688,7 @@ struct Code
 
 @Package(PackageType.codelist)
 @Class(ClassType.Codelist)
-@Type("codelist")
+@Type(ResourceType.codelist)
 struct Codelist
 {
     string id;
@@ -698,7 +709,7 @@ struct Codelist
 
 @Package(PackageType.datastructure)
 @Class(ClassType.Dataflow)
-@Type("dataflow")
+@Type(ResourceType.dataflow)
 struct Dataflow
 {
     string id;
@@ -718,7 +729,7 @@ struct Dataflow
 
 @Package(PackageType.categoryscheme)
 @Class(ClassType.Categorisation)
-@Type("categorisation")
+@Type(ResourceType.categorisation)
 struct Categorisation
 {
     string id;
@@ -768,7 +779,7 @@ struct CubeRegion
 
 @Package(PackageType.registry)
 @Class(ClassType.ContentConstraint)
-@Type("contentconstraint")
+@Type(ResourceType.contentcontrainst)
 struct DataConstraint
 {
     string id;
@@ -826,8 +837,8 @@ struct Error_
     {
         return Error_(
             code,
-            message, 
-            [DefaultLanguage : message], 
+            message,
+            [DefaultLanguage : message],
             (Nullable!string).init,
             (Nullable!(string[Language])).init
         );
@@ -896,7 +907,6 @@ private mixin template GenerateLinks(T, ParentType = void)
     import std.uni : toLower;
     import std.conv : to;
     import std.traits : hasUDA, getUDAs;
-    import vulpes.core.providers : Provider;
 
     enum self = "self";
     enum hasNoParentType = is(ParentType == void);
@@ -932,10 +942,8 @@ private mixin template GenerateLinks(T, ParentType = void)
             return Urn(getPackage(), getClass(), agencyId, id, version_).toString;
         }
 
-        Link[] links(inout ref Provider provider) pure @safe inout @property
+        Link[] links(in string rootUrl) pure @safe inout @property
         {
-            const rootUrl = provider.rootUrl;
-
             const href = format!"%s/%s/%s/%s/%s"(rootUrl, getType(), agencyId, id, version_);
             auto s = Link(
                 href.nullable,
@@ -957,9 +965,8 @@ private mixin template GenerateLinks(T, ParentType = void)
 
         static if(hasUDA!(T, Item))
         {
-            Link[] links(inout ref Provider provider, inout ref ParentType parent) pure @safe inout @property
+            Link[] links(in string rootUrl, inout ref ParentType parent) pure @safe inout @property
             {
-                const rootUrl = provider.rootUrl;
                 const href = format!"%s/%s/%s/%s/%s/%s"
                     (rootUrl, getType(), parent.agencyId, parent.id, parent.version_, id);
                 auto s = Link(
@@ -991,9 +998,7 @@ private mixin template GenerateLinks(T, ParentType = void)
 
 unittest
 {
-    import vulpes.core.providers : Provider, Resource;
-
-    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[][string]).init);
+    const rootUrl = "https://bar.org";
 
     @Package(PackageType.base)
     @Class(ClassType.Codelist)
@@ -1010,9 +1015,9 @@ unittest
     auto foo = Foo("FOO", "1.0", "BAR");
     assert(foo.urn == "urn:sdmx:org.sdmx.infomodel.base.Codelist=BAR:FOO(1.0)");
 
-    assert(foo.links(provider).length == 1);
+    assert(foo.links(rootUrl).length == 1);
 
-    auto link = foo.links(provider)[0];
+    auto link = foo.links(rootUrl)[0];
     assert(link.href.get == "https://bar.org/foo/BAR/FOO/1.0");
     assert(link.rel == "self");
     assert(link.type.get == "foo");
@@ -1052,9 +1057,7 @@ unittest
 
 unittest
 {
-    import vulpes.core.providers : Provider, Resource;
-
-    const provider = Provider("BAR", true, "https://bar.org", Nullable!(Resource[][string]).init);
+    const rootUrl = "https://bar.org";
 
     @Package(PackageType.codelist)
     @Class(ClassType.Codelist)
@@ -1082,9 +1085,9 @@ unittest
     const bar = Bar("bar");
 
     assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.codelist.Code=PROV:foo(1.0).bar");
-    assert(bar.links(provider, foo).length == 1);
+    assert(bar.links(rootUrl, foo).length == 1);
 
-    auto link = bar.links(provider, foo)[0];
+    auto link = bar.links(rootUrl, foo)[0];
     assert(link.href.get = "https://bar.org/footype/PROV/foo/1.0/bar");
     assert(link.rel == "self");
     assert(link.type.get == "bar");
