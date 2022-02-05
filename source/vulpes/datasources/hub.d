@@ -138,6 +138,16 @@ unittest
     assertThrown(fetchResources(toDelegate(&ko), provider, ResourceType.dataflow, "aResourceId"));
 }
 
+unittest
+{
+    import std.functional : toDelegate;
+
+    auto provider = buildTestProvider(false, "dataflow");
+
+    auto r = fetchResources(toDelegate(&ok), provider, ResourceType.dataflow, "aResourceId");
+    assert(!r["foo"].isNull);
+}
+
 SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider) nothrow
 {
     import std.format : format;
