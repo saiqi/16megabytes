@@ -1055,8 +1055,8 @@ unittest
 enum bool isMappable(S, T) = is(ReturnType!((S s) => s.coreResource) : Nullable!T);
 
 Nullable!(T[]) buildResourceList(string resourceName, S, T)(in Nullable!string[string] messages,
-                                                            size_t limit,
-                                                            size_t offset = 0)
+                                                            int limit = -1,
+                                                            int offset = 0)
 if(isMappable!(S, T))
 {
     import std.range : drop, take;
@@ -1066,7 +1066,7 @@ if(isMappable!(S, T))
     return messages.get(resourceName, (Nullable!string).init)
         .apply!((msg) {
             Appender!(T[]) dfs;
-            dfs.reserve(limit);
+            if(limit > 0) dfs.reserve(limit);
             auto iRange = msg.deserializeAsRangeOf!S
                 .drop(offset)
                 .take(limit);
@@ -1089,4 +1089,37 @@ unittest
     auto r = buildDataflows(["dataflow": xmlStr], 10, 10);
     assert(!r.isNull);
     assert(r.get.length == 10);
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.range : walkLength;
+    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+    auto r = buildDataflows(["dataflow": xmlStr]);
+    auto expectedLength = deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).walkLength;
+    assert(!r.isNull);
+    assert(r.get.length == expectedLength);
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.datetime.stopwatch : benchmark;
+    import std.stdio : writefln;
+    import std.array : array;
+    import dxml.dom : parseDOM;
+
+    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+    auto bm = benchmark!({
+        buildDataflows(["dataflow": xmlStr]);
+    }, {
+        deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).array;
+    }, {
+        parseDOM(xmlStr.get);
+    })(100);
+
+    writefln("Mapped: %s msecs", bm[0].total!"msecs");
+    writefln("Original: %s msecs", bm[1].total!"msecs");
+    writefln("Raw: %s msecs", bm[2].total!"msecs");
 }
