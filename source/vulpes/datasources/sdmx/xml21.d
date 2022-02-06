@@ -1104,6 +1104,21 @@ unittest
 
 unittest
 {
+    Nullable!string xmlStr = "none";
+    auto r = buildDataflows(["other": xmlStr], 10, 10);
+    assert(r.isNull);
+}
+
+unittest
+{
+    import std.file : readText;
+    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+    auto r = buildDataflows(["dataflow": xmlStr], 10, 190);
+    assert(r.get.length == 5);
+}
+
+unittest
+{
     import std.file : readText;
     import std.datetime.stopwatch : benchmark;
     import std.stdio : writefln;
