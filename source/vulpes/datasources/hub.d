@@ -31,9 +31,9 @@ alias Fetcher = Future!Response delegate(in string, in string[string], in string
 private alias Content = Tuple!(Nullable!string, "content", FormatType, "formatType");
 
 private Content[string] fetchResources(Fetcher fetcher,
-                                               in Provider provider,
-                                               in ResourceType resourceType,
-                                               in string resourceId = null)
+                                       in Provider provider,
+                                       in ResourceType resourceType,
+                                       in string resourceId = null)
 {
     import std.typecons : tuple, nullable, apply;
     import std.traits : ReturnType;
@@ -158,6 +158,8 @@ unittest
 SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider) nothrow
 {
     import std.format : format;
+    import std.algorithm : uniq, map;
+    import std.array : array;
 
     SumType!(Error_, Dataflow[]) result;
     // Deserialization ?
@@ -177,6 +179,26 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider)
     }
 
     const responses = fetchResources(fetcher, provider, ResourceType.dataflow);
+
+    const types = responses.byValue.map!"a.formatType".uniq.array;
+
+    if(types.length > 1)
+    {
+        result = Error_.build(ErrorStatusCode.internalServerError,
+                              format!"multiple types are not supported: %s"(types));
+        return result;
+    }
+
+    with(FormatType) final switch(types[0])
+    {
+        case sdmxml21:
+        // result = ??
+        break;
+
+        case sdmxml20:
+        // result = ??
+        break;
+    }
 
     return result;
 }
