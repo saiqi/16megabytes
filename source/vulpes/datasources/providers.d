@@ -27,8 +27,15 @@ alias RequestItems = Tuple!(
     string, "url",
     string[string], "headers",
     string[string], "queryParams",
-    bool, "mandatory"
+    bool, "mandatory",
+    FormatType, "formatType"
 );
+
+enum FormatType : string
+{
+    sdmxml21 = "sdmxml21",
+    sdmxml20 = "sdmxml20"
+}
 
 struct Resource
 {
@@ -37,6 +44,7 @@ struct Resource
     Nullable!(string[string]) queryTemplate;
     string[string] headerTemplate;
     bool mandatory;
+    FormatType formatType;
 
     private static string[string] handleVars(const(string[VariableType]) vars) @safe
     {
@@ -70,7 +78,8 @@ struct Resource
             rootUrl ~ this.path(vars),
             this.headers(vars),
             this.queryParams(vars),
-            this.mandatory
+            this.mandatory,
+            this.formatType
         );
     }
 
@@ -85,7 +94,8 @@ unittest
         "/{resourceType}/foo",
         ["q": "{providerId}"].nullable,
         ["h": "{resourceId}"],
-        true
+        true,
+        FormatType.sdmxml21
     );
 
     with(VariableType)
@@ -101,6 +111,7 @@ unittest
         assert(ri.headers["h"] == "1");
         assert(ri.queryParams["q"] == "id");
         assert(ri.mandatory);
+        assert(ri.formatType == FormatType.sdmxml21);
     }
 }
 
@@ -111,7 +122,8 @@ unittest
         "/{resourceType}/foo",
         (Nullable!(string[string])).init,
         ["h": "{resourceId}"],
-        true
+        true,
+        FormatType.sdmxml21
     );
 
     with(VariableType)
@@ -194,7 +206,8 @@ unittest
             "/foo/{resourceType}/{providerId}",
             ["q" : "aParam"].nullable,
             ["Content-Type": "application/json"],
-            true
+            true,
+            FormatType.sdmxml21
         )
     ];
 
@@ -217,7 +230,8 @@ unittest
             "/bar/{providerId}/{resourceId}",
             (Nullable!(string[string])).init,
             ["Content-Type": "application/json"],
-            true
+            true,
+            FormatType.sdmxml21
         )
     ];
 

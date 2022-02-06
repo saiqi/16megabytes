@@ -1,9 +1,9 @@
 module vulpes.datasources.hub;
 
 import std.sumtype : SumType, isSumType;
-import std.typecons : Nullable;
+import std.typecons : Nullable, Tuple;
 import vibe.core.concurrency : Future;
-import vulpes.datasources.providers : Provider;
+import vulpes.datasources.providers : Provider, FormatType;
 import vulpes.core.model;
 import vulpes.requests : doAsyncRequest, Response;
 
@@ -28,8 +28,9 @@ unittest
 }
 
 alias Fetcher = Future!Response delegate(in string, in string[string], in string[string]);
+private alias Content = Tuple!(Nullable!string, "content", FormatType, "formatType");
 
-private Nullable!string[string] fetchResources(Fetcher fetcher,
+private Content[string] fetchResources(Fetcher fetcher,
                                                in Provider provider,
                                                in ResourceType resourceType,
                                                in string resourceId = null)
@@ -62,10 +63,12 @@ private Nullable!string[string] fetchResources(Fetcher fetcher,
     {
         auto ri = eFut[0]; auto fut = eFut[1];
         if(ri.mandatory)
-            result[ri.name] = getResultOrFail(fut).content.nullable;
+            result[ri.name] = Content(getResultOrFail(fut).content.nullable, ri.formatType);
         else
-            result[ri.name] = getResultOrNullable(fut)
-                .apply!(r => r.content);
+        {
+            auto rn = getResultOrNullable(fut).apply!(a => a.content);
+            result[ri.name] = Content(rn, ri.formatType);
+        }
     }
 
     return result;
@@ -101,7 +104,8 @@ version(unittest)
                 "/{resourceType}/{providerId}/{resourceId}",
                 (Nullable!(string[string])).init,
                 ["Content-Type": "application/json"],
-                mandatory
+                mandatory,
+                FormatType.sdmxml21
             )
         ];
 
@@ -116,7 +120,8 @@ unittest
     auto provider = buildTestProvider(true, "dataflow");
 
     auto r = fetchResources(toDelegate(&ok), provider, ResourceType.dataflow, "aResourceId");
-    assert(!r["foo"].isNull);
+    assert(!r["foo"].content.isNull);
+    assert(r["foo"].formatType == FormatType.sdmxml21);
 }
 
 unittest
@@ -126,7 +131,8 @@ unittest
     auto provider = buildTestProvider(false, "dataflow");
 
     auto r = fetchResources(toDelegate(&ko), provider, ResourceType.dataflow, "aResourceId");
-    assert(r["foo"].isNull);
+    assert(r["foo"].content.isNull);
+    assert(r["foo"].formatType == FormatType.sdmxml21);
 }
 
 unittest
@@ -145,7 +151,8 @@ unittest
     auto provider = buildTestProvider(false, "dataflow");
 
     auto r = fetchResources(toDelegate(&ok), provider, ResourceType.dataflow, "aResourceId");
-    assert(!r["foo"].isNull);
+    assert(!r["foo"].content.isNull);
+    assert(r["foo"].formatType == FormatType.sdmxml21);
 }
 
 SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider) nothrow
