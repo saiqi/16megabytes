@@ -433,9 +433,10 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
     {
 
         assert(isNextNodeReached(), "Seek range to first node");
-
+        
         _current = T();
-        R[] path;
+        Appender!(R[]) path;
+        path.reserve(42);
 
         while (!_entityRange.empty)
         {
@@ -443,13 +444,13 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
 
             if (n.type == EntityType.elementStart)
             {
-                path ~= n.name.cleanNs();
-                setValue!(T, typeof(n), R)(_current, path.dup, n, _entityRange.getText());
+                path.put(n.name.cleanNs());
+                setValue!(T, typeof(n), R)(_current, path.data, n, _entityRange.getText());
             }
 
             if (n.type == EntityType.elementEnd)
             {
-                path = path[0 .. ($ - 1)];
+                path.shrinkTo(path.data.length - 1u);
                 if (n.name.cleanNs() == getRootName!T)
                 {
                     break;
