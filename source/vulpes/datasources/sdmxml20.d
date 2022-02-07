@@ -1,4 +1,4 @@
-module vulpes.datasources.sdmx.xml20;
+module vulpes.datasources.sdmxml20;
 
 import std.typecons : Nullable, nullable;
 import vulpes.lib.xml;
@@ -75,11 +75,11 @@ struct SDMX20Dataflow
     @xmlElementList("Name")
     SDMX20Name[] names;
 
-    Nullable!Dataflow dataflow() pure @safe inout nothrow
+    Nullable!Dataflow convert() pure @safe inout nothrow
     {
         scope(failure) return typeof(return).init;
 
-        import vulpes.datasources.sdmx.common : getLabel, getIntlLabels;
+        import vulpes.datasources.sdmxcommon : getLabel, getIntlLabels;
 
         auto cNames = names.dup;
 
@@ -108,7 +108,7 @@ unittest
     import std.file : readText;
     const str = readText("fixtures/sdmx20/structure_dataflows.xml");
     const SDMX20Dataflow sdmxDf = str.deserializeAs!SDMX20Dataflows.dataflows[0];
-    const df = sdmxDf.dataflow;
+    const df = sdmxDf.convert;
     assert(!df.isNull);
     assert(df.get.id == "DS-BOP_2017M06");
     assert(df.get.agencyId == "IMF");

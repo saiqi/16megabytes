@@ -1,10 +1,10 @@
-module vulpes.datasources.sdmx.xml21;
+module vulpes.datasources.sdmxml21;
 
 import std.typecons : Nullable, nullable;
 import std.traits : ReturnType;
 import vulpes.lib.xml;
-import vulpes.core.model : Dataflow, Language, DefaultVersion, Urn;
-import vulpes.datasources.sdmx.common : getIntlLabels, getLabel;
+import vulpes.core.model;
+import vulpes.datasources.sdmxcommon : getIntlLabels, getLabel;
 
 package:
 
@@ -63,7 +63,7 @@ struct SDMX21Dataflow
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
 
-    Nullable!Dataflow coreResource() pure @safe inout nothrow
+    Nullable!Dataflow convert() pure @safe inout nothrow
     {
         scope(failure) return typeof(return).init;
 
@@ -100,7 +100,7 @@ unittest
     import std.file : readText;
     const xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
     const sdmxDf = xmlStr.deserializeAs!SDMX21Structures.dataflows.get.dataflows[0];
-    const df = sdmxDf.coreResource();
+    const df = sdmxDf.convert();
     assert(!df.isNull);
     assert(df.get.id == "BALANCE-PAIEMENTS");
     assert(df.get.version_ == "1.0");
@@ -1052,89 +1052,61 @@ unittest
     assert(dataset.series[2].observations[0].obsValue.isNull);
 }
 
-enum bool isMappable(S, T) = is(ReturnType!((S s) => s.coreResource) : Nullable!T);
+// public alias buildDataflows = buildResourceList!("dataflow", SDMX21Dataflow, Dataflow);
 
-Nullable!(T[]) buildResourceList(string resourceName, S, T)(in Nullable!string[string] messages,
-                                                            int limit = -1,
-                                                            int offset = 0)
-if(isMappable!(S, T))
-{
-    import std.range : drop, take;
-    import std.array : Appender;
-    import std.typecons : apply;
+// unittest
+// {
+//     import std.file : readText;
+//     Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+//     auto r = buildDataflows(["dataflow": xmlStr], 10, 10);
+//     assert(!r.isNull);
+//     assert(r.get.length == 10);
+// }
 
-    return messages.get(resourceName, (Nullable!string).init)
-        .apply!((msg) {
-            Appender!(T[]) dfs;
-            if(limit > 0) dfs.reserve(limit);
-            auto iRange = msg.deserializeAsRangeOf!S
-                .drop(offset)
-                .take(limit);
+// unittest
+// {
+//     import std.file : readText;
+//     import std.range : walkLength;
+//     Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+//     auto r = buildDataflows(["dataflow": xmlStr]);
+//     auto expectedLength = deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).walkLength;
+//     assert(!r.isNull);
+//     assert(r.get.length == expectedLength);
+// }
 
-            foreach (ref iDf; iRange)
-            {
-                auto df = iDf.coreResource();
-                if(!df.isNull) dfs.put(df.get);
-            }
-            return dfs.data;
-        });
-}
+// unittest
+// {
+//     Nullable!string xmlStr = "none";
+//     auto r = buildDataflows(["other": xmlStr], 10, 10);
+//     assert(r.isNull);
+// }
 
-alias buildDataflows = buildResourceList!("dataflow", SDMX21Dataflow, Dataflow);
+// unittest
+// {
+//     import std.file : readText;
+//     Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+//     auto r = buildDataflows(["dataflow": xmlStr], 10, 190);
+//     assert(r.get.length == 5);
+// }
 
-unittest
-{
-    import std.file : readText;
-    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
-    auto r = buildDataflows(["dataflow": xmlStr], 10, 10);
-    assert(!r.isNull);
-    assert(r.get.length == 10);
-}
+// unittest
+// {
+//     import std.file : readText;
+//     import std.datetime.stopwatch : benchmark;
+//     import std.stdio : writefln;
+//     import std.array : array;
+//     import dxml.dom : parseDOM;
 
-unittest
-{
-    import std.file : readText;
-    import std.range : walkLength;
-    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
-    auto r = buildDataflows(["dataflow": xmlStr]);
-    auto expectedLength = deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).walkLength;
-    assert(!r.isNull);
-    assert(r.get.length == expectedLength);
-}
+//     Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
+//     auto bm = benchmark!({
+//         buildDataflows(["dataflow": xmlStr]);
+//     }, {
+//         deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).array;
+//     }, {
+//         parseDOM(xmlStr.get);
+//     })(100);
 
-unittest
-{
-    Nullable!string xmlStr = "none";
-    auto r = buildDataflows(["other": xmlStr], 10, 10);
-    assert(r.isNull);
-}
-
-unittest
-{
-    import std.file : readText;
-    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
-    auto r = buildDataflows(["dataflow": xmlStr], 10, 190);
-    assert(r.get.length == 5);
-}
-
-unittest
-{
-    import std.file : readText;
-    import std.datetime.stopwatch : benchmark;
-    import std.stdio : writefln;
-    import std.array : array;
-    import dxml.dom : parseDOM;
-
-    Nullable!string xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
-    auto bm = benchmark!({
-        buildDataflows(["dataflow": xmlStr]);
-    }, {
-        deserializeAsRangeOf!SDMX21Dataflow(xmlStr.get).array;
-    }, {
-        parseDOM(xmlStr.get);
-    })(100);
-
-    writefln("Mapped: %s msecs", bm[0].total!"msecs");
-    writefln("Original: %s msecs", bm[1].total!"msecs");
-    writefln("Raw: %s msecs", bm[2].total!"msecs");
-}
+//     writefln("Mapped: %s msecs", bm[0].total!"msecs");
+//     writefln("Original: %s msecs", bm[1].total!"msecs");
+//     writefln("Raw: %s msecs", bm[2].total!"msecs");
+// }

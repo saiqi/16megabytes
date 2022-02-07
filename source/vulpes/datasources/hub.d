@@ -2,6 +2,7 @@ module vulpes.datasources.hub;
 
 import std.sumtype : SumType, isSumType;
 import std.typecons : Nullable, Tuple;
+import std.traits : ReturnType;
 import vibe.core.concurrency : Future;
 import vulpes.datasources.providers : Provider, FormatType;
 import vulpes.core.model;
@@ -36,7 +37,6 @@ private Content[string] fetchResources(Fetcher fetcher,
                                        in string resourceId = null)
 {
     import std.typecons : tuple, nullable, apply;
-    import std.traits : ReturnType;
     import std.algorithm : sort;
     import vulpes.datasources.providers : RequestItems;
     import vulpes.requests : getResultOrFail, getResultOrNullable;
@@ -155,14 +155,77 @@ unittest
     assert(r["foo"].formatType == FormatType.sdmxml21);
 }
 
-SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider) nothrow
+private enum bool isMappable(S, T) = is(ReturnType!((S s) => s.convert) : Nullable!T);
+
+private Nullable!(T[]) buildListFromXml(string resourceName, S, T)(in Nullable!string[string] messages,
+                                                                   int limit,
+                                                                   int offset)
+if(isMappable!(S, T))
+{
+    import std.range : drop, take;
+    import std.array : Appender;
+    import std.typecons : apply;
+    import vulpes.lib.xml : deserializeAsRangeOf;
+
+    return messages.get(resourceName, (Nullable!string).init)
+        .apply!((msg) {
+            Appender!(T[]) dfs;
+            if(limit > 0) dfs.reserve(limit);
+            auto iRange = msg.deserializeAsRangeOf!S
+                .drop(offset)
+                .take(limit);
+
+            foreach (ref iDf; iRange)
+            {
+                auto df = iDf.convert;
+                if(!df.isNull) dfs.put(df.get);
+            }
+            return dfs.data;
+        });
+}
+
+unittest
+{
+    import std.algorithm : equal;
+    import vulpes.lib.xml : xmlRoot, text;
+
+    static struct Out
+    {
+        int v;
+    }
+
+    @xmlRoot("node")
+    static struct In
+    {
+        @text
+        int v;
+
+        Nullable!Out convert() pure nothrow @safe inout
+        {
+            return Out(this.v).nullable;
+        }
+    }
+
+    static assert(isMappable!(In, Out));
+
+    auto xml = "<root><node>1</node><node>2</node><node>3</node></root>";
+
+    auto messages = ["in": xml.nullable];
+    assert(equal(buildListFromXml!("in", In, Out)(messages, 3, 0).get, [Out(1), Out(2), Out(3)]));
+    assert(equal(buildListFromXml!("in", In, Out)(messages, 1, 0).get, [Out(1)]));
+    assert(equal(buildListFromXml!("in", In, Out)(messages, 2, 1).get, [Out(2), Out(3)]));
+    assert(buildListFromXml!("in", In, Out)(["other": xml.nullable], 3, 0).isNull);
+}
+
+
+SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider, int limit = -1, int offset = 0) nothrow
 {
     import std.format : format;
     import std.algorithm : uniq, map;
-    import std.array : array;
+    import std.typecons : tuple;
+    import std.array : array, assocArray;
 
     SumType!(Error_, Dataflow[]) result;
-    // Deserialization ?
 
     scope(failure)
     {
@@ -178,27 +241,41 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider)
         return result;
     }
 
-    const responses = fetchResources(fetcher, provider, ResourceType.dataflow);
+    auto responses = fetchResources(fetcher, provider, ResourceType.dataflow);
 
     const types = responses.byValue.map!"a.formatType".uniq.array;
+
+    auto messages = responses.byKeyValue.map!(t => tuple(t.key, t.value.content)).assocArray;
 
     if(types.length > 1)
     {
         result = Error_.build(ErrorStatusCode.internalServerError,
-                              format!"multiple types are not supported: %s"(types));
+                              format!"multiple resource types are not supported: %s"(types));
         return result;
     }
 
+    Nullable!(Dataflow[]) dfs;
     with(FormatType) final switch(types[0])
     {
         case sdmxml21:
-        // result = ??
+        import vulpes.datasources.sdmxml21 : SDMX21Dataflow;
+        dfs = buildListFromXml!("dataflow", SDMX21Dataflow, Dataflow)(messages, limit, offset);
         break;
 
         case sdmxml20:
-        // result = ??
+        import vulpes.datasources.sdmxml20 : SDMX20Dataflow;
+        dfs = buildListFromXml!("dataflow", SDMX20Dataflow, Dataflow)(messages, limit, offset);
         break;
     }
+
+    if(dfs.isNull)
+    {
+        result = Error_.build(ErrorStatusCode.internalServerError,
+                              "something went wrong!");
+        return result;
+    }
+
+    result = dfs.get;
 
     return result;
 }

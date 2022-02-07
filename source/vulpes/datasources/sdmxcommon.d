@@ -1,4 +1,4 @@
-module vulpes.datasources.sdmx.common;
+module vulpes.datasources.sdmxcommon;
 
 import std.typecons : Nullable, nullable;
 import std.range : isInputRange, ElementType;
