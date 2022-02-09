@@ -243,9 +243,16 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider,
 
     auto responses = fetchResources(fetcher, provider, ResourceType.dataflow);
 
-    const types = responses.byValue.map!"a.formatType".uniq.array;
+    const types = responses
+        .byValue
+        .map!"a.formatType"
+        .uniq
+        .array;
 
-    auto messages = responses.byKeyValue.map!(t => tuple(t.key, t.value.content)).assocArray;
+    auto messages = responses
+        .byKeyValue
+        .map!(t => tuple(t.key, t.value.content))
+        .assocArray;
 
     if(types.length > 1)
     {
@@ -255,7 +262,7 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider,
     }
 
     Nullable!(Dataflow[]) dfs;
-    with(FormatType) final switch(types[0])
+    with(FormatType) switch(types[0])
     {
         case sdmxml21:
         import vulpes.datasources.sdmxml21 : SDMX21Dataflow;
@@ -266,6 +273,11 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider,
         import vulpes.datasources.sdmxml20 : SDMX20Dataflow;
         dfs = buildListFromXml!("dataflow", SDMX20Dataflow, Dataflow)(messages, limit, offset);
         break;
+
+        default:
+        result = Error_.build(ErrorStatusCode.notImplemented,
+                              format!"%s format not supported yet"(types[0]));
+        return result;
     }
 
     if(dfs.isNull)
@@ -279,3 +291,123 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider,
 
     return result;
 }
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+
+    auto resources = [Resource(
+        "dataflow",
+        "/FOO/dataflow/all",
+        (Nullable!(string[string])).init,
+        ["Accept": "application/xml"],
+        true,
+        FormatType.sdmxml21
+    )];
+
+    auto provider = Provider("FOO", true, "https://localhost", ["other": resources].nullable);
+
+    auto result = getDataflows(toDelegate(&ok), provider);
+    assert(isError(result));
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+    import std.sumtype : match;
+    import vibe.core.concurrency : async;
+    import vibe.core.file : readFileUTF8;
+
+    Future!Response fetcher(in string s, in string[string] h, in string[string] q)
+    {
+        return async({
+            return Response(200, readFileUTF8("fixtures/sdmx21/structure_dataflow.xml"));
+        });
+    }
+
+    auto resources = [Resource(
+        "dataflow",
+        "/FOO/dataflow/all",
+        (Nullable!(string[string])).init,
+        ["Accept": "application/xml"],
+        true,
+        FormatType.sdmxml21
+    )];
+
+    auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
+
+    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    assert(!isError(result));
+    assert(result.match!(
+        (Dataflow[] dfs) => dfs.length == 5,
+        _ => false
+    ));
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+    import std.sumtype : match;
+    import vibe.core.concurrency : async;
+    import vibe.core.file : readFileUTF8;
+
+    Future!Response fetcher(in string s, in string[string] h, in string[string] q)
+    {
+        return async({
+            return Response(200, readFileUTF8("fixtures/sdmx20/structure_dataflows.xml"));
+        });
+    }
+
+    auto resources = [Resource(
+        "dataflow",
+        "/FOO/dataflow/all",
+        (Nullable!(string[string])).init,
+        ["Accept": "application/xml"],
+        true,
+        FormatType.sdmxml20
+    )];
+
+    auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
+
+    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    assert(!isError(result));
+    assert(result.match!(
+        (Dataflow[] dfs) => dfs.length == 5,
+        _ => false
+    ));
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+    import std.sumtype : match;
+    import std.exception : enforce;
+    import vibe.core.concurrency : async;
+
+    Future!Response fetcher(in string s, in string[string] h, in string[string] q)
+    {
+        return async({
+            enforce(false);
+            return Response(400, "");
+        });
+    }
+
+    auto resources = [Resource(
+        "dataflow",
+        "/FOO/dataflow/all",
+        (Nullable!(string[string])).init,
+        ["Accept": "application/xml"],
+        true,
+        FormatType.sdmxml21
+    )];
+
+    auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
+
+    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    assert(isError(result));
+}
+
