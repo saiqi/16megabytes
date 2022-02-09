@@ -411,3 +411,33 @@ unittest
     assert(isError(result));
 }
 
+unittest
+{
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+    import std.sumtype : match;
+    import std.exception : enforce;
+    import vibe.core.concurrency : async;
+
+    Future!Response fetcher(in string s, in string[string] h, in string[string] q)
+    {
+        return async({
+            enforce(false);
+            return Response(400, "");
+        });
+    }
+
+    auto resources = [Resource(
+        "dataflow",
+        "/FOO/dataflow/all",
+        (Nullable!(string[string])).init,
+        ["Accept": "application/xml"],
+        false,
+        FormatType.sdmxml21
+    )];
+
+    auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
+
+    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    assert(isError(result));
+}
