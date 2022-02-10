@@ -5,61 +5,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://www.bdm.insee.fr/series/sdmx",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categoryscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -68,61 +97,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://sdw-wsrest.ecb.europa.eu/service",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categoryscheme": {
-                "pathTemplate": "/{resourceType}/all/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -131,61 +189,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://data.un.org/WS/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categoryscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -194,54 +281,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://data.un.org/WS/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -250,78 +373,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://www.ilo.org/sdmx/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1",
-                    "references": "conceptscheme"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categoryscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1",
-                    "references": "categorisation"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "queryTemplate": {
-                    "format": "compact_2_1"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "queryTemplate": {
-                    "format": "compact_2_1"
-                },
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -330,27 +465,42 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://ec.europa.eu/eurostat/SDMX/diss-web/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -359,54 +509,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "http://api.worldbank.org/v2/sdmx/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -415,54 +601,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "http://wits.worldbank.org/API/V1/SDMX/V21/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -471,54 +693,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "http://wits.worldbank.org/API/V1/SDMX/V21/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -527,54 +785,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://registry.sdmx.org/ws/public/sdmxapi/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -583,54 +877,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://sdmx.data.unicef.org/ws/public/sdmxapi/rest",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     },
     {
@@ -639,13 +969,18 @@
         "protocol": "imf",
         "rootUrl": "http://dataservices.imf.org/REST/SDMX_XML.svc",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/Dataflow",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.0",
-                    "Accept-Encoding": "gzip"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/Dataflow",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml20",
+                    "mandatory": true
                 }
-            }
+            ]
         }
     },
     {
@@ -654,54 +989,90 @@
         "protocol": "sdmx-rest",
         "rootUrl": "https://api.uis.unesco.org/sdmx",
         "resources": {
-            "dataflow": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "categorisation"
+            "dataflow": [
+                {
+                    "name": "dataflow",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "datastructure": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
-                },
-                "queryTemplate": {
-                    "references": "conceptscheme"
+            ],
+            "datastructure": [
+                {
+                    "name": "datastructure",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "categorisation": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categoryscheme": [
+                {
+                    "name": "categoryscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "codelist": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "categorisation": [
+                {
+                    "name": "categorisation",
+                    "pathTemplate": "/{resourceType}/{providerId}/all/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "conceptscheme": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{version}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "codelist": [
+                {
+                    "name": "codelist",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            },
-            "data": {
-                "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
-                "headerTemplate": {
-                    "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
-                    "Accept-Encoding": "gzip"
+            ],
+            "conceptscheme": [
+                {
+                    "name": "conceptscheme",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/latest",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structure+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
                 }
-            }
+            ],
+            "data": [
+                {
+                    "name": "data",
+                    "pathTemplate": "/{resourceType}/{providerId}/{resourceId}/{keys}",
+                    "headerTemplate": {
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept-Encoding": "gzip"
+                    },
+                    "formatType": "sdmxml21",
+                    "mandatory": true
+                }
+            ]
         }
     }
 ]

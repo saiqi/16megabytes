@@ -3,6 +3,7 @@ module vulpes.datasources.hub;
 import std.sumtype : SumType, isSumType;
 import std.typecons : Nullable, Tuple;
 import std.traits : ReturnType;
+import std.functional : toDelegate;
 import vibe.core.concurrency : Future;
 import vulpes.datasources.providers : Provider, FormatType;
 import vulpes.core.model;
@@ -31,10 +32,10 @@ unittest
 alias Fetcher = Future!Response delegate(in string, in string[string], in string[string]);
 private alias Content = Tuple!(Nullable!string, "content", FormatType, "formatType");
 
-private Content[string] fetchResources(Fetcher fetcher,
-                                       in Provider provider,
+private Content[string] fetchResources(in Provider provider,
                                        in ResourceType resourceType,
-                                       in string resourceId = null)
+                                       in string resourceId = null,
+                                       Fetcher fetcher = toDelegate(&doAsyncRequest))
 {
     import std.typecons : tuple, nullable, apply;
     import std.algorithm : sort;
@@ -119,7 +120,7 @@ unittest
 
     auto provider = buildTestProvider(true, "dataflow");
 
-    auto r = fetchResources(toDelegate(&ok), provider, ResourceType.dataflow, "aResourceId");
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
     assert(!r["foo"].content.isNull);
     assert(r["foo"].formatType == FormatType.sdmxml21);
 }
@@ -130,7 +131,7 @@ unittest
 
     auto provider = buildTestProvider(false, "dataflow");
 
-    auto r = fetchResources(toDelegate(&ko), provider, ResourceType.dataflow, "aResourceId");
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko));
     assert(r["foo"].content.isNull);
     assert(r["foo"].formatType == FormatType.sdmxml21);
 }
@@ -141,7 +142,7 @@ unittest
     import std.exception : assertThrown;
     auto provider = buildTestProvider(true, "dataflow");
 
-    assertThrown(fetchResources(toDelegate(&ko), provider, ResourceType.dataflow, "aResourceId"));
+    assertThrown(fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko)));
 }
 
 unittest
@@ -150,7 +151,7 @@ unittest
 
     auto provider = buildTestProvider(false, "dataflow");
 
-    auto r = fetchResources(toDelegate(&ok), provider, ResourceType.dataflow, "aResourceId");
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
     assert(!r["foo"].content.isNull);
     assert(r["foo"].formatType == FormatType.sdmxml21);
 }
@@ -218,7 +219,10 @@ unittest
 }
 
 
-SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider, int limit = -1, int offset = 0) nothrow
+SumType!(Error_, Dataflow[]) getDataflows(in Provider provider,
+                                          int limit,
+                                          int offset,
+                                          Fetcher fetcher = toDelegate(&doAsyncRequest)) nothrow
 {
     import std.format : format;
     import std.algorithm : uniq, map;
@@ -241,7 +245,7 @@ SumType!(Error_, Dataflow[]) getDataflows(Fetcher fetcher, in Provider provider,
         return result;
     }
 
-    auto responses = fetchResources(fetcher, provider, ResourceType.dataflow);
+    auto responses = fetchResources(provider, ResourceType.dataflow, null, fetcher);
 
     const types = responses
         .byValue
@@ -308,7 +312,7 @@ unittest
 
     auto provider = Provider("FOO", true, "https://localhost", ["other": resources].nullable);
 
-    auto result = getDataflows(toDelegate(&ok), provider);
+    auto result = getDataflows(provider, 1, 0, toDelegate(&ok));
     assert(isError(result));
 }
 
@@ -338,7 +342,7 @@ unittest
 
     auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
 
-    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    auto result = getDataflows(provider, 5, 0, toDelegate(&fetcher));
     assert(!isError(result));
     assert(result.match!(
         (Dataflow[] dfs) => dfs.length == 5,
@@ -372,7 +376,7 @@ unittest
 
     auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
 
-    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    auto result = getDataflows(provider, 5, 0, toDelegate(&fetcher));
     assert(!isError(result));
     assert(result.match!(
         (Dataflow[] dfs) => dfs.length == 5,
@@ -407,7 +411,7 @@ unittest
 
     auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
 
-    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    auto result = getDataflows(provider, 5, 0, toDelegate(&fetcher));
     assert(isError(result));
 }
 
@@ -438,6 +442,6 @@ unittest
 
     auto provider = Provider("FOO", true, "https://localhost", ["dataflow": resources].nullable);
 
-    auto result = getDataflows(toDelegate(&fetcher), provider, 5);
+    auto result = getDataflows(provider, 5, 0, toDelegate(&fetcher));
     assert(isError(result));
 }

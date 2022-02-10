@@ -1,6 +1,7 @@
 module vulpes.datasources.providers;
 
 import std.typecons : Nullable, Tuple;
+import vibe.data.json : optional;
 import vulpes.lib.boilerplate : Generate;
 import vulpes.core.model : ResourceType;
 
@@ -41,7 +42,7 @@ struct Resource
 {
     string name;
     string pathTemplate;
-    Nullable!(string[string]) queryTemplate;
+    @optional Nullable!(string[string]) queryTemplate;
     string[string] headerTemplate;
     bool mandatory;
     FormatType formatType;
@@ -251,4 +252,18 @@ unittest
 
     auto provider = Provider("ID", true, "https://vulpes.org", ["dataflow" : [Resource()]].nullable);
     assertThrown!ProviderException(provider.requestItems(ResourceType.datastructure));
+}
+
+immutable(Provider[]) loadProvidersFromConfig(in string path = "conf/providers.json")
+{
+    import vibe.core.file : readFileUTF8;
+    import vibe.data.json : deserializeJson;
+
+    return readFileUTF8(path)
+        .deserializeJson!(immutable(Provider[]));
+}
+
+unittest
+{
+    assert(loadProvidersFromConfig().length);
 }
