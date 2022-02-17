@@ -229,10 +229,9 @@ SumType!(Error_, Dataflow[]) getDataflows(in Provider provider,
     import std.typecons : tuple;
     import std.array : array, assocArray;
 
-    SumType!(Error_, Dataflow[]) result;
-
     scope(failure)
     {
+        SumType!(Error_, Dataflow[]) result;
         result = Error_.build(ErrorStatusCode.internalServerError,
                               "unexpected error");
         return result;
@@ -240,9 +239,8 @@ SumType!(Error_, Dataflow[]) getDataflows(in Provider provider,
 
     if(!provider.hasResource(ResourceType.dataflow))
     {
-        result = Error_.build(ErrorStatusCode.notImplemented,
-                              format!"dataflows not found for agency %s"(provider.id));
-        return result;
+        return typeof(return)(Error_.build(ErrorStatusCode.notImplemented,
+                              format!"dataflows not found for agency %s"(provider.id)));
     }
 
     auto responses = fetchResources(provider, ResourceType.dataflow, null, fetcher);
@@ -260,9 +258,8 @@ SumType!(Error_, Dataflow[]) getDataflows(in Provider provider,
 
     if(types.length > 1)
     {
-        result = Error_.build(ErrorStatusCode.internalServerError,
-                              format!"multiple resource types are not supported: %s"(types));
-        return result;
+        return typeof(return)(Error_.build(ErrorStatusCode.internalServerError,
+                              format!"multiple resource types are not supported: %s"(types)));
     }
 
     Nullable!(Dataflow[]) dfs;
@@ -279,21 +276,17 @@ SumType!(Error_, Dataflow[]) getDataflows(in Provider provider,
         break;
 
         default:
-        result = Error_.build(ErrorStatusCode.notImplemented,
-                              format!"%s format not supported yet"(types[0]));
-        return result;
+        return typeof(return)(Error_.build(ErrorStatusCode.notImplemented,
+                              format!"%s format not supported yet"(types[0])));
     }
 
     if(dfs.isNull)
     {
-        result = Error_.build(ErrorStatusCode.internalServerError,
-                              "something went wrong!");
-        return result;
+        return typeof(return)(Error_.build(ErrorStatusCode.internalServerError,
+                              "something went wrong!"));
     }
 
-    result = dfs.get;
-
-    return result;
+    return typeof(return)(dfs.get);
 }
 
 unittest
