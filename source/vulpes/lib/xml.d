@@ -433,7 +433,7 @@ if (hasUDA!(T, xmlRoot) && isForwardRangeOfChar!R)
     {
 
         assert(isNextNodeReached(), "Seek range to first node");
-        
+
         _current = T();
         Appender!(R[]) path;
         path.reserve(42);
