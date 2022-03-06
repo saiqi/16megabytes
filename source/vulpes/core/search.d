@@ -121,8 +121,7 @@ if(isInputRange!R && isNamed!(ElementType!R))
         .filter!(a => a.score <= threshold)
         .array
         .sort!((a, b) => a.score < b.score)
-        .map!"a.resource"
-        .array;
+        .map!"a.resource";
 }
 
 unittest

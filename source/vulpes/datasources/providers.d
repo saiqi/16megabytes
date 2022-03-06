@@ -1,9 +1,12 @@
 module vulpes.datasources.providers;
 
-import std.typecons : Nullable, Tuple;
+import std.typecons : Nullable, Tuple, Flag;
+import std.functional : toDelegate;
 import vibe.data.json : optional;
+import vibe.core.concurrency : Future;
 import vulpes.lib.boilerplate : Generate;
 import vulpes.core.model : ResourceType;
+import vulpes.requests : doAsyncRequest, Response;
 
 ///Dedicated module `Exception`
 class ProviderException : Exception
@@ -186,6 +189,40 @@ struct Provider
         return this.requestItems(resourceType, null);
     }
 
+    FormatType[] formatTypes() @safe inout
+    {
+        import std.algorithm : map, uniq;
+        import std.array : join, array;
+        import std.exception : enforce;
+        import std.format : format;
+
+        enforce!ProviderException(!this.resources.isNull,
+                                  format!"provider %s has no resource"(this.id));
+
+        return this.resources
+            .get
+            .byValue
+            .join
+            .map!"a.formatType"
+            .uniq
+            .array
+            .dup;
+
+    }
+
+    Nullable!FormatType formatType() @safe inout nothrow
+    {
+        import std.typecons : nullable;
+
+        scope(failure) return typeof(return).init;
+
+        auto fts = this.formatTypes();
+
+        if(fts.length != 1) return typeof(return).init;
+
+        return fts[0].nullable;
+    }
+
     mixin(Generate);
 }
 
@@ -254,6 +291,68 @@ unittest
     assertThrown!ProviderException(provider.requestItems(ResourceType.datastructure));
 }
 
+unittest
+{
+    import std.typecons : nullable;
+    import std.algorithm : equal;
+
+    auto resources = [
+        Resource(
+            "foo",
+            "/foo/{resourceType}/{providerId}",
+            ["q" : "aParam"].nullable,
+            ["Content-Type": "application/json"],
+            true,
+            FormatType.sdmxml21
+        )
+    ];
+
+    auto provider = Provider("ID", true, "https://vulpes.org", ["dataflow" : resources].nullable);
+    assert(provider.formatTypes.equal([FormatType.sdmxml21]));
+    assert(provider.formatType.get == FormatType.sdmxml21);
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.algorithm : equal, sort;
+
+    auto resources = [
+        Resource(
+            "foo",
+            "/foo/{resourceType}/{providerId}",
+            ["q" : "aParam"].nullable,
+            ["Content-Type": "application/json"],
+            true,
+            FormatType.sdmxml21
+        ),
+         Resource(
+            "bar",
+            "/bar/{resourceType}/{providerId}",
+            ["q" : "aParam"].nullable,
+            ["Content-Type": "application/json"],
+            true,
+            FormatType.sdmxml20
+        )
+    ];
+
+    auto provider = Provider("ID", true, "https://vulpes.org", ["dataflow" : resources].nullable);
+    assert(provider.formatTypes.sort.equal([FormatType.sdmxml21, FormatType.sdmxml20].sort));
+    assert(provider.formatType.isNull);
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.exception : assertThrown;
+
+    auto resources = Nullable!(Resource[][string]).init;
+
+    auto provider = Provider("ID", true, "https://vulpes.org", resources);
+    assertThrown!ProviderException(provider.formatTypes);
+    assert(provider.formatType.isNull);
+}
+
 immutable(Provider[]) loadProvidersFromConfig(in string path = "conf/providers.json")
 {
     import vibe.core.file : readFileUTF8;
@@ -266,4 +365,158 @@ immutable(Provider[]) loadProvidersFromConfig(in string path = "conf/providers.j
 unittest
 {
     assert(loadProvidersFromConfig().length);
+}
+
+alias Fetcher = Future!Response delegate(in string, in string[string], in string[string]);
+
+Nullable!string[string] fetchResources(in Provider provider,
+                                       in ResourceType resourceType,
+                                       in string resourceId = null,
+                                       Fetcher fetcher = toDelegate(&doAsyncRequest))
+{
+    import std.typecons : tuple, nullable, apply;
+    import std.algorithm : sort;
+    import std.traits : ReturnType;
+    import vulpes.datasources.providers : RequestItems;
+    import vulpes.requests : getResultOrFail, getResultOrNullable;
+
+    Nullable!string[string] result;
+
+    auto reqItems = provider.requestItems(resourceType, resourceId);
+
+    auto gatherFuture(in ref RequestItems ri)
+    {
+        auto fut = fetcher(ri.url, ri.headers, ri.queryParams);
+        return tuple(ri, fut);
+    }
+
+    alias EnrichedFuture = ReturnType!gatherFuture;
+
+    EnrichedFuture[] futures;
+    foreach (ref ri; reqItems.sort!((a, b) => a.mandatory < b.mandatory))
+    {
+        futures ~= gatherFuture(ri);
+    }
+
+    foreach (ref EnrichedFuture eFut; futures)
+    {
+        auto ri = eFut[0]; auto fut = eFut[1];
+        if(ri.mandatory)
+            result[ri.name] = getResultOrFail(fut).content.nullable;
+        else
+        {
+            auto rn = getResultOrNullable(fut).apply!(a => a.content);
+            result[ri.name] = rn;
+        }
+    }
+
+    return result;
+}
+
+version(unittest)
+{
+    import std.typecons : nullable;
+    import std.exception : enforce;
+    import vibe.core.concurrency : async;
+
+    Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
+    {
+        return async({
+            return Response(200, "ok");
+        });
+    }
+
+    Future!Response ko(in string url, in string[string] headers, in string[string] queryParams)
+    {
+        return async({
+            enforce(false);
+            return Response(400, "ko");
+        });
+    }
+
+    auto buildTestProvider(bool mandatory, string resourceName)
+    {
+        auto resources = [
+            Resource(
+                "foo",
+                "/{resourceType}/{providerId}/{resourceId}",
+                (Nullable!(string[string])).init,
+                ["Content-Type": "application/json"],
+                mandatory,
+                FormatType.sdmxml21
+            )
+        ];
+
+        return Provider("anId", true, "https://vulpes.org", [resourceName: resources].nullable);
+    }
+}
+
+unittest
+{
+    import std.functional : toDelegate;
+
+    auto provider = buildTestProvider(true, "dataflow");
+
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
+    assert(!r["foo"].isNull);
+}
+
+unittest
+{
+    import std.functional : toDelegate;
+
+    auto provider = buildTestProvider(false, "dataflow");
+
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko));
+    assert(r["foo"].isNull);
+}
+
+unittest
+{
+    import std.functional : toDelegate;
+    import std.exception : assertThrown;
+    auto provider = buildTestProvider(true, "dataflow");
+
+    assertThrown(fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko)));
+}
+
+unittest
+{
+    import std.functional : toDelegate;
+
+    auto provider = buildTestProvider(false, "dataflow");
+
+    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
+    assert(!r["foo"].isNull);
+}
+
+void enforceMessages(string k, Flag!"canBeNull" canBeNull)(in Nullable!string[string] messages) @safe
+{
+    import std.exception : enforce;
+    import std.format : format;
+
+    auto m = (k in messages);
+
+    enforce!ProviderException(m !is null,
+                              format!"provider did not provide %s"(k));
+
+    static if(!canBeNull)
+    {
+        enforce!ProviderException(!m.isNull,
+                                  format!"provider provided a Null resouce %s"(k));
+    }
+}
+
+unittest
+{
+    import std.exception : assertNotThrown, assertThrown;
+    import std.typecons : nullable, Yes, No;
+
+    auto valid = ["foo": "foo".nullable];
+    auto invalid = ["foo": (Nullable!string).init];
+
+    assertNotThrown!ProviderException(enforceMessages!("foo", Yes.canBeNull)(valid));
+    assertNotThrown!ProviderException(enforceMessages!("foo", No.canBeNull)(valid));
+    assertNotThrown!ProviderException(enforceMessages!("foo", Yes.canBeNull)(invalid));
+    assertThrown!ProviderException(enforceMessages!("bar", Yes.canBeNull)(valid));
 }

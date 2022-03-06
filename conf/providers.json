@@ -974,7 +974,7 @@
                     "name": "dataflow",
                     "pathTemplate": "/Dataflow",
                     "headerTemplate": {
-                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.1",
+                        "Accept": "application/vnd.sdmx.structurespecificdata+xml;version=2.0",
                         "Accept-Encoding": "gzip"
                     },
                     "formatType": "sdmxml20",

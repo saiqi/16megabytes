@@ -15,8 +15,7 @@ mixin template GenerateMembers()
     import std.meta : anySatisfy;
     import std.algorithm : filter;
     import std.array : array, join;
-
-    private enum bool isNullable(T) = is(T: Nullable!Arg, Arg);
+    import vulpes.lib.monadish : isNullable;
 
     private enum dupNeeded(T) = (isAssociativeArray!(T)
         || isArray!T

@@ -6,6 +6,7 @@ import std.range;
 import std.traits : isSomeChar, isSomeString, isArray, TemplateOf, TemplateArgsOf;
 import std.typecons : Nullable, nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
+import vulpes.lib.monadish : isNullable;
 
 ///Dedicated module `Exception`
 class DeserializationException : Exception
@@ -134,8 +135,6 @@ enum allAttr;
         Bar[] bar;
     }
 }
-
-private enum isNullable(T) = __traits(isSame, TemplateOf!T, Nullable);
 
 private template handleNullable(T, alias pred, Args...)
 {
