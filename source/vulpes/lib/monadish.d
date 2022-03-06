@@ -83,3 +83,17 @@ nothrow @safe pure unittest
     alias f = a => a % 2 == 0 ? (Nullable!int).init : a.nullable;
     assert(iota(10).map!f.filterNull.walkLength == 5);
 }
+
+nothrow @safe pure unittest
+{
+    import std.typecons : nullable;
+    import std.range : iota;
+    import std.algorithm : map;
+    import std.array : array;
+
+    auto range = iota(10).map!"a.nullable".array.filterNull;
+    auto copy = range.save;
+    range.popFront();
+    assert(range.front == 1);
+    assert(copy.front == 0);
+}
