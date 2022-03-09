@@ -31,8 +31,6 @@ struct SDMX20KeyFamilyRef
 
     inout(Urn) urn() pure @safe inout nothrow
     {
-        scope(failure) return typeof(return).init;
-
         import vulpes.core.model : PackageType, ClassType, DefaultVersion;
         return Urn(
             PackageType.datastructure,
@@ -75,10 +73,8 @@ struct SDMX20Dataflow
     @xmlElementList("Name")
     SDMX20Name[] names;
 
-    Nullable!Dataflow convert() pure @safe inout nothrow
+    Nullable!Dataflow convert() pure @safe inout
     {
-        scope(failure) return typeof(return).init;
-
         import vulpes.datasources.sdmxcommon : getLabel, getIntlLabels;
 
         auto cNames = names.dup;

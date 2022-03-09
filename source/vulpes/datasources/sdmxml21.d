@@ -63,10 +63,8 @@ struct SDMX21Dataflow
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
 
-    Nullable!Dataflow convert() pure @safe inout nothrow
+    Nullable!Dataflow convert() pure @safe inout
     {
-        scope(failure) return typeof(return).init;
-
         if(id.isNull || agencyId.isNull || structure.isNull || structure.get.ref_.urn.isNull)
             return typeof(return).init;
 
@@ -163,10 +161,8 @@ struct SDMX21Ref
     @attr("class")
     Nullable!string class_;
 
-    inout(Nullable!Urn) urn() pure @safe inout nothrow
+    inout(Nullable!Urn) urn() pure @safe inout
     {
-        scope(failure) return typeof(return).init;
-
         import std.conv : to;
         import vulpes.core.model : PackageType, ClassType;
 

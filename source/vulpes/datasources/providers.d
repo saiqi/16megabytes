@@ -196,8 +196,7 @@ struct Provider
         import std.exception : enforce;
         import std.format : format;
 
-        enforce!ProviderException(!this.resources.isNull,
-                                  format!"provider %s has no resource"(this.id));
+        if(this.resources.isNull) return typeof(return).init;
 
         return this.resources
             .get
@@ -210,11 +209,9 @@ struct Provider
 
     }
 
-    Nullable!FormatType formatType() @safe inout nothrow
+    Nullable!FormatType formatType() @safe inout
     {
         import std.typecons : nullable;
-
-        scope(failure) return typeof(return).init;
 
         auto fts = this.formatTypes();
 
@@ -344,12 +341,11 @@ unittest
 unittest
 {
     import std.typecons : nullable;
-    import std.exception : assertThrown;
 
     auto resources = Nullable!(Resource[][string]).init;
 
     auto provider = Provider("ID", true, "https://vulpes.org", resources);
-    assertThrown!ProviderException(provider.formatTypes);
+    assert(!provider.formatTypes.length);
     assert(provider.formatType.isNull);
 }
 

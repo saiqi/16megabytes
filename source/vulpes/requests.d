@@ -143,11 +143,17 @@ unittest
         doAsyncRequest("https://httpbin.org/get", headers).getResultOrFail);
 }
 
-auto getResultOrNullable(T)(Future!T fut) @safe
+auto getResultOrNullable(T)(Future!T fut) @safe nothrow
 {
     import std.typecons : nullable, Nullable;
-    scope(failure) return (Nullable!T).init;
-    return fut.getResult.nullable;
+    try
+    {
+        return fut.getResult.nullable;
+    }
+    catch(Exception e)
+    {
+        return (Nullable!T).init;
+    }
 }
 
 unittest

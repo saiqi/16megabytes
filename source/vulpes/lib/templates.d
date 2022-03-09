@@ -1,6 +1,6 @@
 module vulpes.lib.templates;
 
-import std.traits : isSomeString;
+import std.traits : isSomeString, Unqual;
 import std.range : ElementType;
 
 ///Dedicated module `Exception`
@@ -14,7 +14,7 @@ class TemplateException : Exception
     }
 }
 
-enum bool isTemplate(T) = isSomeString!T || is(T == V[K], K : string, V : string);
+enum bool isTemplate(T) = isSomeString!T || is(Unqual!T == V[K], K : string, V : string);
 
 unittest
 {
@@ -40,7 +40,7 @@ if(isTemplate!T)
             if(m[1] in values) result = replace(result, m[0], values[m[1]]);
         }
         enforce!TemplateException(matchAll(result, r).empty,
-                                 format!"Serveral templated items have not been replace in %s"(result));
+                                 format!"Serveral templated items have not been replaced in %s"(result));
         return result;
     }
     else static if(is(T == V[K], K, V))

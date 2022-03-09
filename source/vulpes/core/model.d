@@ -1,11 +1,41 @@
 module vulpes.core.model;
 
 import std.typecons : Nullable, nullable;
-import std.traits : Unqual;
+import std.traits : Unqual, EnumMembers;
+import std.range : ElementType;
 import vulpes.lib.boilerplate : Generate;
 
 enum Unknown = "Unknown";
 enum DefaultVersion = "latest";
+
+template enumMember(E)
+if(is(E == enum) && is(typeof(EnumMembers!E[0]) : string))
+{
+    alias T = typeof(EnumMembers!E[0]);
+
+    Nullable!T enumMember(in string v)
+    {
+        static foreach (m; EnumMembers!E)
+        {
+            if(m == v) return m.nullable;
+        }
+
+        return typeof(return).init;
+    }
+}
+
+@safe nothrow pure @nogc unittest
+{
+    enum Foo : string
+    {
+        a = "a",
+        b = "b"
+    }
+
+    assert(enumMember!Foo("a").get == Foo.a);
+    assert(enumMember!Foo("b").get == Foo.b);
+    assert(enumMember!Foo("c").isNull);
+}
 
 enum ResourceType : string
 {
@@ -100,8 +130,8 @@ struct Urn
     this(string u) @safe
     {
         import std.regex : matchFirst;
-        import std.conv : to;
         import std.exception : enforce;
+        import std.conv : to;
         import std.algorithm : equal, sort;
 
         auto m = matchFirst(u, pattern);
@@ -128,49 +158,6 @@ struct Urn
         return format!"%s:%s:%s.%s.%s=%s:%s(%s).%s"
             (root, nid, pkgPrefix, package_, class_, agencyId, id, version_, item.get);
     }
-
-    static Nullable!Urn safeParse(inout string u) @safe nothrow
-    {
-        scope(failure) return typeof(return).init;
-
-        Nullable!Urn urn = Urn(u);
-
-        return urn;
-    }
-}
-
-unittest
-{
-    const str = "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=ABC:ABC(1.0).ABC";
-    auto urn = Urn(str);
-    assert(urn.toString == str);
-}
-
-unittest
-{
-    const str = "urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=FR1:CHOMAGE-TRIM-NATIONAL(1.0)";
-    assert(Urn(str).toString == str);
-}
-
-unittest
-{
-    import std.exception : assertThrown;
-    const str = "unmatched";
-    assertThrown(Urn(str));
-}
-
-unittest
-{
-    const str = "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=ABC:ABC(1.0).ABC";
-    auto urn = Urn.safeParse(str);
-    assert(!urn.isNull);
-    assert(urn.get.toString == str);
-}
-
-unittest
-{
-    assert(Urn.safeParse("foo").isNull);
-    assert(Urn.safeParse("urn:sdmx:org.sdmx.infomodel.impo.Ssible=ABC:ABC(1.0).ABC").isNull);
 }
 
 enum Item;
@@ -551,10 +538,8 @@ struct CategoryScheme
 
 alias CategoryHierarchy = Category[][Category];
 
-Nullable!CategoryHierarchy buildHierarchy(CategoryScheme categoryScheme) pure nothrow @safe
+Nullable!CategoryHierarchy buildHierarchy(CategoryScheme categoryScheme) pure @safe
 {
-    scope(failure) return typeof(return).init;
-
     CategoryHierarchy path;
 
     void visit(Category category)
