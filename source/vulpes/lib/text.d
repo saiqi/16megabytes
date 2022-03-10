@@ -1,6 +1,5 @@
 module vulpes.lib.text;
 
-import std.typecons : Nullable, nullable;
 import std.range;
 
 
@@ -10,32 +9,31 @@ Params:
     needle = a finite random access range
     haystack = a finite random access range
 Returns:
-    the edit distance as `Nullable!size_t`
+    the edit distance
 */
-Nullable!size_t fuzzySearch(R1, R2)(R1 needle, R2 haystack) @safe nothrow
+int fuzzySearch(R1, R2)(R1 needle, R2 haystack)
 if(isForwardRange!R1 && isForwardRange!R2)
 {
-    scope(failure) return (Nullable!size_t).init;
     import std.algorithm : canFind, min, minElement;
     import std.conv : to;
 
-    auto m = walkLength(needle);
-    auto n = walkLength(haystack);
+    auto m = walkLength(needle).to!int;
+    auto n = walkLength(haystack).to!int;
 
-    if(m == 1) return (!haystack.canFind(needle)).to!size_t.nullable;
-    if(n == 0) return m.nullable;
+    if(m == 1) return (!haystack.canFind(needle)).to!int;
+    if(n == 0) return m;
 
-    auto row1 = new size_t[](n + 1);
+    auto row1 = new int[](n + 1);
     foreach (i; 0 .. m)
     {
-        auto row2 = new size_t[](n + 1);
+        auto row2 = new int[](n + 1);
         row2[0] = i + 1;
 
         auto sHaystack = haystack.save;
 
         foreach (j; 0 .. n)
         {
-            size_t cost = needle.front != sHaystack.front;
+            int cost = needle.front != sHaystack.front;
             row2[j + 1] = min(row1[j + 1] + 1, row2[j] + 1, row1[j] + cost);
             sHaystack.popFront();
         }
@@ -43,13 +41,13 @@ if(isForwardRange!R1 && isForwardRange!R2)
         needle.popFront();
     }
 
-    return minElement(row1).nullable;
+    return minElement(row1);
 }
 
-unittest
+@safe pure unittest
 {
-    assert(fuzzySearch("aba", "c abba c").get == 1);
-    assert(fuzzySearch("a", "c abba c").get == 0);
-    assert(fuzzySearch("d", "c abba c").get == 1);
-    assert(fuzzySearch("a", "").get == 1);
+    assert(fuzzySearch("aba", "c abba c") == 1);
+    assert(fuzzySearch("a", "c abba c") == 0);
+    assert(fuzzySearch("d", "c abba c") == 1);
+    assert(fuzzySearch("a", "") == 1);
 }

@@ -97,24 +97,22 @@ unittest
 
 }
 
-auto search(size_t threshold, R)(R resources, in string q) pure @safe nothrow
+auto search(int threshold, R)(R resources, in string q) pure @safe
 if(isInputRange!R && isNamed!(ElementType!R))
 {
     import vulpes.lib.text : fuzzySearch;
     import std.typecons : Tuple;
     import std.array : array;
-    import std.algorithm : map, filter, sort, uniq, min, reduce;
+    import std.algorithm : map, filter, sort, min, reduce;
     import std.functional : partial;
 
-    alias T = Tuple!(ElementType!R, "resource", size_t, "score");
-    alias pSearch = partial!(fuzzySearch, q);
+    alias T = Tuple!(ElementType!R, "resource", int, "score");
+    alias pSearch = partial!(fuzzySearch!(string, string), q);
 
     T computeScore(ElementType!R resource)
     {
-        auto score = collectSearchItems(resource)
-            .map!pSearch
-            .map!(a => a.get(size_t.max));
-        return T(resource, reduce!((a, b) => min(a, b))(size_t.max, score));
+        auto score = collectSearchItems(resource).map!pSearch;
+        return T(resource, reduce!((a, b) => min(a, b))(int.max, score));
     }
 
     return resources.map!computeScore
