@@ -97,7 +97,7 @@ unittest
 
 }
 
-auto search(int threshold, R)(R resources, in string q) pure @safe
+auto search(int threshold, R)(R resources, in string q)
 if(isInputRange!R && isNamed!(ElementType!R))
 {
     import vulpes.lib.text : fuzzySearch;

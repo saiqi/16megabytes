@@ -518,7 +518,8 @@ unittest
     assertThrown!ProviderException(enforceMessages!("bar", Yes.canBeNull)(valid));
 }
 
-InputRange!Dataflow dataflows(in ref Provider provider, Fetcher fetcher = toDelegate(&doAsyncRequest))
+InputRange!Dataflow dataflows(in ref Provider provider,
+                              Fetcher fetcher = toDelegate(&doAsyncRequest))
 {
     import std.typecons : No;
     import std.algorithm : map;
@@ -558,7 +559,6 @@ InputRange!Dataflow dataflows(in ref Provider provider, Fetcher fetcher = toDele
             .map!"a.convert"
             .filterNull
             .inputRangeObject;
-
     }
 }
 
@@ -571,25 +571,40 @@ unittest
     import vulpes.requests : Response;
     import vulpes.datasources.providers : Resource, FormatType;
 
-    Resource r = Resource(
+    Resource sdmx21 = Resource(
         "dataflow",
-        "/{resourceType}/{providerId}/{resourceId}",
+        "/sdmx21",
         (Nullable!(string[string])).init,
-        ["Content-Type": "application/json"],
+        ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.1"],
         true,
         FormatType.sdmxml21
     );
-    
-    Provider provider = Provider("ID", true, "", ["dataflow": [r]].nullable);
+
+    Resource sdmx20 = Resource(
+        "dataflow",
+        "/sdmx20",
+        (Nullable!(string[string])).init,
+        ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.0"],
+        true,
+        FormatType.sdmxml20
+    );
+
+    Provider p21 = Provider("ID21", true, "", ["dataflow": [sdmx21]].nullable);
+    Provider p20 = Provider("ID20", true, "", ["dataflow": [sdmx20]].nullable);
 
     Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
     {
-        return async({
-            return Response(200, readText("./fixtures/sdmx21/structure_dataflow.xml"));
-        });
-    } 
+        if(url == "/sdmx21")
+            return async({
+                return Response(200, readText("./fixtures/sdmx21/structure_dataflow.xml"));
+            });
+        if(url == "/sdmx20")
+            return async({
+                return Response(200, readText("./fixtures/sdmx20/structure_dataflows.xml"));
+            });
+        assert(false);
+    }
 
-    auto dataflows = dataflows(provider, toDelegate(&ok));
-    assert(!dataflows.empty);
-    assert(dataflows.front.id == "BALANCE-PAIEMENTS");
+    assert(p21.dataflows(toDelegate(&ok)).front.id == "BALANCE-PAIEMENTS");
+    assert(p20.dataflows(toDelegate(&ok)).front.id == "DS-BOP_2017M06");
 }

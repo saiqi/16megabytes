@@ -6,9 +6,8 @@ import std.format : format;
 import std.array : array;
 import vibe.http.server : HTTPServerRequest, HTTPServerResponse;
 import vibe.http.common : enforceHTTP, HTTPStatus;
+import vibe.core.log;
 import vulpes.datasources.providers;
-import vulpes.core.model : ResourceType;
-import vulpes.lib.xml : deserializeAs, deserializeAsRangeOf;
 
 immutable(Provider) getProviderOrError(in string providerId)
 {
@@ -25,6 +24,12 @@ immutable(Provider) getProviderOrError(in string providerId)
 
 void handleDataflows(HTTPServerRequest req, HTTPServerResponse res)
 {
+    import vulpes.core.search : search;
+
     auto provider = getProviderOrError(req.params["providerId"]);
-    res.writeJsonBody(provider.dataflows.array);
+    auto q = req.query.get("q");
+    logInfo(q);
+
+    if(q is null) res.writeJsonBody(provider.dataflows.array);
+    else res.writeJsonBody(provider.dataflows.search!1(q).array);
 }
