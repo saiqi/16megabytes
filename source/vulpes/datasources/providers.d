@@ -2,10 +2,11 @@ module vulpes.datasources.providers;
 
 import std.typecons : Nullable, Tuple, Flag;
 import std.functional : toDelegate;
+import std.range : InputRange;
 import vibe.data.json : optional;
 import vibe.core.concurrency : Future;
 import vulpes.lib.boilerplate : Generate;
-import vulpes.core.model : ResourceType;
+import vulpes.core.model;
 import vulpes.requests : doAsyncRequest, Response;
 
 ///Dedicated module `Exception`
@@ -515,4 +516,80 @@ unittest
     assertNotThrown!ProviderException(enforceMessages!("foo", No.canBeNull)(valid));
     assertNotThrown!ProviderException(enforceMessages!("foo", Yes.canBeNull)(invalid));
     assertThrown!ProviderException(enforceMessages!("bar", Yes.canBeNull)(valid));
+}
+
+InputRange!Dataflow dataflows(in ref Provider provider, Fetcher fetcher = toDelegate(&doAsyncRequest))
+{
+    import std.typecons : No;
+    import std.algorithm : map;
+    import std.range : inputRangeObject;
+    import std.exception : enforce;
+    import std.format : format;
+    import vulpes.lib.monadish : filterNull;
+    import vulpes.lib.xml : deserializeAsRangeOf, deserializeAs;
+
+    enforce!ProviderException(!provider.formatType.isNull,
+                              format!"Cannot deduce provider %s format type"(provider.id));
+
+    auto msgs = fetchResources(provider, ResourceType.dataflow, null, fetcher);
+
+    auto ft = provider.formatType.get;
+
+    with(FormatType) final switch(ft)
+    {
+        case sdmxml21:
+        enforceMessages!(ResourceType.dataflow, No.canBeNull)(msgs);
+
+        import vulpes.datasources.sdmxml21: SDMX21Dataflow;
+        return msgs["dataflow"]
+            .get
+            .deserializeAsRangeOf!SDMX21Dataflow
+            .map!"a.convert"
+            .filterNull
+            .inputRangeObject;
+
+        case sdmxml20:
+        enforceMessages!(ResourceType.dataflow, No.canBeNull)(msgs);
+
+        import vulpes.datasources.sdmxml20 : SDMX20Dataflow;
+        return msgs["dataflow"]
+            .get
+            .deserializeAsRangeOf!SDMX20Dataflow
+            .map!"a.convert"
+            .filterNull
+            .inputRangeObject;
+
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.typecons : nullable;
+    import std.functional : toDelegate;
+    import vibe.core.concurrency : async, Future;
+    import vulpes.requests : Response;
+    import vulpes.datasources.providers : Resource, FormatType;
+
+    Resource r = Resource(
+        "dataflow",
+        "/{resourceType}/{providerId}/{resourceId}",
+        (Nullable!(string[string])).init,
+        ["Content-Type": "application/json"],
+        true,
+        FormatType.sdmxml21
+    );
+    
+    Provider provider = Provider("ID", true, "", ["dataflow": [r]].nullable);
+
+    Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
+    {
+        return async({
+            return Response(200, readText("./fixtures/sdmx21/structure_dataflow.xml"));
+        });
+    } 
+
+    auto dataflows = dataflows(provider, toDelegate(&ok));
+    assert(!dataflows.empty);
+    assert(dataflows.front.id == "BALANCE-PAIEMENTS");
 }

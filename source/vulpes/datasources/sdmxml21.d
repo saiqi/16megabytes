@@ -1047,32 +1047,3 @@ unittest
     assert(dataset.series[2].observations[0].attributes.isNull);
     assert(dataset.series[2].observations[0].obsValue.isNull);
 }
-
-public:
-auto buildDataflows(in Nullable!string[string] messages)
-{
-    import std.typecons : No;
-    import std.algorithm : map;
-    import vulpes.datasources.providers : enforceMessages;
-    import vulpes.lib.monadish : filterNull;
-
-    enforceMessages!("dataflow", No.canBeNull)(messages);
-
-    return messages["dataflow"].get
-        .deserializeAsRangeOf!SDMX21Dataflow
-        .map!"a.convert"
-        .filterNull;
-}
-
-unittest
-{
-    import std.file : readText;
-    import std.typecons : nullable;
-
-    auto msg = readText("./fixtures/sdmx21/structure_dataflow.xml");
-    auto messages = ["dataflow": msg.nullable];
-
-    auto dataflows = buildDataflows(messages);
-    assert(!dataflows.empty);
-    assert(dataflows.front.id == "BALANCE-PAIEMENTS");
-}
