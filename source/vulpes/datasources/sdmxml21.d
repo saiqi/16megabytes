@@ -204,14 +204,56 @@ struct SDMX21TextFormat
     @attr("textType")
     Nullable!string textType;
 
-    @attr("minValue")
-    Nullable!string minValue;
+    @attr("minLength")
+    Nullable!string minLength;
 
-    @attr("maxValue")
-    Nullable!string maxValue;
+    @attr("maxLength")
+    Nullable!string maxLength;
 
     @attr("pattern")
     Nullable!string pattern;
+
+    Nullable!Format convert() pure @safe inout
+    {
+        import std.conv : to;
+        import std.typecons : apply;
+
+        if(textType.isNull) return typeof(return).init;
+
+        auto b = textType.get.enumMember!BasicDataType;
+
+        if(b.isNull) return typeof(return).init;
+
+        Nullable!Format fmt = Format(
+            maxLength.apply!(to!uint),
+            minLength.apply!(to!uint),
+            b.get
+        );
+
+        return fmt;
+    }
+}
+
+unittest
+{
+    auto tfOk = SDMX21TextFormat(
+        "String".nullable,
+        (Nullable!string).init,
+        "3".nullable,
+        (Nullable!string).init
+    );
+
+    assert(!tfOk.convert.isNull);
+    assert(tfOk.convert.get.maxLength.get == 3u);
+
+    auto tfKo = SDMX21TextFormat(
+        "Not a type".nullable,
+        (Nullable!string).init,
+        "3".nullable,
+        (Nullable!string).init
+    );
+
+    assert(tfKo.convert.isNull);
 }
 
 @xmlRoot("Enumeration")
@@ -219,6 +261,38 @@ struct SDMX21Enumeration
 {
     @xmlElement("Ref")
     SDMX21Ref ref_;
+
+    Nullable!Enumeration convert() @safe pure inout
+    {
+        if(ref_.urn.isNull) return typeof(return).init;
+        return Enumeration(ref_.urn.get.toString).nullable;
+    }
+}
+
+unittest
+{
+    auto rOk = SDMX21Ref(
+        "ID",
+        "1.0".nullable,
+        "PARENT".nullable,
+        "1.0".nullable,
+        "FOO".nullable,
+        "conceptscheme".nullable,
+        "Concept".nullable
+    );
+
+    auto rKo = SDMX21Ref(
+        "ID",
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init
+    );
+
+    assert(!SDMX21Enumeration(rOk).convert.isNull);
+    assert(SDMX21Enumeration(rKo).convert.isNull);
 }
 
 @xmlRoot("LocalRepresentation")
@@ -229,6 +303,45 @@ struct SDMX21LocalRepresentation
 
     @xmlElement("Enumeration")
     Nullable!SDMX21Enumeration enumeration;
+
+    Nullable!LocalRepresentation convert() pure @safe inout
+    {
+        if(enumeration.isNull && textFormat.isNull) return typeof(return).init;
+        if(!enumeration.isNull && !textFormat.isNull) return typeof(return).init;
+
+        Nullable!LocalRepresentation r = enumeration.isNull
+            ? LocalRepresentation((Nullable!Enumeration).init, textFormat.get.convert)
+            : LocalRepresentation(enumeration.get.convert, (Nullable!Format).init);
+
+        return r;
+    }
+}
+
+unittest
+{
+    Nullable!SDMX21Enumeration e = SDMX21Enumeration(SDMX21Ref());
+    Nullable!SDMX21TextFormat tf = SDMX21TextFormat();
+
+    assert(SDMX21LocalRepresentation(
+        (Nullable!SDMX21TextFormat).init,
+        (Nullable!SDMX21Enumeration).init
+    ).convert.isNull);
+
+    assert(SDMX21LocalRepresentation(
+        tf,
+        e
+    ).convert.isNull);
+
+    assert(!SDMX21LocalRepresentation(
+        tf,
+        (Nullable!SDMX21Enumeration).init
+    ).convert.isNull);
+
+    assert(!SDMX21LocalRepresentation(
+        (Nullable!SDMX21TextFormat).init,
+        e
+    ).convert.isNull);
+
 }
 
 @xmlRoot("TimeDimension")
@@ -296,6 +409,86 @@ struct SDMX21AttributeRelationship
 
     @xmlElement("PrimaryMeasure")
     Nullable!SDMX21PrimaryMeasure primaryMeasure;
+
+    Nullable!AttributeRelationship convert() pure @safe inout
+    {
+        import std.algorithm : map, any;
+        import std.array : array;
+        import vulpes.lib.monadish : filterNull;
+
+        auto hasNone = primaryMeasure.isNull && dimensions.length == 0;
+        auto hasBoth = !primaryMeasure.isNull && dimensions.length > 0;
+
+        if(hasNone || hasBoth)
+        {
+            return typeof(return).init;
+        }
+
+        if(!primaryMeasure.isNull)
+        {
+            return AttributeRelationship(
+                [],
+                (Nullable!string).init,
+                Empty().nullable,
+                (Nullable!Empty).init
+            ).nullable;
+        }
+
+        if(dimensions.any!"a.id.isNull") return typeof(return).init;
+
+        return AttributeRelationship(
+            dimensions.dup.map!"a.id".filterNull.array,
+            (Nullable!string).init,
+            (Nullable!Empty).init,
+            (Nullable!Empty).init
+        ).nullable;
+    }
+}
+
+unittest
+{
+    Nullable!SDMX21PrimaryMeasure pm = SDMX21PrimaryMeasure(
+        "0".nullable,
+        (Nullable!string).init,
+        (Nullable!SDMX21ConceptIdentity).init
+    );
+
+    auto dims = [
+        SDMX21Dimension(
+            "0".nullable,
+            (Nullable!string).init,
+            (Nullable!int).init,
+            (Nullable!SDMX21ConceptIdentity).init,
+            (Nullable!SDMX21LocalRepresentation).init,
+            (Nullable!SDMX21Ref).init
+        )
+    ];
+
+    auto corruptedDims = [
+        dims[0],
+        SDMX21Dimension(
+            (Nullable!string).init,
+            (Nullable!string).init,
+            (Nullable!int).init,
+            (Nullable!SDMX21ConceptIdentity).init,
+            (Nullable!SDMX21LocalRepresentation).init,
+            (Nullable!SDMX21Ref).init
+        )
+    ];
+
+    auto rPrimaryOnly = SDMX21AttributeRelationship([], pm);
+    auto rDimsOnly = SDMX21AttributeRelationship(dims, (Nullable!SDMX21PrimaryMeasure).init);
+    auto rBoth = SDMX21AttributeRelationship(dims, pm);
+    auto rEmpty = SDMX21AttributeRelationship([], (Nullable!SDMX21PrimaryMeasure).init);
+    auto rCorrDims = SDMX21AttributeRelationship(corruptedDims, (Nullable!SDMX21PrimaryMeasure).init);
+
+    assert(!rPrimaryOnly.convert.get.observation.isNull);
+    assert(rPrimaryOnly.convert.get.dimensions.length == 0);
+    assert(rDimsOnly.convert.get.dimensions.length == 1);
+    assert(rDimsOnly.convert.get.dimensions[0] == "0");
+    assert(rBoth.convert.isNull);
+    assert(rEmpty.convert.isNull);
+    assert(rCorrDims.convert.isNull);
 }
 
 @xmlRoot("Attribute")
