@@ -4,7 +4,7 @@ import vibe.core.log;
 import vibe.core.core;
 import vibe.http.server;
 import vibe.http.router;
-import vulpes.api;
+import vulpes.datasources.providers : Provider;
 
 void handleError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) @safe
 {
@@ -28,6 +28,33 @@ void handleError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorI
 void handleGreetings(HTTPServerRequest req, HTTPServerResponse res)
 {
     res.writeJsonBody(["message": "Welcome to Vulpes API"]);
+}
+
+immutable(Provider) getProviderOrError(in string providerId)
+{
+    import std.algorithm : find;
+    import std.format : format;
+    import vulpes.datasources.providers : loadProvidersFromConfig;
+
+    auto ps = loadProvidersFromConfig()
+        .find!(a => a.id == providerId);
+
+    enforceHTTP(ps.length > 0, HTTPStatus.notFound, format!"%s not found"(providerId));
+
+    return ps[0];
+}
+
+void handleDataflows(HTTPServerRequest req, HTTPServerResponse res)
+{
+    import std.array : array;
+    import vulpes.datasources.providers : dataflows;
+    import vulpes.core.search : search;
+
+    auto provider = getProviderOrError(req.params["providerId"]);
+    auto q = req.query.get("q");
+
+    if(q is null) res.writeJsonBody(provider.dataflows.array);
+    else res.writeJsonBody(provider.dataflows.search!1(q).array);
 }
 
 void main()

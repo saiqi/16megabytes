@@ -1,6 +1,7 @@
 module vulpes.datasources.sdmxml20;
 
 import std.typecons : Nullable, nullable;
+import std.range: InputRange;
 import vulpes.lib.xml;
 import vulpes.core.model : Urn, Dataflow, Language;
 
@@ -379,4 +380,26 @@ unittest
     assert(!s.keyFamilies.isNull);
     assert(!s.codelists.isNull);
     assert(!s.concepts.isNull);
+}
+
+InputRange!Dataflow buildDataflows(R)(in R xmlStr)
+if(isForwardRangeOfChar!R)
+{
+    import std.algorithm : map;
+    import std.range : inputRangeObject;
+    import vulpes.lib.monadish : filterNull;
+
+    return xmlStr
+        .deserializeAsRangeOf!SDMX20Dataflow
+        .map!"a.convert"
+        .filterNull
+        .inputRangeObject;
+}
+
+unittest
+{
+    import std.file : readText;
+    auto xmlIn = readText("./fixtures/sdmx20/structure_dataflows.xml");
+    auto dfs = buildDataflows(xmlIn);
+    assert(!dfs.empty);
 }

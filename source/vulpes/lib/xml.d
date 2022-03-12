@@ -175,7 +175,7 @@ private template getElementName(S, string name)
 }
 
 /// Check wether a range is a `ForwardRange` of characters
-enum isForwardRangeOfChar(R) = isForwardRange!R && isSomeChar!(ElementType!R);
+enum bool isForwardRangeOfChar(R) = isForwardRange!R && isSomeChar!(ElementType!R);
 
 private template allChildren(S)
 {

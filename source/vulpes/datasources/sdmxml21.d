@@ -2,6 +2,7 @@ module vulpes.datasources.sdmxml21;
 
 import std.typecons : Nullable, nullable;
 import std.traits : ReturnType;
+import std.range : InputRange;
 import vulpes.lib.xml;
 import vulpes.core.model;
 import vulpes.datasources.sdmxcommon : getIntlLabels, getLabel;
@@ -1046,4 +1047,26 @@ unittest
     assert(dataset.series[2].observations[0].obsDimension.isNull);
     assert(dataset.series[2].observations[0].attributes.isNull);
     assert(dataset.series[2].observations[0].obsValue.isNull);
+}
+
+InputRange!Dataflow buildDataflows(R)(in R xmlStr)
+if(isForwardRangeOfChar!R)
+{
+    import std.algorithm : map;
+    import std.range : inputRangeObject;
+    import vulpes.lib.monadish : filterNull;
+
+    return xmlStr
+        .deserializeAsRangeOf!SDMX21Dataflow
+        .map!"a.convert"
+        .filterNull
+        .inputRangeObject;
+}
+
+unittest
+{
+    import std.file : readText;
+    auto xmlIn = readText("./fixtures/sdmx21/structure_dataflow.xml");
+    auto dfs = buildDataflows(xmlIn);
+    assert(!dfs.empty);
 }

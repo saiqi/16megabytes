@@ -539,26 +539,16 @@ InputRange!Dataflow dataflows(in ref Provider provider,
     with(FormatType) final switch(ft)
     {
         case sdmxml21:
-        enforceMessages!(ResourceType.dataflow, No.canBeNull)(msgs);
+        enforceMessages!("dataflow", No.canBeNull)(msgs);
 
-        import vulpes.datasources.sdmxml21: SDMX21Dataflow;
-        return msgs["dataflow"]
-            .get
-            .deserializeAsRangeOf!SDMX21Dataflow
-            .map!"a.convert"
-            .filterNull
-            .inputRangeObject;
+        import vulpes.datasources.sdmxml21: buildDataflows;
+        return msgs["dataflow"].get.buildDataflows;
 
         case sdmxml20:
-        enforceMessages!(ResourceType.dataflow, No.canBeNull)(msgs);
+        enforceMessages!("dataflow", No.canBeNull)(msgs);
 
-        import vulpes.datasources.sdmxml20 : SDMX20Dataflow;
-        return msgs["dataflow"]
-            .get
-            .deserializeAsRangeOf!SDMX20Dataflow
-            .map!"a.convert"
-            .filterNull
-            .inputRangeObject;
+        import vulpes.datasources.sdmxml20 : buildDataflows;
+        return msgs["dataflow"].get.buildDataflows;
     }
 }
 

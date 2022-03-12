@@ -2,7 +2,6 @@
     {
         "id": "FR1",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://www.bdm.insee.fr/series/sdmx",
         "resources": {
             "dataflow": [
@@ -94,7 +93,6 @@
     {
         "id": "ECB",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://sdw-wsrest.ecb.europa.eu/service",
         "resources": {
             "dataflow": [
@@ -186,7 +184,6 @@
     {
         "id": "UNSD",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://data.un.org/WS/rest",
         "resources": {
             "dataflow": [
@@ -278,7 +275,6 @@
     {
         "id": "IAEG",
         "isPublic": false,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://data.un.org/WS/rest",
         "resources": {
             "dataflow": [
@@ -370,7 +366,6 @@
     {
         "id": "ILO",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://www.ilo.org/sdmx/rest",
         "resources": {
             "dataflow": [
@@ -462,7 +457,6 @@
     {
         "id": "ESTAT",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://ec.europa.eu/eurostat/SDMX/diss-web/rest",
         "resources": {
             "dataflow": [
@@ -506,7 +500,6 @@
     {
         "id": "WB",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "http://api.worldbank.org/v2/sdmx/rest",
         "resources": {
             "dataflow": [
@@ -598,7 +591,6 @@
     {
         "id": "WITS",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "http://wits.worldbank.org/API/V1/SDMX/V21/rest",
         "resources": {
             "dataflow": [
@@ -690,7 +682,6 @@
     {
         "id": "WBG_WITS",
         "isPublic": false,
-        "protocol": "sdmx-rest",
         "rootUrl": "http://wits.worldbank.org/API/V1/SDMX/V21/rest",
         "resources": {
             "dataflow": [
@@ -782,7 +773,6 @@
     {
         "id": "SDG",
         "isPublic": false,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://registry.sdmx.org/ws/public/sdmxapi/rest",
         "resources": {
             "dataflow": [
@@ -874,7 +864,6 @@
     {
         "id": "UNICEF",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://sdmx.data.unicef.org/ws/public/sdmxapi/rest",
         "resources": {
             "dataflow": [
@@ -966,7 +955,6 @@
     {
         "id": "IMF",
         "isPublic": true,
-        "protocol": "imf",
         "rootUrl": "http://dataservices.imf.org/REST/SDMX_XML.svc",
         "resources": {
             "dataflow": [
@@ -986,7 +974,6 @@
     {
         "id": "UNESCO",
         "isPublic": true,
-        "protocol": "sdmx-rest",
         "rootUrl": "https://api.uis.unesco.org/sdmx",
         "resources": {
             "dataflow": [
