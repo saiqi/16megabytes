@@ -97,3 +97,43 @@ nothrow @safe pure unittest
     assert(range.front == 1);
     assert(copy.front == 0);
 }
+
+template fallbackMap(alias fun)
+{
+    import std.functional : unaryFun;
+
+    alias f = unaryFun!fun;
+
+    auto fallbackMap(R)(R r)
+    if(isInputRange!(Unqual!R) && !is(typeof(f(ElementType!R).init) == void))
+    {
+        alias RT = typeof(f((ElementType!R).init));
+
+        import std.array : Appender;
+        Appender!(RT[]) app;
+
+        foreach (el; r) app.put(f(el));
+
+        return app.data;
+    }
+}
+
+pure @safe nothrow unittest
+{
+    static struct A
+    {
+        int v;
+    }
+
+    static struct B
+    {
+        A[] as;
+
+        int[] prop() pure @safe inout
+        {
+            return as.fallbackMap!"a.v%2";
+        }
+    }
+
+    assert(B([A(0), A(1), A(2), A(4)]).prop);
+}

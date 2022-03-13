@@ -216,12 +216,6 @@ struct Meta
     mixin(Generate);
 }
 
-enum AssignementStatus : string
-{
-    mandatory = "Mandatory",
-    conditional = "Conditional"
-}
-
 enum UsageType : string
 {
     mandatory = "Mandatory",
@@ -315,7 +309,7 @@ struct LocalRepresentation
 struct Attribute
 {
     string id;
-    Nullable!AssignementStatus assignementStatus;
+    Nullable!UsageType usage;
     Nullable!AttributeRelationship attributeRelationship;
     Nullable!string conceptIdentity;
     string[] conceptRoles;

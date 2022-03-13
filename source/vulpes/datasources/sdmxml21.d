@@ -164,13 +164,15 @@ struct SDMX21Ref
 
     inout(Nullable!Urn) urn() pure @safe inout
     {
-        import std.conv : to;
-        import vulpes.core.model : PackageType, ClassType;
-
         if(package_.isNull || class_.isNull || version_.isNull || agencyId.isNull)
             return typeof(return).init;
 
-        Nullable!Urn urn = Urn(package_.get.to!PackageType, class_.get.to!ClassType, agencyId.get, id, version_.get);
+        auto pkg = package_.get.enumMember!PackageType;
+        auto cls = class_.get.enumMember!ClassType;
+
+        if(pkg.isNull || class_.isNull) return typeof(return).init;
+
+        Nullable!Urn urn = Urn(pkg.get, cls.get, agencyId.get, id, version_.get);
         return urn;
     }
 }
@@ -412,9 +414,9 @@ struct SDMX21AttributeRelationship
 
     Nullable!AttributeRelationship convert() pure @safe inout
     {
-        import std.algorithm : map, any;
+        import std.algorithm : any;
         import std.array : array;
-        import vulpes.lib.monadish : filterNull;
+        import vulpes.lib.monadish : filterNull, fallbackMap;
 
         auto hasNone = primaryMeasure.isNull && dimensions.length == 0;
         auto hasBoth = !primaryMeasure.isNull && dimensions.length > 0;
@@ -434,10 +436,10 @@ struct SDMX21AttributeRelationship
             ).nullable;
         }
 
-        if(dimensions.any!"a.id.isNull") return typeof(return).init;
+        if(dimensions.any!"a.ref_.isNull") return typeof(return).init;
 
         return AttributeRelationship(
-            dimensions.dup.map!"a.id".filterNull.array,
+            dimensions.fallbackMap!"a.ref_.get.id".array,
             (Nullable!string).init,
             (Nullable!Empty).init,
             (Nullable!Empty).init
@@ -447,20 +449,31 @@ struct SDMX21AttributeRelationship
 
 unittest
 {
-    Nullable!SDMX21PrimaryMeasure pm = SDMX21PrimaryMeasure(
-        "0".nullable,
+    Nullable!SDMX21Ref ref_ = SDMX21Ref(
+        "0",
         (Nullable!string).init,
-        (Nullable!SDMX21ConceptIdentity).init
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init
+    );
+
+    Nullable!SDMX21PrimaryMeasure pm = SDMX21PrimaryMeasure(
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!SDMX21ConceptIdentity).init,
+        ref_
     );
 
     auto dims = [
         SDMX21Dimension(
-            "0".nullable,
+            (Nullable!string).init,
             (Nullable!string).init,
             (Nullable!int).init,
             (Nullable!SDMX21ConceptIdentity).init,
             (Nullable!SDMX21LocalRepresentation).init,
-            (Nullable!SDMX21Ref).init
+            ref_
         )
     ];
 
@@ -511,6 +524,59 @@ struct SDMX21Attribute
 
     @xmlElement("AttributeRelationship")
     Nullable!SDMX21AttributeRelationship attributeRelationship;
+
+    Nullable!Attribute convert() pure @safe inout
+    {
+        import std.typecons : apply;
+        if(id.isNull) return typeof(return).init;
+
+        Nullable!UsageType usage = assignementStatus
+            .apply!(enumMember!UsageType);
+
+        Nullable!AttributeRelationship rel = attributeRelationship
+            .apply!"a.convert";
+
+        Nullable!LocalRepresentation rep = localRepresentation
+            .apply!"a.convert";
+
+        Nullable!string conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn)
+            .apply!"a.toString";
+
+        return Attribute(
+            id.get,
+            usage,
+            rel,
+            conceptId,
+            [],
+            rep
+        ).nullable;
+    }
+}
+
+unittest
+{
+    auto attrWithId = SDMX21Attribute(
+        "0".nullable,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!SDMX21ConceptIdentity).init,
+        (Nullable!SDMX21LocalRepresentation).init,
+        (Nullable!SDMX21AttributeRelationship).init
+    );
+
+    assert(!attrWithId.convert.isNull);
+
+    auto attrWithoutId = SDMX21Attribute(
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!string).init,
+        (Nullable!SDMX21ConceptIdentity).init,
+        (Nullable!SDMX21LocalRepresentation).init,
+        (Nullable!SDMX21AttributeRelationship).init
+    );
+
+    assert(attrWithoutId.convert.isNull);
 }
 
 @xmlRoot("AttributeList")
@@ -524,6 +590,19 @@ struct SDMX21AttributeList
 
     @xmlElementList("Attribute")
     SDMX21Attribute[] attributes;
+
+    Nullable!AttributeList convert() pure @safe inout
+    {
+        import std.array : array;
+        import std.algorithm : any;
+        import vulpes.lib.monadish : filterNull, fallbackMap;
+
+        auto attrs = attributes.fallbackMap!"a.convert";
+
+        if(attrs.any!"a.isNull") return typeof(return).init;
+
+        return AttributeList(id, attrs.filterNull.array).nullable;
+    }
 }
 
 @xmlRoot("DimensionReference")
@@ -564,6 +643,9 @@ struct SDMX21PrimaryMeasure
 
     @xmlElement("ConceptIdentity")
     Nullable!SDMX21ConceptIdentity conceptIdentity;
+
+    @xmlElement("Ref")
+    Nullable!SDMX21Ref ref_;
 }
 
 @xmlRoot("MeasureList")
