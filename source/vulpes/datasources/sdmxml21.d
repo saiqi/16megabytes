@@ -164,33 +164,25 @@ struct SDMX21Ref
 
     inout(Nullable!Urn) urn() pure @safe inout
     {
-        if(package_.isNull || class_.isNull || version_.isNull || agencyId.isNull)
+        if(package_.isNull || class_.isNull || agencyId.isNull)
+            return typeof(return).init;
+
+        if(version_.isNull && maintainableParentVersion.isNull)
+            return typeof(return).init;
+
+        if(!maintainableParentId.isNull && maintainableParentVersion.isNull)
             return typeof(return).init;
 
         auto pkg = package_.get.enumMember!PackageType;
         auto cls = class_.get.enumMember!ClassType;
 
-        if(pkg.isNull || class_.isNull) return typeof(return).init;
+        if(pkg.isNull || cls.isNull) return typeof(return).init;
 
-        Nullable!Urn urn = Urn(pkg.get, cls.get, agencyId.get, id, version_.get);
+        Nullable!Urn urn = maintainableParentId.isNull
+            ? Urn(pkg.get, cls.get, agencyId.get, id, version_.get)
+            : Urn(pkg.get, cls.get, agencyId.get, maintainableParentId.get, maintainableParentVersion.get, id);
         return urn;
     }
-}
-
-unittest
-{
-    assert(SDMX21Ref().urn.isNull);
-    const ref_ = SDMX21Ref(
-        "FOO",
-        "1.0".nullable,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        "BAR".nullable,
-        "datastructure".nullable,
-        "DataStructure".nullable
-    );
-    const expected = "urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=BAR:FOO(1.0)";
-    assert(ref_.urn.get.toString == expected);
 }
 
 @xmlRoot("ConceptIdentity")
@@ -236,28 +228,6 @@ struct SDMX21TextFormat
     }
 }
 
-unittest
-{
-    auto tfOk = SDMX21TextFormat(
-        "String".nullable,
-        (Nullable!string).init,
-        "3".nullable,
-        (Nullable!string).init
-    );
-
-    assert(!tfOk.convert.isNull);
-    assert(tfOk.convert.get.maxLength.get == 3u);
-
-    auto tfKo = SDMX21TextFormat(
-        "Not a type".nullable,
-        (Nullable!string).init,
-        "3".nullable,
-        (Nullable!string).init
-    );
-
-    assert(tfKo.convert.isNull);
-}
-
 @xmlRoot("Enumeration")
 struct SDMX21Enumeration
 {
@@ -269,32 +239,6 @@ struct SDMX21Enumeration
         if(ref_.urn.isNull) return typeof(return).init;
         return Enumeration(ref_.urn.get.toString).nullable;
     }
-}
-
-unittest
-{
-    auto rOk = SDMX21Ref(
-        "ID",
-        "1.0".nullable,
-        "PARENT".nullable,
-        "1.0".nullable,
-        "FOO".nullable,
-        "conceptscheme".nullable,
-        "Concept".nullable
-    );
-
-    auto rKo = SDMX21Ref(
-        "ID",
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init
-    );
-
-    assert(!SDMX21Enumeration(rOk).convert.isNull);
-    assert(SDMX21Enumeration(rKo).convert.isNull);
 }
 
 @xmlRoot("LocalRepresentation")
@@ -319,33 +263,6 @@ struct SDMX21LocalRepresentation
     }
 }
 
-unittest
-{
-    Nullable!SDMX21Enumeration e = SDMX21Enumeration(SDMX21Ref());
-    Nullable!SDMX21TextFormat tf = SDMX21TextFormat();
-
-    assert(SDMX21LocalRepresentation(
-        (Nullable!SDMX21TextFormat).init,
-        (Nullable!SDMX21Enumeration).init
-    ).convert.isNull);
-
-    assert(SDMX21LocalRepresentation(
-        tf,
-        e
-    ).convert.isNull);
-
-    assert(!SDMX21LocalRepresentation(
-        tf,
-        (Nullable!SDMX21Enumeration).init
-    ).convert.isNull);
-
-    assert(!SDMX21LocalRepresentation(
-        (Nullable!SDMX21TextFormat).init,
-        e
-    ).convert.isNull);
-
-}
-
 @xmlRoot("TimeDimension")
 struct SDMX21TimeDimension
 {
@@ -363,6 +280,28 @@ struct SDMX21TimeDimension
 
     @xmlElement("LocalRepresentation")
     Nullable!SDMX21LocalRepresentation localRepresentation;
+
+    Nullable!TimeDimension convert() pure @safe inout
+    {
+        import std.typecons : apply;
+
+        if(id.isNull || position.isNull) return typeof(return).init;
+
+        Nullable!LocalRepresentation rep = localRepresentation
+            .apply!"a.convert";
+
+        Nullable!string conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn)
+            .apply!"a.toString";
+
+        return TimeDimension(
+            id.get,
+            position.get,
+            conceptId,
+            [],
+            rep
+        ).nullable;
+    }
 }
 
 @xmlRoot("Dimension")
@@ -385,6 +324,28 @@ struct SDMX21Dimension
 
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
+
+    Nullable!Dimension convert() pure @safe inout
+    {
+        import std.typecons : apply;
+
+        if(id.isNull || position.isNull) return typeof(return).init;
+
+        Nullable!LocalRepresentation rep = localRepresentation
+            .apply!"a.convert";
+
+        Nullable!string conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn)
+            .apply!"a.toString";
+
+        return Dimension(
+            id.get,
+            position.get,
+            conceptId,
+            [],
+            rep
+        ).nullable;
+    }
 }
 
 @xmlRoot("DimensionList")
@@ -401,6 +362,25 @@ struct SDMX21DimensionList
 
     @xmlElementList("Dimension")
     SDMX21Dimension[] dimensions;
+
+    Nullable!DimensionList convert() pure @safe inout
+    {
+        import std.algorithm : any;
+        import std.array : array;
+        import vulpes.lib.monadish : fallbackMap, filterNull;
+
+        auto td = timeDimension.convert;
+
+        if(td.isNull) return typeof(return).init;
+
+        auto ds = dimensions.fallbackMap!"a.convert";
+
+        if(ds.any!"a.isNull") return typeof(return).init;
+
+        Nullable!DimensionList result = DimensionList(id, ds.filterNull.array, td.get);
+
+        return result;
+    }
 }
 
 @xmlRoot("AttributeRelationship")
@@ -445,63 +425,6 @@ struct SDMX21AttributeRelationship
             (Nullable!Empty).init
         ).nullable;
     }
-}
-
-unittest
-{
-    Nullable!SDMX21Ref ref_ = SDMX21Ref(
-        "0",
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!string).init
-    );
-
-    Nullable!SDMX21PrimaryMeasure pm = SDMX21PrimaryMeasure(
-        (Nullable!string).init,
-        (Nullable!string).init,
-        (Nullable!SDMX21ConceptIdentity).init,
-        ref_
-    );
-
-    auto dims = [
-        SDMX21Dimension(
-            (Nullable!string).init,
-            (Nullable!string).init,
-            (Nullable!int).init,
-            (Nullable!SDMX21ConceptIdentity).init,
-            (Nullable!SDMX21LocalRepresentation).init,
-            ref_
-        )
-    ];
-
-    auto corruptedDims = [
-        dims[0],
-        SDMX21Dimension(
-            (Nullable!string).init,
-            (Nullable!string).init,
-            (Nullable!int).init,
-            (Nullable!SDMX21ConceptIdentity).init,
-            (Nullable!SDMX21LocalRepresentation).init,
-            (Nullable!SDMX21Ref).init
-        )
-    ];
-
-    auto rPrimaryOnly = SDMX21AttributeRelationship([], pm);
-    auto rDimsOnly = SDMX21AttributeRelationship(dims, (Nullable!SDMX21PrimaryMeasure).init);
-    auto rBoth = SDMX21AttributeRelationship(dims, pm);
-    auto rEmpty = SDMX21AttributeRelationship([], (Nullable!SDMX21PrimaryMeasure).init);
-    auto rCorrDims = SDMX21AttributeRelationship(corruptedDims, (Nullable!SDMX21PrimaryMeasure).init);
-
-    assert(!rPrimaryOnly.convert.get.observation.isNull);
-    assert(rPrimaryOnly.convert.get.dimensions.length == 0);
-    assert(rDimsOnly.convert.get.dimensions.length == 1);
-    assert(rDimsOnly.convert.get.dimensions[0] == "0");
-    assert(rBoth.convert.isNull);
-    assert(rEmpty.convert.isNull);
-    assert(rCorrDims.convert.isNull);
 }
 
 @xmlRoot("Attribute")
@@ -615,8 +538,8 @@ struct SDMX21DimensionReference
 @xmlRoot("GroupDimension")
 struct SDMX21GroupDimension
 {
-    @xmlElementList("DimensionReference")
-    SDMX21DimensionReference[] dimensionReference;
+    @xmlElement("DimensionReference")
+    SDMX21DimensionReference dimensionReference;
 }
 
 @xmlRoot("Group")
@@ -630,6 +553,18 @@ struct SDMX21Group
 
     @xmlElementList("GroupDimension")
     SDMX21GroupDimension[] groupDimesions;
+
+    Nullable!Group convert() pure @safe inout
+    {
+        import std.algorithm : map;
+        import std.array : array;
+        import vulpes.lib.monadish : fallbackMap;
+
+        auto gds = groupDimesions.fallbackMap!(a => a.dimensionReference.ref_.id);
+
+        Nullable!Group g = Group(id, gds);
+        return g;
+    }
 }
 
 @xmlRoot("PrimaryMeasure")
@@ -644,8 +579,33 @@ struct SDMX21PrimaryMeasure
     @xmlElement("ConceptIdentity")
     Nullable!SDMX21ConceptIdentity conceptIdentity;
 
+    @xmlElement("LocalRepresentation")
+    Nullable!SDMX21LocalRepresentation localRepresentation;
+
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
+
+    Nullable!Measure convert() pure @safe inout
+    {
+        import std.typecons : apply;
+
+        if(id.isNull) return typeof(return).init;
+
+        Nullable!string conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn)
+            .apply!"a.toString";
+
+        Nullable!LocalRepresentation rep = localRepresentation
+            .apply!"a.convert";
+
+        return Measure(
+            id.get,
+            conceptId,
+            [],
+            rep,
+            (Nullable!UsageType).init
+        ).nullable;
+    }
 }
 
 @xmlRoot("MeasureList")
@@ -659,6 +619,15 @@ struct SDMX21MeasureList
 
     @xmlElement("PrimaryMeasure")
     SDMX21PrimaryMeasure primaryMeasure;
+
+    Nullable!MeasureList convert() pure @safe inout
+    {
+        auto pm = primaryMeasure.convert;
+
+        if(pm.isNull) return typeof(return).init;
+
+        return MeasureList(id, [pm.get]).nullable;
+    }
 }
 
 @xmlRoot("DataStructureComponents")
@@ -668,13 +637,30 @@ struct SDMX21DataStructureComponents
     SDMX21DimensionList dimensionList;
 
     @xmlElement("AttributeList")
-    SDMX21AttributeList attributeList;
+    Nullable!SDMX21AttributeList attributeList;
 
     @xmlElement("MeasureList")
-    SDMX21MeasureList measureList;
+    Nullable!SDMX21MeasureList measureList;
 
-    @xmlElement("Group")
-    Nullable!SDMX21Group group;
+    @xmlElementList("Group")
+    SDMX21Group[] groups;
+
+    Nullable!DataStructureComponents convert() pure @safe inout
+    {
+        import std.typecons : apply;
+        import std.array : array;
+        import vulpes.lib.monadish : filterNull, fallbackMap;
+
+        auto dl = dimensionList.convert;
+
+        if(dl.isNull) return typeof(return).init;
+
+        Nullable!AttributeList al = attributeList.apply!"a.convert";
+        Nullable!MeasureList ml = measureList.apply!"a.convert";
+        auto gs = groups.fallbackMap!"a.convert".filterNull.array;
+
+        return DataStructureComponents(al, dl.get, gs, ml).nullable;
+    }
 }
 
 @xmlRoot("DataStructure")
@@ -700,6 +686,79 @@ struct SDMX21DataStructure
 
     @xmlElement("DataStructureComponents")
     SDMX21DataStructureComponents dataStructureComponents;
+
+    Nullable!DataStructure convert() pure @safe inout
+    {
+        auto comp = dataStructureComponents.convert;
+        if(comp.isNull) return typeof(return).init;
+
+        auto cNames = names.dup;
+        auto cDescs = descriptions.dup;
+
+        auto name = getLabel(cNames);
+
+        if(name.isNull) return typeof(return).init;
+
+        return DataStructure(
+            id,
+            version_,
+            agencyId,
+            true,
+            true,
+            name.get,
+            getIntlLabels(cNames),
+            getLabel(cDescs),
+            getIntlLabels(cDescs),
+            comp.get
+        ).nullable;
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto msg = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist.xml");
+    DataStructure dsd = msg.deserializeAs!SDMX21DataStructure.convert.get;
+    assert(dsd.name == "AMECO");
+    assert(dsd.names.get[Language.en] == "AMECO");
+    assert(dsd.description.isNull);
+    assert(dsd.descriptions.isNull);
+
+    assert(dsd.dataStructureComponents.dimensionList.dimensions.length == 7);
+    assert(dsd.dataStructureComponents.groups.length == 1);
+    assert(dsd.dataStructureComponents.attributeList.get.attributes.length == 11);
+    assert(dsd.dataStructureComponents.measureList.get.measures.length == 1);
+
+    Dimension d0 = dsd.dataStructureComponents.dimensionList.dimensions[0];
+    assert(d0.id == "FREQ");
+    assert(d0.position == 1);
+    assert(d0.conceptIdentity.get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).FREQ");
+    assert(d0
+        .localRepresentation
+        .get
+        .enumeration
+        .get
+        .enumeration == "urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_FREQ(1.0)");
+
+    Group g = dsd.dataStructureComponents.groups[0];
+    assert(g.groupDimensions.length == 6);
+    assert(g.groupDimensions[0] == "AME_REF_AREA");
+
+    Attribute a0 = dsd.dataStructureComponents.attributeList.get.attributes[0];
+    assert(a0
+        .conceptIdentity
+        .get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).TIME_FORMAT");
+    assert(a0.localRepresentation.get.format.get.dataType == BasicDataType.string_);
+    assert(a0.attributeRelationship.get.dimensions.length == 7);
+    assert(a0.attributeRelationship.get.dimensions[0] == "FREQ");
+
+    Measure m0 = dsd.dataStructureComponents.measureList.get.measures[0];
+    assert(m0
+        .conceptIdentity
+        .get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).OBS_VALUE");
+    assert(m0.localRepresentation.get.format.get.dataType == BasicDataType.string_);
+    assert(m0.localRepresentation.get.format.get.maxLength == 15);
 }
 
 @xmlRoot("Code")
@@ -1199,14 +1258,16 @@ unittest
         .dimensions[0]
         .localRepresentation.get.enumeration.get.ref_.id == "CL_FREQ");
 
-    assert(dataStructure.dataStructureComponents.attributeList.attributes.length == 2);
-    assert(dataStructure.dataStructureComponents.attributeList.attributes[0].id == "OBS_FLAG");
+    assert(dataStructure.dataStructureComponents.attributeList.get.attributes.length == 2);
+    assert(dataStructure.dataStructureComponents.attributeList.get.attributes[0].id == "OBS_FLAG");
     assert(dataStructure.dataStructureComponents
         .attributeList
+        .get
         .attributes[0]
         .conceptIdentity.get.ref_.id == "OBS_FLAG");
     assert(dataStructure.dataStructureComponents
         .attributeList
+        .get
         .attributes[0]
         .localRepresentation.get.enumeration.get.ref_.id == "CL_OBS_FLAG");
 
@@ -1221,16 +1282,17 @@ unittest
         .timeDimension
         .localRepresentation.get.enumeration.isNull);
 
-    assert(dataStructure.dataStructureComponents.measureList.primaryMeasure.id == "OBS_VALUE");
+    assert(dataStructure.dataStructureComponents.measureList.get.primaryMeasure.id == "OBS_VALUE");
     assert(dataStructure
         .dataStructureComponents
         .measureList
+        .get
         .primaryMeasure
         .conceptIdentity
         .get
         .ref_.id == "OBS_VALUE");
 
-    assert(dataStructure.dataStructureComponents.group.isNull);
+    assert(dataStructure.dataStructureComponents.groups.length == 0);
 }
 
 unittest

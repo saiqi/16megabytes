@@ -76,7 +76,7 @@ enum ClassType : string
     TimeDimension = "TimeDimension",
     DimensionDescriptor = "DimensionDescriptor",
     MeasureDescriptor = "MeasureDescriptor",
-    PrimaryMeasure = "PrimaryMeasure",
+    Measure = "Measure",
     GroupDimensionDescriptor = "GroupDimensionDescriptor"
 }
 
@@ -364,7 +364,7 @@ struct DimensionList
 {
     string id;
     Dimension[] dimensions;
-    TimeDimension[] timeDimensions;
+    TimeDimension timeDimension;
 
     mixin(Generate);
     mixin GenerateLinks!(typeof(this), DataStructure);
@@ -382,8 +382,8 @@ struct Group
 }
 
 @Package(PackageType.datastructure)
-@Class(ClassType.PrimaryMeasure)
-struct PrimaryMeasure
+@Class(ClassType.Measure)
+struct Measure
 {
     string id;
     Nullable!string conceptIdentity;
@@ -400,7 +400,7 @@ struct PrimaryMeasure
 struct MeasureList
 {
     string id;
-    PrimaryMeasure measure;
+    Measure[] measures;
 
     mixin(Generate);
     mixin GenerateLinks!(typeof(this), DataStructure);
@@ -419,7 +419,7 @@ enum DefaultLanguage = Language.en;
 struct DataStructureComponents
 {
     Nullable!AttributeList attributeList;
-    Nullable!DimensionList dimensionList;
+    DimensionList dimensionList;
     Group[] groups;
     Nullable!MeasureList measureList;
 
