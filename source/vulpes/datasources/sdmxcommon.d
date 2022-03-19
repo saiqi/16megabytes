@@ -1,7 +1,9 @@
 module vulpes.datasources.sdmxcommon;
 
 import std.typecons : Nullable, nullable;
-import std.range : isInputRange, ElementType;
+import std.traits : Unqual, ReturnType;
+import std.range : isInputRange, ElementType, InputRange;
+import vulpes.lib.xml : isForwardRangeOfChar, deserializeAsRangeOf;
 import vulpes.core.model : DefaultLanguage, Language, enumMember;
 
 enum bool isLabelizable(T) = is(typeof(T.init.lang) : string) && is(typeof(T.init.content) : string);
@@ -56,9 +58,9 @@ if(isInputRange!T && isLabelizable!(ElementType!T))
     auto rs = resources
         .filter!(a => !a.lang.enumMember!Language.isNull)
         .map!(a => tuple(a.lang.enumMember!Language.get, a.content));
-        
+
     if(rs.empty) return typeof(return).init;
-        
+
     return rs.assocArray.nullable;
 }
 
@@ -80,4 +82,44 @@ unittest
     assert(getIntlLabels([Name("unknown", "")]).isNull);
     const Name[] empty;
     assert(getIntlLabels(empty).isNull);
+}
+
+InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml)
+if(isForwardRangeOfChar!Range && is(Unqual!(ReturnType!(Source.init.convert)) == Nullable!Target))
+{
+    import std.algorithm : map;
+    import std.range : inputRangeObject;
+    import vulpes.lib.monadish : filterNull;
+
+    return xml
+        .deserializeAsRangeOf!Source
+        .map!"a.convert"
+        .filterNull
+        .inputRangeObject;
+}
+
+unittest
+{
+    import vulpes.lib.xml : text, xmlRoot;
+
+    static struct Out
+    {
+        string v;
+    }
+
+    @xmlRoot("In")
+    static struct In
+    {
+        @text
+        string value;
+
+        Nullable!Out convert()
+        {
+            return Out(value).nullable;
+        }
+    }
+
+    auto xml = "<Root><In>foo</In></Root>";
+    auto r = buildRangeFromXml!(In, Out)(xml);
+    assert(r.front.v == "foo");
 }

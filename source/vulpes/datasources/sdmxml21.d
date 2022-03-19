@@ -5,7 +5,7 @@ import std.traits : ReturnType;
 import std.range : InputRange;
 import vulpes.lib.xml;
 import vulpes.core.model;
-import vulpes.datasources.sdmxcommon : getIntlLabels, getLabel;
+import vulpes.datasources.sdmxcommon : getIntlLabels, getLabel, buildRangeFromXml;
 
 package:
 
@@ -1386,19 +1386,8 @@ unittest
     assert(dataset.series[2].observations[0].obsValue.isNull);
 }
 
-InputRange!Dataflow buildDataflows(R)(in R xmlStr)
-if(isForwardRangeOfChar!R)
-{
-    import std.algorithm : map;
-    import std.range : inputRangeObject;
-    import vulpes.lib.monadish : filterNull;
-
-    return xmlStr
-        .deserializeAsRangeOf!SDMX21Dataflow
-        .map!"a.convert"
-        .filterNull
-        .inputRangeObject;
-}
+alias buildDataflows = buildRangeFromXml!(SDMX21Dataflow, Dataflow, string);
+alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructure, string);
 
 unittest
 {
