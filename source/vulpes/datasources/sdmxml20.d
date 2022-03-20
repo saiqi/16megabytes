@@ -2,9 +2,73 @@ module vulpes.datasources.sdmxml20;
 
 import std.typecons : Nullable, nullable;
 import std.range: InputRange;
+import std.traits : Unqual;
 import vulpes.lib.xml;
 import vulpes.core.model;
 import vulpes.datasources.sdmxcommon : buildRangeFromXml;
+
+private enum bool isDSDComponent(T) = is(Unqual!T == SDMX20Attribute)
+    || is(Unqual!T == SDMX20Dimension)
+    || is(Unqual!T == SDMX20TimeDimension)
+    || is(Unqual!T == SDMX20PrimaryMeasure);
+
+private Nullable!Urn conceptId(T)(in ref T resource, string scheme, string agency, string version_)
+if(isDSDComponent!T)
+{
+    if(resource.conceptRef.isNull) return typeof(return).init;
+
+    Nullable!Urn urn = Urn(
+        PackageType.conceptscheme,
+        ClassType.Concept,
+        resource.conceptSchemeAgency.get(agency),
+        resource.conceptSchemeRef.get(scheme),
+        resource.conceptVersion.get(version_),
+        resource.concepRef.get);
+
+    return urn;
+}
+
+private Nullable!Enumeration enumeration(T)(in ref T resource, string agency, string version_)
+if(isDSDComponent!T)
+{
+    if(resource.codelist.isNull) return typeof(return).init;
+
+    Urn u = Urn(
+        PackageType.codelist,
+        ClassType.Codelist,
+        resource.codelistAgency.get(agency),
+        resource.codelist.get,
+        resource.codelistVersion.get(version_));
+
+    Nullable!Enumeration e = Enumeration(u);
+    return e;
+}
+
+private Nullable!LocalRepresentation localRepresentation(T)(in ref resource, string agency, string version_)
+if(isDSDComponent!T)
+{
+    import std.typecons : apply;
+
+    auto e = enumeration!T(resource, agency, version_);
+
+    Nullable!LocalRepresentation rep;
+    
+    static if(is(typeof(Unqual!(T.init.textFormat)) == SDMX20TextFormat))
+    {
+        Nullable!Format f = resource.textFormat.apply!(a => Format(
+            (Nullable!uint).init,
+            (Nullable!uint).init,
+            a.textType.apply!"a.enumMember!BasicDataType"
+        ));
+        rep = LocalRepresentation(e, f);
+    }
+    else
+    {
+        rep = LocalRepresentation(e, (Nullable!Format).init);
+    }
+
+    return rep;
+}
 
 package:
 
@@ -33,7 +97,6 @@ struct SDMX20KeyFamilyRef
 
     inout(Urn) urn() pure @safe inout nothrow
     {
-        import vulpes.core.model : PackageType, ClassType, DefaultVersion;
         return Urn(
             PackageType.datastructure,
             ClassType.DataStructure,
@@ -250,6 +313,9 @@ struct SDMX20Attribute
 
     @attr("attachmentLevel")
     Nullable!string attachmentLevel;
+
+    @xmlElement("TextFormat")
+    Nullable!SDMX20TextFormat textFormat;
 }
 
 @xmlRoot("Components")
