@@ -95,7 +95,7 @@ struct SDMX20Dataflow
             getIntlLabels(cNames),
             (Nullable!string).init,
             (Nullable!(string[Language])).init,
-            keyFamilyRef.urn.toString
+            keyFamilyRef.urn
         ).nullable;
 
     }
@@ -114,7 +114,7 @@ unittest
     assert(df.get.name == "Balance of Payments (BOP), 2017 M06");
     assert(!df.get.names.isNull);
     assert(df.get.name == df.get.names.get[Language.en]);
-    assert(df.get.structure == sdmxDf.keyFamilyRef.urn.toString);
+    assert(df.get.structure == sdmxDf.keyFamilyRef.urn);
 }
 
 @xmlRoot("Dataflows")

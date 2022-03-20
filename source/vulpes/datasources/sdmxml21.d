@@ -89,7 +89,7 @@ struct SDMX21Dataflow
             getIntlLabels(cNames),
             getLabel(cDescriptions),
             getIntlLabels(cDescriptions),
-            structureUrn.toString
+            structureUrn
         ).nullable;
     }
 }
@@ -108,7 +108,7 @@ unittest
     assert(df.get.names.get[Language.fr] == "Balance des paiements");
     assert(df.get.description.isNull);
     assert(df.get.descriptions.isNull);
-    assert(df.get.structure == sdmxDf.structure.get.ref_.urn.toString);
+    assert(df.get.structure == sdmxDf.structure.get.ref_.urn);
 }
 
 @xmlRoot("Name")
@@ -237,7 +237,8 @@ struct SDMX21Enumeration
     Nullable!Enumeration convert() @safe pure inout
     {
         if(ref_.urn.isNull) return typeof(return).init;
-        return Enumeration(ref_.urn.get.toString).nullable;
+        Nullable!Enumeration e = Enumeration(ref_.urn.get);
+        return e;
     }
 }
 
@@ -290,9 +291,8 @@ struct SDMX21TimeDimension
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
 
-        Nullable!string conceptId = conceptIdentity
-            .apply!(a => a.ref_.urn)
-            .apply!"a.toString";
+        Nullable!Urn conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn);
 
         return TimeDimension(
             id.get,
@@ -334,9 +334,8 @@ struct SDMX21Dimension
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
 
-        Nullable!string conceptId = conceptIdentity
-            .apply!(a => a.ref_.urn)
-            .apply!"a.toString";
+        Nullable!Urn conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn);
 
         return Dimension(
             id.get,
@@ -462,9 +461,8 @@ struct SDMX21Attribute
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
 
-        Nullable!string conceptId = conceptIdentity
-            .apply!(a => a.ref_.urn)
-            .apply!"a.toString";
+        Nullable!Urn conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn);
 
         return Attribute(
             id.get,
@@ -591,9 +589,8 @@ struct SDMX21PrimaryMeasure
 
         if(id.isNull) return typeof(return).init;
 
-        Nullable!string conceptId = conceptIdentity
-            .apply!(a => a.ref_.urn)
-            .apply!"a.toString";
+        Nullable!Urn conceptId = conceptIdentity
+            .apply!(a => a.ref_.urn);
 
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
@@ -733,13 +730,15 @@ unittest
     Dimension d0 = dsd.dataStructureComponents.dimensionList.dimensions[0];
     assert(d0.id == "FREQ");
     assert(d0.position == 1);
-    assert(d0.conceptIdentity.get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).FREQ");
+    assert(d0
+        .conceptIdentity
+        .get == Urn("urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).FREQ"));
     assert(d0
         .localRepresentation
         .get
         .enumeration
         .get
-        .enumeration == "urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_FREQ(1.0)");
+        .enumeration == Urn("urn:sdmx:org.sdmx.infomodel.codelist.Codelist=ECB:CL_FREQ(1.0)"));
 
     Group g = dsd.dataStructureComponents.groups[0];
     assert(g.groupDimensions.length == 6);
@@ -748,7 +747,7 @@ unittest
     Attribute a0 = dsd.dataStructureComponents.attributeList.get.attributes[0];
     assert(a0
         .conceptIdentity
-        .get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).TIME_FORMAT");
+        .get == Urn("urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).TIME_FORMAT"));
     assert(a0.localRepresentation.get.format.get.dataType == BasicDataType.string_);
     assert(a0.attributeRelationship.get.dimensions.length == 7);
     assert(a0.attributeRelationship.get.dimensions[0] == "FREQ");
@@ -756,7 +755,7 @@ unittest
     Measure m0 = dsd.dataStructureComponents.measureList.get.measures[0];
     assert(m0
         .conceptIdentity
-        .get == "urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).OBS_VALUE");
+        .get == Urn("urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=ECB:ECB_CONCEPTS(1.0).OBS_VALUE"));
     assert(m0.localRepresentation.get.format.get.dataType == BasicDataType.string_);
     assert(m0.localRepresentation.get.format.get.maxLength == 15);
 }

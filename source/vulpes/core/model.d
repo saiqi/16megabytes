@@ -237,7 +237,7 @@ struct AttributeRelationship
 
 struct Enumeration
 {
-    string enumeration;
+    Urn enumeration;
 
     mixin(Generate);
 }
@@ -311,7 +311,7 @@ struct Attribute
     string id;
     Nullable!UsageType usage;
     Nullable!AttributeRelationship attributeRelationship;
-    Nullable!string conceptIdentity;
+    Nullable!Urn conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
 
@@ -336,7 +336,7 @@ struct Dimension
 {
     string id;
     uint position;
-    Nullable!string conceptIdentity;
+    Nullable!Urn conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
 
@@ -350,7 +350,7 @@ struct TimeDimension
 {
     string id;
     uint position;
-    Nullable!string conceptIdentity;
+    Nullable!Urn conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
 
@@ -386,7 +386,7 @@ struct Group
 struct Measure
 {
     string id;
-    Nullable!string conceptIdentity;
+    Nullable!Urn conceptIdentity;
     string[] conceptRoles;
     Nullable!LocalRepresentation localRepresentation;
     Nullable!UsageType usage;
@@ -700,7 +700,7 @@ struct Dataflow
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    string structure;
+    Urn structure;
 
     mixin(Generate);
     mixin GenerateLinks!(typeof(this));
