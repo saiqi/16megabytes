@@ -1388,11 +1388,3 @@ unittest
 
 alias buildDataflows = buildRangeFromXml!(SDMX21Dataflow, Dataflow, string);
 alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructure, string);
-
-unittest
-{
-    import std.file : readText;
-    auto xmlIn = readText("./fixtures/sdmx21/structure_dataflow.xml");
-    auto dfs = buildDataflows(xmlIn);
-    assert(!dfs.empty);
-}

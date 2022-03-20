@@ -1,0 +1,1053 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Structure xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/message" xsi:schemaLocation="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/message https://registry.sdmx.org/schemas/v2_0/SDMXMessage.xsd">
+  <Header>
+    <ID>b9f726a0-9009-4e31-aea5-4aa1128b7be4</ID>
+    <Test>false</Test>
+    <Prepared>2022-03-20T12:26:34</Prepared>
+    <Sender id="1C0">
+      <Name xml:lang="en">IMF</Name>
+      <Contact>
+        <URI>http://www.imf.org</URI>
+        <Telephone>+ 1 (202) 623-6220</Telephone>
+      </Contact>
+    </Sender>
+    <Receiver id="ZZZ" />
+  </Header>
+  <CodeLists>
+    <CodeList id="CL_UNIT_MULT" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Scale</Name>
+      <Code value="0">
+        <Description xml:lang="en">Units</Description>
+      </Code>
+      <Code value="2">
+        <Description xml:lang="en">Hundreds</Description>
+      </Code>
+      <Code value="3">
+        <Description xml:lang="en">Thousands</Description>
+      </Code>
+      <Code value="6">
+        <Description xml:lang="en">Millions</Description>
+      </Code>
+      <Code value="9">
+        <Description xml:lang="en">Billions</Description>
+      </Code>
+      <Code value="12">
+        <Description xml:lang="en">Trillions</Description>
+      </Code>
+      <Code value="N15">
+        <Description xml:lang="en">Quadrillionths</Description>
+      </Code>
+      <Code value="N14">
+        <Description xml:lang="en">Hundred Trillionths</Description>
+      </Code>
+      <Code value="N13">
+        <Description xml:lang="en">Ten Trillionths</Description>
+      </Code>
+      <Code value="N12">
+        <Description xml:lang="en">Trillionths</Description>
+      </Code>
+      <Code value="N11">
+        <Description xml:lang="en">Hundred Billionths</Description>
+      </Code>
+      <Code value="N10">
+        <Description xml:lang="en">Ten Billionths</Description>
+      </Code>
+      <Code value="N9">
+        <Description xml:lang="en">Billionths</Description>
+      </Code>
+      <Code value="N8">
+        <Description xml:lang="en">Hundred Millionths</Description>
+      </Code>
+      <Code value="N7">
+        <Description xml:lang="en">Ten Millionths</Description>
+      </Code>
+      <Code value="N6">
+        <Description xml:lang="en">Millionths</Description>
+      </Code>
+      <Code value="N5">
+        <Description xml:lang="en">Hundred Thousandths</Description>
+      </Code>
+      <Code value="N4">
+        <Description xml:lang="en">Ten Thousandths</Description>
+      </Code>
+      <Code value="N3">
+        <Description xml:lang="en">Thousandths</Description>
+      </Code>
+      <Code value="N2">
+        <Description xml:lang="en">Hundredths</Description>
+      </Code>
+      <Code value="N1">
+        <Description xml:lang="en">Tenths</Description>
+      </Code>
+      <Code value="1">
+        <Description xml:lang="en">Tens</Description>
+      </Code>
+      <Code value="4">
+        <Description xml:lang="en">Ten Thousands</Description>
+      </Code>
+      <Code value="5">
+        <Description xml:lang="en">Hundred Thousands</Description>
+      </Code>
+      <Code value="7">
+        <Description xml:lang="en">Ten Millions</Description>
+      </Code>
+      <Code value="8">
+        <Description xml:lang="en">Hundred Millions</Description>
+      </Code>
+      <Code value="10">
+        <Description xml:lang="en">Ten Billions</Description>
+      </Code>
+      <Code value="11">
+        <Description xml:lang="en">Hundred Billions</Description>
+      </Code>
+      <Code value="13">
+        <Description xml:lang="en">Ten Trillions</Description>
+      </Code>
+      <Code value="14">
+        <Description xml:lang="en">Hundred Trillions</Description>
+      </Code>
+      <Code value="15">
+        <Description xml:lang="en">Quadrillions</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_FREQ" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Frequency</Name>
+      <Description xml:lang="en">Frequency</Description>
+      <Code value="A">
+        <Description xml:lang="en">Annual</Description>
+      </Code>
+      <Code value="B">
+        <Description xml:lang="en">Bi-annual</Description>
+      </Code>
+      <Code value="Q">
+        <Description xml:lang="en">Quarterly</Description>
+      </Code>
+      <Code value="M">
+        <Description xml:lang="en">Monthly</Description>
+      </Code>
+      <Code value="D">
+        <Description xml:lang="en">Daily</Description>
+      </Code>
+      <Code value="W">
+        <Description xml:lang="en">Weekly</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_AREA_GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Geographical Areas</Name>
+      <Code value="AF">
+        <Description xml:lang="en">Afghanistan</Description>
+      </Code>
+      <Code value="AL">
+        <Description xml:lang="en">Albania</Description>
+      </Code>
+      <Code value="DZ">
+        <Description xml:lang="en">Algeria</Description>
+      </Code>
+      <Code value="AO">
+        <Description xml:lang="en">Angola</Description>
+      </Code>
+      <Code value="AI">
+        <Description xml:lang="en">Anguilla</Description>
+      </Code>
+      <Code value="AG">
+        <Description xml:lang="en">Antigua and Barbuda</Description>
+      </Code>
+      <Code value="AR">
+        <Description xml:lang="en">Argentina</Description>
+      </Code>
+      <Code value="AM">
+        <Description xml:lang="en">Armenia</Description>
+      </Code>
+      <Code value="AW">
+        <Description xml:lang="en">Aruba</Description>
+      </Code>
+      <Code value="AU">
+        <Description xml:lang="en">Australia</Description>
+      </Code>
+      <Code value="AT">
+        <Description xml:lang="en">Austria</Description>
+      </Code>
+      <Code value="AZ">
+        <Description xml:lang="en">Azerbaijan</Description>
+      </Code>
+      <Code value="BS">
+        <Description xml:lang="en">Bahamas</Description>
+      </Code>
+      <Code value="BH">
+        <Description xml:lang="en">Bahrain</Description>
+      </Code>
+      <Code value="BD">
+        <Description xml:lang="en">Bangladesh</Description>
+      </Code>
+      <Code value="BB">
+        <Description xml:lang="en">Barbados</Description>
+      </Code>
+      <Code value="BY">
+        <Description xml:lang="en">Belarus</Description>
+      </Code>
+      <Code value="BE">
+        <Description xml:lang="en">Belgium</Description>
+      </Code>
+      <Code value="BZ">
+        <Description xml:lang="en">Belize</Description>
+      </Code>
+      <Code value="BJ">
+        <Description xml:lang="en">Benin</Description>
+      </Code>
+      <Code value="BT">
+        <Description xml:lang="en">Bhutan</Description>
+      </Code>
+      <Code value="BO">
+        <Description xml:lang="en">Bolivia</Description>
+      </Code>
+      <Code value="BA">
+        <Description xml:lang="en">Bosnia and Herzegovina</Description>
+      </Code>
+      <Code value="BW">
+        <Description xml:lang="en">Botswana</Description>
+      </Code>
+      <Code value="BR">
+        <Description xml:lang="en">Brazil</Description>
+      </Code>
+      <Code value="BN">
+        <Description xml:lang="en">Brunei Darussalam</Description>
+      </Code>
+      <Code value="BG">
+        <Description xml:lang="en">Bulgaria</Description>
+      </Code>
+      <Code value="BF">
+        <Description xml:lang="en">Burkina Faso</Description>
+      </Code>
+      <Code value="BI">
+        <Description xml:lang="en">Burundi</Description>
+      </Code>
+      <Code value="CV">
+        <Description xml:lang="en">Cape Verde</Description>
+      </Code>
+      <Code value="KH">
+        <Description xml:lang="en">Cambodia</Description>
+      </Code>
+      <Code value="CM">
+        <Description xml:lang="en">Cameroon</Description>
+      </Code>
+      <Code value="CA">
+        <Description xml:lang="en">Canada</Description>
+      </Code>
+      <Code value="KY">
+        <Description xml:lang="en">Cayman Islands</Description>
+      </Code>
+      <Code value="CF">
+        <Description xml:lang="en">Central African Republic</Description>
+      </Code>
+      <Code value="TD">
+        <Description xml:lang="en">Chad</Description>
+      </Code>
+      <Code value="CL">
+        <Description xml:lang="en">Chile</Description>
+      </Code>
+      <Code value="HK">
+        <Description xml:lang="en">Hong Kong, China</Description>
+      </Code>
+      <Code value="MO">
+        <Description xml:lang="en">Macao</Description>
+      </Code>
+      <Code value="CN">
+        <Description xml:lang="en">China</Description>
+      </Code>
+      <Code value="CO">
+        <Description xml:lang="en">Colombia</Description>
+      </Code>
+      <Code value="KM">
+        <Description xml:lang="en">Comoros</Description>
+      </Code>
+      <Code value="CD">
+        <Description xml:lang="en">Congo, the Democratic Republic of the</Description>
+      </Code>
+      <Code value="CG">
+        <Description xml:lang="en">Congo</Description>
+      </Code>
+      <Code value="CK">
+        <Description xml:lang="en">Cook Islands</Description>
+      </Code>
+      <Code value="CR">
+        <Description xml:lang="en">Costa Rica</Description>
+      </Code>
+      <Code value="CI">
+        <Description xml:lang="en">Cote d`Ivoire</Description>
+      </Code>
+      <Code value="HR">
+        <Description xml:lang="en">Croatia</Description>
+      </Code>
+      <Code value="1C_355">
+        <Description xml:lang="en">Curacao &amp; St. Maarten</Description>
+      </Code>
+      <Code value="CY">
+        <Description xml:lang="en">Cyprus</Description>
+      </Code>
+      <Code value="CZ">
+        <Description xml:lang="en">Czech Republic</Description>
+      </Code>
+      <Code value="DK">
+        <Description xml:lang="en">Denmark</Description>
+      </Code>
+      <Code value="DJ">
+        <Description xml:lang="en">Djibouti</Description>
+      </Code>
+      <Code value="DM">
+        <Description xml:lang="en">Dominica</Description>
+      </Code>
+      <Code value="DO">
+        <Description xml:lang="en">Dominican Republic</Description>
+      </Code>
+      <Code value="EC">
+        <Description xml:lang="en">Ecuador</Description>
+      </Code>
+      <Code value="EG">
+        <Description xml:lang="en">Egypt</Description>
+      </Code>
+      <Code value="SV">
+        <Description xml:lang="en">El Salvador</Description>
+      </Code>
+      <Code value="GQ">
+        <Description xml:lang="en">Equatorial Guinea</Description>
+      </Code>
+      <Code value="ER">
+        <Description xml:lang="en">Eritrea</Description>
+      </Code>
+      <Code value="EE">
+        <Description xml:lang="en">Estonia</Description>
+      </Code>
+      <Code value="ET">
+        <Description xml:lang="en">Ethiopia</Description>
+      </Code>
+      <Code value="U2">
+        <Description xml:lang="en">Euro area (Member States and Institutions of the Euro Area) changing composition</Description>
+      </Code>
+      <Code value="FJ">
+        <Description xml:lang="en">Fiji</Description>
+      </Code>
+      <Code value="FI">
+        <Description xml:lang="en">Finland</Description>
+      </Code>
+      <Code value="FR">
+        <Description xml:lang="en">France</Description>
+      </Code>
+      <Code value="GA">
+        <Description xml:lang="en">Gabon</Description>
+      </Code>
+      <Code value="GM">
+        <Description xml:lang="en">Gambia</Description>
+      </Code>
+      <Code value="GE">
+        <Description xml:lang="en">Georgia</Description>
+      </Code>
+      <Code value="DE">
+        <Description xml:lang="en">Germany</Description>
+      </Code>
+      <Code value="GH">
+        <Description xml:lang="en">Ghana</Description>
+      </Code>
+      <Code value="GR">
+        <Description xml:lang="en">Greece</Description>
+      </Code>
+      <Code value="GD">
+        <Description xml:lang="en">Grenada</Description>
+      </Code>
+      <Code value="GT">
+        <Description xml:lang="en">Guatemala</Description>
+      </Code>
+      <Code value="GN">
+        <Description xml:lang="en">Guinea</Description>
+      </Code>
+      <Code value="GW">
+        <Description xml:lang="en">Guinea-Bissau</Description>
+      </Code>
+      <Code value="GY">
+        <Description xml:lang="en">Guyana</Description>
+      </Code>
+      <Code value="HT">
+        <Description xml:lang="en">Haiti</Description>
+      </Code>
+      <Code value="HN">
+        <Description xml:lang="en">Honduras</Description>
+      </Code>
+      <Code value="HU">
+        <Description xml:lang="en">Hungary</Description>
+      </Code>
+      <Code value="IS">
+        <Description xml:lang="en">Iceland</Description>
+      </Code>
+      <Code value="IN">
+        <Description xml:lang="en">India</Description>
+      </Code>
+      <Code value="ID">
+        <Description xml:lang="en">Indonesia</Description>
+      </Code>
+      <Code value="IR">
+        <Description xml:lang="en">Iran, Islamic Republic of</Description>
+      </Code>
+      <Code value="IQ">
+        <Description xml:lang="en">Iraq</Description>
+      </Code>
+      <Code value="IE">
+        <Description xml:lang="en">Ireland</Description>
+      </Code>
+      <Code value="IL">
+        <Description xml:lang="en">Israel</Description>
+      </Code>
+      <Code value="IT">
+        <Description xml:lang="en">Italy</Description>
+      </Code>
+      <Code value="JM">
+        <Description xml:lang="en">Jamaica</Description>
+      </Code>
+      <Code value="JP">
+        <Description xml:lang="en">Japan</Description>
+      </Code>
+      <Code value="JO">
+        <Description xml:lang="en">Jordan</Description>
+      </Code>
+      <Code value="KZ">
+        <Description xml:lang="en">Kazakhstan</Description>
+      </Code>
+      <Code value="KE">
+        <Description xml:lang="en">Kenya</Description>
+      </Code>
+      <Code value="KI">
+        <Description xml:lang="en">Kiribati</Description>
+      </Code>
+      <Code value="KR">
+        <Description xml:lang="en">Korea, Republic of</Description>
+      </Code>
+      <Code value="XK">
+        <Description xml:lang="en">Kosovo</Description>
+      </Code>
+      <Code value="KW">
+        <Description xml:lang="en">Kuwait</Description>
+      </Code>
+      <Code value="KG">
+        <Description xml:lang="en">Kyrgyzstan</Description>
+      </Code>
+      <Code value="LA">
+        <Description xml:lang="en">Lao People`s Democratic Republic</Description>
+      </Code>
+      <Code value="LV">
+        <Description xml:lang="en">Latvia</Description>
+      </Code>
+      <Code value="LB">
+        <Description xml:lang="en">Lebanon</Description>
+      </Code>
+      <Code value="LS">
+        <Description xml:lang="en">Lesotho</Description>
+      </Code>
+      <Code value="LR">
+        <Description xml:lang="en">Liberia</Description>
+      </Code>
+      <Code value="LY">
+        <Description xml:lang="en">Libya</Description>
+      </Code>
+      <Code value="LT">
+        <Description xml:lang="en">Lithuania</Description>
+      </Code>
+      <Code value="LU">
+        <Description xml:lang="en">Luxembourg</Description>
+      </Code>
+      <Code value="MK">
+        <Description xml:lang="en">Macedonia, The Former Yugoslav Republic of</Description>
+      </Code>
+      <Code value="MG">
+        <Description xml:lang="en">Madagascar</Description>
+      </Code>
+      <Code value="MW">
+        <Description xml:lang="en">Malawi</Description>
+      </Code>
+      <Code value="MY">
+        <Description xml:lang="en">Malaysia</Description>
+      </Code>
+      <Code value="MV">
+        <Description xml:lang="en">Maldives</Description>
+      </Code>
+      <Code value="ML">
+        <Description xml:lang="en">Mali</Description>
+      </Code>
+      <Code value="MT">
+        <Description xml:lang="en">Malta</Description>
+      </Code>
+      <Code value="MH">
+        <Description xml:lang="en">Marshall islands</Description>
+      </Code>
+      <Code value="MR">
+        <Description xml:lang="en">Mauritania</Description>
+      </Code>
+      <Code value="MU">
+        <Description xml:lang="en">Mauritius</Description>
+      </Code>
+      <Code value="MX">
+        <Description xml:lang="en">Mexico</Description>
+      </Code>
+      <Code value="FM">
+        <Description xml:lang="en">Micronesia, Federated States of</Description>
+      </Code>
+      <Code value="MD">
+        <Description xml:lang="en">Moldova, Republic of</Description>
+      </Code>
+      <Code value="MC">
+        <Description xml:lang="en">Monaco</Description>
+      </Code>
+      <Code value="MN">
+        <Description xml:lang="en">Mongolia</Description>
+      </Code>
+      <Code value="ME">
+        <Description xml:lang="en">Montenegro</Description>
+      </Code>
+      <Code value="MS">
+        <Description xml:lang="en">Montserrat</Description>
+      </Code>
+      <Code value="MA">
+        <Description xml:lang="en">Morocco</Description>
+      </Code>
+      <Code value="MZ">
+        <Description xml:lang="en">Mozambique</Description>
+      </Code>
+      <Code value="MM">
+        <Description xml:lang="en">Myanmar</Description>
+      </Code>
+      <Code value="NA">
+        <Description xml:lang="en">Namibia</Description>
+      </Code>
+      <Code value="NR">
+        <Description xml:lang="en">Nauru</Description>
+      </Code>
+      <Code value="NP">
+        <Description xml:lang="en">Nepal</Description>
+      </Code>
+      <Code value="NL">
+        <Description xml:lang="en">Netherlands</Description>
+      </Code>
+      <Code value="AN">
+        <Description xml:lang="en">Netherlands Antilles</Description>
+      </Code>
+      <Code value="NZ">
+        <Description xml:lang="en">New Zealand</Description>
+      </Code>
+      <Code value="NI">
+        <Description xml:lang="en">Nicaragua</Description>
+      </Code>
+      <Code value="NE">
+        <Description xml:lang="en">Niger</Description>
+      </Code>
+      <Code value="NG">
+        <Description xml:lang="en">Nigeria</Description>
+      </Code>
+      <Code value="NO">
+        <Description xml:lang="en">Norway</Description>
+      </Code>
+      <Code value="OM">
+        <Description xml:lang="en">Oman</Description>
+      </Code>
+      <Code value="PK">
+        <Description xml:lang="en">Pakistan</Description>
+      </Code>
+      <Code value="PW">
+        <Description xml:lang="en">Palau</Description>
+      </Code>
+      <Code value="PA">
+        <Description xml:lang="en">Panama</Description>
+      </Code>
+      <Code value="PG">
+        <Description xml:lang="en">Papua New Guinea</Description>
+      </Code>
+      <Code value="PY">
+        <Description xml:lang="en">Paraguay</Description>
+      </Code>
+      <Code value="PE">
+        <Description xml:lang="en">Peru</Description>
+      </Code>
+      <Code value="PH">
+        <Description xml:lang="en">Philippines</Description>
+      </Code>
+      <Code value="PL">
+        <Description xml:lang="en">Poland</Description>
+      </Code>
+      <Code value="PT">
+        <Description xml:lang="en">Portugal</Description>
+      </Code>
+      <Code value="QA">
+        <Description xml:lang="en">Qatar</Description>
+      </Code>
+      <Code value="RO">
+        <Description xml:lang="en">Romania</Description>
+      </Code>
+      <Code value="RU">
+        <Description xml:lang="en">Russian Federation</Description>
+      </Code>
+      <Code value="RW">
+        <Description xml:lang="en">Rwanda</Description>
+      </Code>
+      <Code value="WS">
+        <Description xml:lang="en">Samoa</Description>
+      </Code>
+      <Code value="SM">
+        <Description xml:lang="en">San Marino</Description>
+      </Code>
+      <Code value="ST">
+        <Description xml:lang="en">Sao Tome and Principe</Description>
+      </Code>
+      <Code value="SA">
+        <Description xml:lang="en">Saudi Arabia</Description>
+      </Code>
+      <Code value="SN">
+        <Description xml:lang="en">Senegal</Description>
+      </Code>
+      <Code value="CS">
+        <Description xml:lang="en">Serbia and Montenegro</Description>
+      </Code>
+      <Code value="RS">
+        <Description xml:lang="en">Serbia</Description>
+      </Code>
+      <Code value="SC">
+        <Description xml:lang="en">Seychelles</Description>
+      </Code>
+      <Code value="SL">
+        <Description xml:lang="en">Sierra Leone</Description>
+      </Code>
+      <Code value="SG">
+        <Description xml:lang="en">Singapore</Description>
+      </Code>
+      <Code value="SK">
+        <Description xml:lang="en">Slovakia</Description>
+      </Code>
+      <Code value="SI">
+        <Description xml:lang="en">Slovenia</Description>
+      </Code>
+      <Code value="SB">
+        <Description xml:lang="en">Solomon Islands</Description>
+      </Code>
+      <Code value="SO">
+        <Description xml:lang="en">Somalia</Description>
+      </Code>
+      <Code value="ZA">
+        <Description xml:lang="en">South Africa</Description>
+      </Code>
+      <Code value="SS">
+        <Description xml:lang="en">South Sudan</Description>
+      </Code>
+      <Code value="ES">
+        <Description xml:lang="en">Spain</Description>
+      </Code>
+      <Code value="LK">
+        <Description xml:lang="en">Sri Lanka</Description>
+      </Code>
+      <Code value="KN">
+        <Description xml:lang="en">Saint Kitts and Nevis</Description>
+      </Code>
+      <Code value="LC">
+        <Description xml:lang="en">Saint Lucia</Description>
+      </Code>
+      <Code value="VC">
+        <Description xml:lang="en">Saint Vincent and the Grenadines</Description>
+      </Code>
+      <Code value="SD">
+        <Description xml:lang="en">Sudan</Description>
+      </Code>
+      <Code value="SR">
+        <Description xml:lang="en">Suriname</Description>
+      </Code>
+      <Code value="SZ">
+        <Description xml:lang="en">Swaziland</Description>
+      </Code>
+      <Code value="SE">
+        <Description xml:lang="en">Sweden</Description>
+      </Code>
+      <Code value="CH">
+        <Description xml:lang="en">Switzerland</Description>
+      </Code>
+      <Code value="SY">
+        <Description xml:lang="en">Syrian Arab Republic</Description>
+      </Code>
+      <Code value="TJ">
+        <Description xml:lang="en">Tajikistan</Description>
+      </Code>
+      <Code value="TZ">
+        <Description xml:lang="en">Tanzania, United Republic of</Description>
+      </Code>
+      <Code value="TH">
+        <Description xml:lang="en">Thailand</Description>
+      </Code>
+      <Code value="TL">
+        <Description xml:lang="en">Timor-Leste</Description>
+      </Code>
+      <Code value="TG">
+        <Description xml:lang="en">Togo</Description>
+      </Code>
+      <Code value="TO">
+        <Description xml:lang="en">Tonga</Description>
+      </Code>
+      <Code value="TT">
+        <Description xml:lang="en">Trinidad and Tobago</Description>
+      </Code>
+      <Code value="TN">
+        <Description xml:lang="en">Tunisia</Description>
+      </Code>
+      <Code value="TR">
+        <Description xml:lang="en">Turkey</Description>
+      </Code>
+      <Code value="TM">
+        <Description xml:lang="en">Turkmenistan</Description>
+      </Code>
+      <Code value="TV">
+        <Description xml:lang="en">Tuvalu</Description>
+      </Code>
+      <Code value="UG">
+        <Description xml:lang="en">Uganda</Description>
+      </Code>
+      <Code value="UA">
+        <Description xml:lang="en">Ukraine</Description>
+      </Code>
+      <Code value="AE">
+        <Description xml:lang="en">United Arab Emirates</Description>
+      </Code>
+      <Code value="GB">
+        <Description xml:lang="en">United Kingdom</Description>
+      </Code>
+      <Code value="US">
+        <Description xml:lang="en">United States</Description>
+      </Code>
+      <Code value="UY">
+        <Description xml:lang="en">Uruguay</Description>
+      </Code>
+      <Code value="UZ">
+        <Description xml:lang="en">Uzbekistan</Description>
+      </Code>
+      <Code value="VU">
+        <Description xml:lang="en">Vanuatu</Description>
+      </Code>
+      <Code value="VE">
+        <Description xml:lang="en">Venezuela, Bolivarian Republic</Description>
+      </Code>
+      <Code value="VN">
+        <Description xml:lang="en">Viet Nam</Description>
+      </Code>
+      <Code value="PS">
+        <Description xml:lang="en">Palestine, State of</Description>
+      </Code>
+      <Code value="1C_473">
+        <Description xml:lang="en">Yemen Arab Rep.</Description>
+      </Code>
+      <Code value="YE">
+        <Description xml:lang="en">Yemen</Description>
+      </Code>
+      <Code value="ZM">
+        <Description xml:lang="en">Zambia</Description>
+      </Code>
+      <Code value="ZW">
+        <Description xml:lang="en">Zimbabwe</Description>
+      </Code>
+      <Code value="1C_All_Countries_for_Dissemination">
+        <Description xml:lang="en">All Countries for Dissemination</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_SECTOR_GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Sector</Name>
+      <Code value="S1311B">
+        <Description xml:lang="en">Budgetary central government</Description>
+      </Code>
+      <Code value="S1311">
+        <Description xml:lang="en">Central government (excl. social security funds)</Description>
+      </Code>
+      <Code value="S1321">
+        <Description xml:lang="en">Central government (incl. social security funds)</Description>
+      </Code>
+      <Code value="S13112">
+        <Description xml:lang="en">Extrabudgetary central government</Description>
+      </Code>
+      <Code value="S13">
+        <Description xml:lang="en">General government</Description>
+      </Code>
+      <Code value="S1313">
+        <Description xml:lang="en">Local governments</Description>
+      </Code>
+      <Code value="S1314">
+        <Description xml:lang="en">Social security funds</Description>
+      </Code>
+      <Code value="S1312">
+        <Description xml:lang="en">State governments</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_UNIT_GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Unit</Name>
+      <Code value="XDC">
+        <Description xml:lang="en">Domestic currency</Description>
+      </Code>
+      <Code value="XDC_R_B1GQ">
+        <Description xml:lang="en">Percent of GDP</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_INDICATOR_GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Indicator</Name>
+      <Code value="GF21">
+        <Description xml:lang="en">Compensation of employees</Description>
+      </Code>
+      <Code value="GF23">
+        <Description xml:lang="en">Consumption of fixed capital</Description>
+      </Code>
+      <Code value="GF6M3D1">
+        <Description xml:lang="en">D1 debt liabilities at market value </Description>
+      </Code>
+      <Code value="GF6M3D2">
+        <Description xml:lang="en">D2 debt liabilities at market value </Description>
+      </Code>
+      <Code value="GF6M3D3">
+        <Description xml:lang="en">D3 debt liabilities at market value </Description>
+      </Code>
+      <Code value="GF6M91">
+        <Description xml:lang="en">Debt, net of highly liquid assets</Description>
+      </Code>
+      <Code value="GF2M">
+        <Description xml:lang="en">Expenditure</Description>
+      </Code>
+      <Code value="GF2">
+        <Description xml:lang="en">Expense</Description>
+      </Code>
+      <Code value="GF2g">
+        <Description xml:lang="en">Expense, excluding consumption of fixed capital</Description>
+      </Code>
+      <Code value="GF26">
+        <Description xml:lang="en">Grants expense</Description>
+      </Code>
+      <Code value="GF13">
+        <Description xml:lang="en">Grants revenue</Description>
+      </Code>
+      <Code value="GF6M3">
+        <Description xml:lang="en">Gross debt (D4) at market value </Description>
+      </Code>
+      <Code value="GFGOB">
+        <Description xml:lang="en">Gross operating balance</Description>
+      </Code>
+      <Code value="GF24">
+        <Description xml:lang="en">Interest expense</Description>
+      </Code>
+      <Code value="GF31g">
+        <Description xml:lang="en">Investment in nonfinancial assets</Description>
+      </Code>
+      <Code value="GF32">
+        <Description xml:lang="en">Net acquisition of financial assets</Description>
+      </Code>
+      <Code value="GF6M36">
+        <Description xml:lang="en">Net debt</Description>
+      </Code>
+      <Code value="GF6M2">
+        <Description xml:lang="en">Net financial worth</Description>
+      </Code>
+      <Code value="GF33">
+        <Description xml:lang="en">Net incurrence of liabilities</Description>
+      </Code>
+      <Code value="GFNLB">
+        <Description xml:lang="en">Net lending (+) / Net borrowing (-)</Description>
+      </Code>
+      <Code value="GFNOB">
+        <Description xml:lang="en">Net operating balance</Description>
+      </Code>
+      <Code value="GF6">
+        <Description xml:lang="en">Net worth</Description>
+      </Code>
+      <Code value="GF31">
+        <Description xml:lang="en">Net/gross investment in nonfinancial assets</Description>
+      </Code>
+      <Code value="GF28">
+        <Description xml:lang="en">Other expense</Description>
+      </Code>
+      <Code value="GF14">
+        <Description xml:lang="en">Other revenue</Description>
+      </Code>
+      <Code value="GFPB">
+        <Description xml:lang="en">Primary net lending / borrowing</Description>
+      </Code>
+      <Code value="GF1">
+        <Description xml:lang="en">Revenue</Description>
+      </Code>
+      <Code value="GF27">
+        <Description xml:lang="en">Social benefits</Description>
+      </Code>
+      <Code value="GF12">
+        <Description xml:lang="en">Social contributions</Description>
+      </Code>
+      <Code value="GF62">
+        <Description xml:lang="en">Stock position of financial assets</Description>
+      </Code>
+      <Code value="GF63">
+        <Description xml:lang="en">Stock position of liabilities</Description>
+      </Code>
+      <Code value="GF61">
+        <Description xml:lang="en">Stock position of nonfinancial assets</Description>
+      </Code>
+      <Code value="GF25">
+        <Description xml:lang="en">Subsidies</Description>
+      </Code>
+      <Code value="GF11">
+        <Description xml:lang="en">Tax revenue</Description>
+      </Code>
+      <Code value="GF22">
+        <Description xml:lang="en">Use of goods and services</Description>
+      </Code>
+    </CodeList>
+    <CodeList id="CL_TIME_FORMAT" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Time format</Name>
+      <Description xml:lang="en">Time formats based on ISO 8601.</Description>
+      <Code value="P1Y">
+        <Description xml:lang="en">Annual</Description>
+      </Code>
+      <Code value="P6M">
+        <Description xml:lang="en">Bi-annual</Description>
+      </Code>
+      <Code value="P3M">
+        <Description xml:lang="en">Quarterly</Description>
+      </Code>
+      <Code value="P1M">
+        <Description xml:lang="en">Monthly</Description>
+      </Code>
+      <Code value="P7D">
+        <Description xml:lang="en">Weekly</Description>
+      </Code>
+      <Code value="P1D">
+        <Description xml:lang="en">Daily</Description>
+      </Code>
+    </CodeList>
+  </CodeLists>
+  <Concepts>
+    <ConceptScheme id="GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances</Name>
+      <Concept id="OBS_VALUE" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Value</Name>
+        <TextFormat textType="Double" />
+      </Concept>
+      <Concept id="UNIT_MULT" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Scale</Name>
+      </Concept>
+      <Concept id="TIME_FORMAT" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Time format</Name>
+        <Description xml:lang="en">Time formats based on ISO 8601.</Description>
+      </Concept>
+      <Concept id="FREQ" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Frequency</Name>
+      </Concept>
+      <Concept id="REF_AREA" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Reference Area</Name>
+      </Concept>
+      <Concept id="REF_SECTOR" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Reporting Institutional Sector</Name>
+      </Concept>
+      <Concept id="UNIT_MEASURE" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Unit of Measure</Name>
+      </Concept>
+      <Concept id="CLASSIFICATION" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Classification</Name>
+      </Concept>
+      <Concept id="GLOBAL_DSD_TIME_SERIES_CODE" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Global DSD Time Series Code</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="INDICATOR_CODE" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Indicator Code</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="TIME_PERIOD" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Date</Name>
+        <TextFormat textType="DateTime" />
+      </Concept>
+      <Concept id="OBS_STATUS" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Observation Status (incl. Confidentiality)</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="BASES_OF_RECORDING_CASH_NON_CASH" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Bases of recording (Cash/ Non Cash)</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="BASES_OF_RECORDING_GROSSNET" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Bases of recording (Gross/Net)</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="VALUATION" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Valuation</Name>
+        <TextFormat textType="String" />
+      </Concept>
+      <Concept id="NATURE_OF_DATA" agencyID="IMF" version="1.0">
+        <Name xml:lang="en">Nature of data</Name>
+        <TextFormat textType="String" />
+      </Concept>
+    </ConceptScheme>
+  </Concepts>
+  <KeyFamilies>
+    <KeyFamily id="GFSMAB2015" agencyID="IMF" version="1.0" isFinal="true" xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/structure">
+      <Name xml:lang="en">Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances</Name>
+      <Components>
+        <Dimension conceptRef="FREQ" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_FREQ" codelistVersion="1.0" codelistAgency="IMF" isFrequencyDimension="true" />
+        <Dimension conceptRef="REF_AREA" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_AREA_GFSMAB2015" codelistVersion="1.0" codelistAgency="IMF" />
+        <Dimension conceptRef="REF_SECTOR" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_SECTOR_GFSMAB2015" codelistVersion="1.0" codelistAgency="IMF" />
+        <Dimension conceptRef="UNIT_MEASURE" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_UNIT_GFSMAB2015" codelistVersion="1.0" codelistAgency="IMF" />
+        <Dimension conceptRef="CLASSIFICATION" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_INDICATOR_GFSMAB2015" codelistVersion="1.0" codelistAgency="IMF" />
+        <TimeDimension conceptRef="TIME_PERIOD" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" />
+        <PrimaryMeasure conceptRef="OBS_VALUE" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF">
+          <TextFormat textType="Double" />
+        </PrimaryMeasure>
+        <Attribute conceptRef="UNIT_MULT" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_UNIT_MULT" codelistVersion="1.0" codelistAgency="IMF" attachmentLevel="Series" assignmentStatus="Mandatory" />
+        <Attribute conceptRef="GLOBAL_DSD_TIME_SERIES_CODE" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Series" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="INDICATOR_CODE" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Series" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="OBS_STATUS" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Observation" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="BASES_OF_RECORDING_CASH_NON_CASH" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Observation" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="BASES_OF_RECORDING_GROSSNET" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Observation" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="VALUATION" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Observation" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="NATURE_OF_DATA" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" attachmentLevel="Observation" assignmentStatus="Conditional">
+          <TextFormat textType="String" />
+        </Attribute>
+        <Attribute conceptRef="TIME_FORMAT" conceptVersion="1.0" conceptSchemeRef="GFSMAB2015" conceptSchemeAgency="IMF" codelist="CL_TIME_FORMAT" codelistVersion="1.0" codelistAgency="IMF" attachmentLevel="Series" assignmentStatus="Mandatory" isTimeFormat="true" />
+      </Components>
+      <Annotations>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Latest Update Date</AnnotationTitle>
+          <AnnotationText xml:lang="en">05/28/2016</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Name</AnnotationTitle>
+          <AnnotationText xml:lang="en">Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Temporal Coverage</AnnotationTitle>
+          <AnnotationText xml:lang="en">1972-2014</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Geographic Coverage</AnnotationTitle>
+          <AnnotationText xml:lang="en">175 countries</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Methodology</AnnotationTitle>
+          <AnnotationText xml:lang="en">Government Finance Statistics Manual 2014 (GFSM 2014)</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Sectoral Coverage</AnnotationTitle>
+          <AnnotationText xml:lang="en">Budgetary central government, Central government (excl. social security funds), Central government (incl. social security funds), Extrabudgetary central government, General government, Local governments, Social security funds, State governments</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Definition</AnnotationTitle>
+          <AnnotationText xml:lang="en">This dataset provides an overview of government operations and stock positions, as well as several derived balances. The Statement of Government Operations shows revenue and expense, with their main components, the operating balance and net lending/net borrowing, as well as financing. The Balance sheet shows stock positions in assets and liabilities, with their main components, as well as net worth and net financial worth. In addition, data on gross debt and net debt are included.</AnnotationText>
+        </Annotation>
+        <Annotation xmlns="http://www.SDMX.org/resources/SDMXML/schemas/v2_0/common">
+          <AnnotationTitle>Code</AnnotationTitle>
+          <AnnotationText xml:lang="en">GFSMAB2015</AnnotationText>
+        </Annotation>
+      </Annotations>
+    </KeyFamily>
+  </KeyFamilies>
+</Structure>

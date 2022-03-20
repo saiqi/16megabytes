@@ -3,7 +3,8 @@ module vulpes.datasources.sdmxml20;
 import std.typecons : Nullable, nullable;
 import std.range: InputRange;
 import vulpes.lib.xml;
-import vulpes.core.model : Urn, Dataflow, Language;
+import vulpes.core.model;
+import vulpes.datasources.sdmxcommon : buildRangeFromXml;
 
 package:
 
@@ -144,8 +145,29 @@ struct SDMX20Dimension
     @attr("codelist")
     Nullable!string codelist;
 
+    @attr("codelistVersion")
+    Nullable!string codelistVersion;
+
+    @attr("codelistAgency")
+    Nullable!string codelistAgency;
+
     @attr("conceptRef")
     Nullable!string conceptRef;
+
+    @attr("conceptVersion")
+    Nullable!string conceptVersion;
+
+    @attr("conceptSchemeRef")
+    Nullable!string conceptSchemeRef;
+
+    @attr("conceptSchemeAgency")
+    Nullable!string conceptSchemeAgency;
+
+    @attr("isFrequencyDimension")
+    Nullable!bool isFrequencyDimension;
+
+    @attr("isMeasureDimension")
+    Nullable!bool isMeasureDimension;
 }
 
 @xmlRoot("TimeDimension")
@@ -154,8 +176,23 @@ struct SDMX20TimeDimension
     @attr("codelist")
     Nullable!string codelist;
 
+    @attr("codelistVersion")
+    Nullable!string codelistVersion;
+
+    @attr("codelistAgency")
+    Nullable!string codelistAgency;
+
     @attr("conceptRef")
     Nullable!string conceptRef;
+
+    @attr("conceptVersion")
+    Nullable!string conceptVersion;
+
+    @attr("conceptSchemeRef")
+    Nullable!string conceptSchemeRef;
+
+    @attr("conceptSchemeAgency")
+    Nullable!string conceptSchemeAgency;
 }
 
 @xmlRoot("TextFormat")
@@ -171,6 +208,15 @@ struct SDMX20PrimaryMeasure
     @attr("conceptRef")
     Nullable!string conceptRef;
 
+    @attr("conceptVersion")
+    Nullable!string conceptVersion;
+
+    @attr("conceptSchemeRef")
+    Nullable!string conceptSchemeRef;
+
+    @attr("conceptSchemeAgency")
+    Nullable!string conceptSchemeAgency;
+
     @xmlElement("TextFormat")
     Nullable!SDMX20TextFormat textFormat;
 }
@@ -181,8 +227,23 @@ struct SDMX20Attribute
     @attr("codelist")
     Nullable!string codelist;
 
+    @attr("codelistVersion")
+    Nullable!string codelistVersion;
+
+    @attr("codelistAgency")
+    Nullable!string codelistAgency;
+
     @attr("conceptRef")
     Nullable!string conceptRef;
+
+    @attr("conceptVersion")
+    Nullable!string conceptVersion;
+
+    @attr("conceptSchemeRef")
+    Nullable!string conceptSchemeRef;
+
+    @attr("conceptSchemeAgency")
+    Nullable!string conceptSchemeAgency;
 
     @attr("assignmentStatus")
     Nullable!string assignmentStatus;
@@ -382,19 +443,7 @@ unittest
     assert(!s.concepts.isNull);
 }
 
-InputRange!Dataflow buildDataflows(R)(in R xmlStr)
-if(isForwardRangeOfChar!R)
-{
-    import std.algorithm : map;
-    import std.range : inputRangeObject;
-    import vulpes.lib.monadish : filterNull;
-
-    return xmlStr
-        .deserializeAsRangeOf!SDMX20Dataflow
-        .map!"a.convert"
-        .filterNull
-        .inputRangeObject;
-}
+alias buildDataflows = buildRangeFromXml!(SDMX20Dataflow, Dataflow, string);
 
 unittest
 {
