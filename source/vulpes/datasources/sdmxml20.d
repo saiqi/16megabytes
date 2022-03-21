@@ -5,14 +5,14 @@ import std.range: InputRange;
 import std.traits : Unqual;
 import vulpes.lib.xml;
 import vulpes.core.model;
-import vulpes.datasources.sdmxcommon : buildRangeFromXml;
+import vulpes.datasources.sdmxcommon;
 
 private enum bool isDSDComponent(T) = is(Unqual!T == SDMX20Attribute)
     || is(Unqual!T == SDMX20Dimension)
     || is(Unqual!T == SDMX20TimeDimension)
     || is(Unqual!T == SDMX20PrimaryMeasure);
 
-private Nullable!Urn conceptId(T)(in ref T resource, string scheme, string agency, string version_)
+private Nullable!Urn conceptId(T)(in ref T resource, string agency)
 if(isDSDComponent!T)
 {
     if(resource.conceptRef.isNull) return typeof(return).init;
@@ -21,45 +21,60 @@ if(isDSDComponent!T)
         PackageType.conceptscheme,
         ClassType.Concept,
         resource.conceptSchemeAgency.get(agency),
-        resource.conceptSchemeRef.get(scheme),
-        resource.conceptVersion.get(version_),
-        resource.concepRef.get);
+        resource.conceptSchemeRef.get(Unknown),
+        resource.conceptVersion.get(DefaultVersion),
+        resource.conceptRef.get);
 
     return urn;
 }
 
-private Nullable!Enumeration enumeration(T)(in ref T resource, string agency, string version_)
+private Nullable!Enumeration enumeration(T)(in ref T resource, string agency)
 if(isDSDComponent!T)
 {
-    if(resource.codelist.isNull) return typeof(return).init;
+    static if(is(typeof(T.init.codelist)))
+    {
+        if(resource.codelist.isNull) return typeof(return).init;
 
-    Urn u = Urn(
-        PackageType.codelist,
-        ClassType.Codelist,
-        resource.codelistAgency.get(agency),
-        resource.codelist.get,
-        resource.codelistVersion.get(version_));
+        Urn u = Urn(
+            PackageType.codelist,
+            ClassType.Codelist,
+            resource.codelistAgency.get(agency),
+            resource.codelist.get,
+            resource.codelistVersion.get(DefaultVersion));
 
-    Nullable!Enumeration e = Enumeration(u);
-    return e;
+        Nullable!Enumeration e = Enumeration(u);
+        return e;
+    }
+    else
+    {
+        return typeof(return).init;
+    }
+
 }
 
-private Nullable!LocalRepresentation localRepresentation(T)(in ref resource, string agency, string version_)
+private Nullable!LocalRepresentation localRepresentation(T)(in ref T resource, string agency)
 if(isDSDComponent!T)
 {
     import std.typecons : apply;
 
-    auto e = enumeration!T(resource, agency, version_);
+    auto e = enumeration!T(resource, agency);
 
     Nullable!LocalRepresentation rep;
-    
-    static if(is(typeof(Unqual!(T.init.textFormat)) == SDMX20TextFormat))
+
+    static if(is(typeof((Unqual!T).init.textFormat) == Nullable!SDMX20TextFormat))
     {
-        Nullable!Format f = resource.textFormat.apply!(a => Format(
+        Nullable!Format f;
+
+        Nullable!BasicDataType type = resource.textFormat
+            .apply!"a.textType"
+            .apply!(a => a.enumMember!BasicDataType);
+
+        if(type.isNull) f = (Nullable!Format).init;
+        else f = Format(
             (Nullable!uint).init,
             (Nullable!uint).init,
-            a.textType.apply!"a.enumMember!BasicDataType"
-        ));
+            type.get);
+        
         rep = LocalRepresentation(e, f);
     }
     else
@@ -140,8 +155,6 @@ struct SDMX20Dataflow
 
     Nullable!Dataflow convert() pure @safe inout
     {
-        import vulpes.datasources.sdmxcommon : getLabel, getIntlLabels;
-
         auto cNames = names.dup;
 
         auto name = getLabel(cNames);
@@ -343,11 +356,237 @@ struct SDMX20KeyFamily
     @attr("agencyID")
     string agencyId;
 
+    @attr("version")
+    Nullable!string version_;
+
+    @attr("isFinal")
+    Nullable!bool isFinal;
+
     @xmlElementList("Name")
     SDMX20Name[] names;
 
     @xmlElement("Components")
     SDMX20Components components;
+
+    Nullable!DataStructure convert() pure @safe inout
+    {
+        import std.range : enumerate;
+        import std.algorithm : any, map;
+        import std.array : array;
+        import std.typecons : tuple;
+        import vulpes.lib.monadish : fallbackMap, filterNull;
+
+        Nullable!Dimension handleDimension(in SDMX20Dimension dim, uint pos)
+        {
+            if(dim.conceptRef.isNull) return typeof(return).init;
+
+            Nullable!Dimension r = Dimension(
+                dim.conceptRef.get,
+                pos,
+                conceptId(dim, this.agencyId),
+                [],
+                localRepresentation(dim, this.agencyId));
+
+            return r;
+        }
+
+        Nullable!TimeDimension handleTimeDimension(in SDMX20TimeDimension dim, uint pos)
+        {
+            if(dim.conceptRef.isNull) return typeof(return).init;
+
+            Nullable!TimeDimension r = TimeDimension(
+                dim.conceptRef.get,
+                pos,
+                conceptId(dim, this.agencyId),
+                [],
+                localRepresentation(dim, this.agencyId));
+
+            return r;
+        }
+
+        Nullable!Attribute handleAttribute(in SDMX20Attribute attr)
+        {
+            import std.typecons : apply;
+            import std.array : array;
+
+            if(attr.conceptRef.isNull) return typeof(return).init;
+            Nullable!UsageType usage = attr.assignmentStatus.apply!(a => a.enumMember!UsageType);
+            Nullable!AttributeRelationship rel = attr.attachmentLevel.apply!((a) {
+                if(a == "Series")
+                {
+                    auto dims = this.components
+                        .dimensions
+                        .fallbackMap!"a.conceptRef"
+                        .filterNull
+                        .array;
+                    return AttributeRelationship(
+                        dims,
+                        (Nullable!string).init,
+                        (Nullable!Empty).init,
+                        (Nullable!Empty).init);
+                }
+                else if(a == "Observation")
+                {
+                    Nullable!Empty obs = Empty();
+                    return AttributeRelationship(
+                        [],
+                        (Nullable!string).init,
+                        obs,
+                        (Nullable!Empty).init);
+                }
+                else
+                {
+                    Nullable!Empty df = Empty();
+                    return AttributeRelationship(
+                        [],
+                        (Nullable!string).init,
+                        (Nullable!Empty).init,
+                        df);
+                }
+            });
+
+            Nullable!Attribute r = Attribute(
+                attr.conceptRef.get,
+                usage,
+                rel,
+                conceptId(attr, this.agencyId),
+                [],
+                localRepresentation(attr, this.agencyId));
+            return r;
+        }
+
+        Nullable!Measure handleMeasure(in SDMX20PrimaryMeasure mes)
+        {
+            if(mes.conceptRef.isNull) return typeof(return).init;
+
+            Nullable!Measure r = Measure(
+                mes.conceptRef.get,
+                conceptId(mes, agencyId),
+                [],
+                localRepresentation(mes, agencyId),
+                (Nullable!UsageType).init);
+            return r;
+        }
+
+        auto cNames = names.dup;
+
+        auto name = getLabel(cNames);
+
+        if(name.isNull) return typeof(return).init;
+
+        auto tDims = this.components
+            .dimensions
+            .dup
+            .enumerate(1)
+            .fallbackMap!(a => tuple(a[0], handleDimension(a[1], a[0])))
+            .array;
+
+        if(tDims.length == 0 || tDims.any!"a[1].isNull") return typeof(return).init;
+
+        uint lastPos = tDims[$ - 1][0];
+
+        auto dims = tDims.map!"a[1]".filterNull.array;
+
+        auto timeDim = handleTimeDimension(this.components.timeDimension, lastPos + 1);
+
+        if(timeDim.isNull) return typeof(return).init;
+
+        auto attrs = this.components
+            .attributes
+            .fallbackMap!handleAttribute;
+
+        auto pMeasure = handleMeasure(this.components.primaryMeasure);
+
+        Nullable!AttributeList attrList;
+        if(attrs.any!"a.isNull") attrList = (Nullable!AttributeList).init;
+        else attrList = AttributeList("AttributeDescriptor", attrs.filterNull.array);
+
+        Nullable!MeasureList measList;
+        if(pMeasure.isNull) measList = (Nullable!MeasureList).init;
+        else measList = MeasureList("MeasureDescriptor", [pMeasure.get]);
+
+        DimensionList dimList = DimensionList("DimensionDescriptor", dims, timeDim.get);
+
+        auto comps = DataStructureComponents(attrList, dimList, [], measList);
+
+        Nullable!DataStructure dsd = DataStructure(
+            id,
+            version_.get(DefaultVersion),
+            agencyId,
+            true,
+            isFinal.get(false),
+            name.get,
+            getIntlLabels(cNames),
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init,
+            comps
+        );
+
+        return dsd;
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    import std.algorithm : equal;
+
+    auto sdmxDsd = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
+        .deserializeAsRangeOf!SDMX20KeyFamily;
+    DataStructure dsd = sdmxDsd.front.convert.get;
+    assert(dsd.id == "GFSMAB2015");
+    assert(dsd.agencyId == "IMF");
+    assert(dsd.version_ == "1.0");
+    assert(dsd.name == "Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances");
+    assert(dsd.names.get[Language.en] == dsd.name);
+
+    DataStructureComponents components = dsd.dataStructureComponents;
+    assert(components.dimensionList.id == "DimensionDescriptor");
+    assert(components.attributeList.get.id == "AttributeDescriptor");
+    assert(components.measureList.get.id == "MeasureDescriptor");
+    assert(components.groups.length == 0);
+
+    Dimension d0 = components.dimensionList.dimensions[0];
+    assert(d0.id == "FREQ");
+    assert(d0.position == 1);
+    assert(d0
+        .conceptIdentity
+        .get == Urn("urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=IMF:GFSMAB2015(1.0).FREQ"));
+    assert(d0
+        .localRepresentation
+        .get
+        .enumeration
+        .get
+        .enumeration == Urn("urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IMF:CL_FREQ(1.0)"));
+
+    Attribute a0 = components.attributeList.get.attributes[0];
+    assert(a0.id == "UNIT_MULT");
+    assert(a0
+        .conceptIdentity
+        .get == Urn("urn:sdmx:org.sdmx.infomodel.conceptscheme.Concept=IMF:GFSMAB2015(1.0).UNIT_MULT"));
+    assert(!a0.localRepresentation.get.enumeration.isNull);
+    assert(a0.localRepresentation.get.format.isNull);
+    auto dims = a0.attributeRelationship.get.dimensions;
+    assert(dims.equal(["FREQ", "REF_AREA", "REF_SECTOR", "UNIT_MEASURE", "CLASSIFICATION"]));
+    assert(a0.attributeRelationship.get.observation.isNull);
+    assert(a0.usage.get == UsageType.mandatory);
+
+    Attribute a1 = components.attributeList.get.attributes[1];
+    assert(a1.usage.get == UsageType.conditional);
+    assert(a1.localRepresentation.get.enumeration.isNull);
+    assert(a1.localRepresentation.get.format.get.dataType == BasicDataType.string_);
+
+    Attribute a3 = components.attributeList.get.attributes[3];
+    assert(!a3.attributeRelationship.get.observation.isNull);
+    assert(a3.attributeRelationship.get.dimensions.length == 0);
+
+    TimeDimension td = components.dimensionList.timeDimension;
+    assert(td.id == "TIME_PERIOD");
+    assert(td.position == 6);
+
+    Measure m0 = components.measureList.get.measures[0];
+    assert(m0.id == "OBS_VALUE");
+    assert(m0.localRepresentation.get.format.get.dataType == BasicDataType.double_);
 }
 
 @xmlRoot("KeyFamilies")
@@ -517,4 +756,11 @@ unittest
     auto xmlIn = readText("./fixtures/sdmx20/structure_dataflows.xml");
     auto dfs = buildDataflows(xmlIn);
     assert(!dfs.empty);
+}
+
+alias buildDataStructures = buildRangeFromXml!(SDMX20KeyFamily, DataStructure, string);
+
+unittest
+{
+
 }

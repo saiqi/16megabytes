@@ -5,8 +5,8 @@ import std.traits : Unqual, EnumMembers;
 import std.range : ElementType;
 import vulpes.lib.boilerplate : Generate;
 
-enum Unknown = "Unknown";
-enum DefaultVersion = "latest";
+enum Unknown = "unknown";
+enum DefaultVersion = "1.0";
 
 template enumMember(E)
 if(is(E == enum) && is(typeof(EnumMembers!E[0]) : string))
