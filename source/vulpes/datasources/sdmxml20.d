@@ -589,6 +589,21 @@ unittest
     assert(m0.localRepresentation.get.format.get.dataType == BasicDataType.double_);
 }
 
+unittest
+{
+    import std.file : readText;
+    import std.algorithm : equal;
+
+    auto sdmxDsd = readText("./fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml")
+        .deserializeAsRangeOf!SDMX20KeyFamily;
+    DataStructure dsd = sdmxDsd.front.convert.get;
+    DataStructureComponents components = dsd.dataStructureComponents;
+    assert(components.dimensionList.id == "DimensionDescriptor");
+    assert(components.attributeList.get.id == "AttributeDescriptor");
+    assert(components.measureList.get.id == "MeasureDescriptor");
+    assert(components.groups.length == 0);
+}
+
 @xmlRoot("KeyFamilies")
 struct SDMX20KeyFamilies
 {
@@ -647,8 +662,29 @@ struct SDMX20Code
     @attr("value")
     string value;
 
+    @xmlElementList("Name")
+    SDMX20Name[] names;
+
     @xmlElementList("Description")
     SDMX20Description[] descriptions;
+
+    Nullable!Code convert() pure @safe inout
+    {
+        auto cDescs = descriptions.dup;
+
+        auto name = getLabel(cDescs);
+
+        if(name.isNull) return typeof(return).init;
+
+        Nullable!Code r = Code(
+            value,
+            name.get,
+            getIntlLabels(cDescs),
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init);
+
+        return r;
+    }
 }
 
 @xmlRoot("CodeList")
@@ -656,6 +692,9 @@ struct SDMX20Codelist
 {
     @xmlElementList("Name")
     SDMX20Name[] names;
+
+    @xmlElementList("Description")
+    SDMX20Description[] descriptions;
 
     @xmlElementList("Code")
     SDMX20Code[] codes;
@@ -665,6 +704,42 @@ struct SDMX20Codelist
 
     @attr("agencyID")
     string agencyId;
+
+    @attr("version")
+    Nullable!string version_;
+
+    Nullable!Codelist convert() pure @safe inout
+    {
+        return convertListOfItems!(typeof(this), Codelist, "codes")(this);
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto sdmxCls = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
+        .deserializeAsRangeOf!SDMX20Codelist;
+
+    Codelist cl = sdmxCls.front.convert.get;
+    assert(cl.id == "CL_UNIT_MULT");
+    assert(cl.name == "Scale");
+    assert(cl.codes[0].id == "0");
+    assert(cl.codes[0].name == "Units");
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto sdmxCls = readText("./fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml")
+        .deserializeAsRangeOf!SDMX20Codelist;
+
+    Codelist cl = sdmxCls.front.convert.get;
+    assert(cl.id == "CL_QNA_LOCATION");
+    assert(cl.name == "Country");
+    assert(cl.codes[0].id == "AUS");
+    assert(cl.codes[0].name == "Australia");
 }
 
 @xmlRoot("CodeLists")
@@ -698,8 +773,59 @@ struct SDMX20Concept
     @attr("agencyID")
     string agencyId;
 
+    @attr("version")
+    Nullable!string version_;
+
     @xmlElementList("Name")
     SDMX20Name[] names;
+
+    @xmlElementList("Description")
+    SDMX20Description[] descriptions;
+
+    Nullable!Concept convert() pure @safe inout
+    {
+        return convertIdentifiableItem!(typeof(this), Concept)(this);
+    }
+}
+
+@xmlRoot("ConceptScheme")
+struct SDMX20ConceptScheme
+{
+    @attr("id")
+    string id;
+
+    @attr("agencyID")
+    string agencyId;
+
+    @attr("version")
+    string version_;
+
+    @xmlElementList("Name")
+    SDMX20Name[] names;
+
+    @xmlElementList("Description")
+    SDMX20Description[] descriptions;
+
+    @xmlElementList("Concept")
+    SDMX20Concept[] concepts;
+
+    Nullable!ConceptScheme convert() pure @safe inout
+    {
+        return convertListOfItems!(typeof(this), ConceptScheme, "concepts")(this);
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    auto sdmxCss = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
+        .deserializeAsRangeOf!SDMX20ConceptScheme;
+
+    ConceptScheme cs = sdmxCss.front.convert.get;
+    assert(cs.id == "GFSMAB2015");
+    assert(cs.name == "Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances");
+    assert(cs.concepts[0].id == "OBS_VALUE");
+    assert(cs.concepts[0].name == "Value");
 }
 
 @xmlRoot("Concepts")
@@ -749,18 +875,4 @@ unittest
 }
 
 alias buildDataflows = buildRangeFromXml!(SDMX20Dataflow, Dataflow, string);
-
-unittest
-{
-    import std.file : readText;
-    auto xmlIn = readText("./fixtures/sdmx20/structure_dataflows.xml");
-    auto dfs = buildDataflows(xmlIn);
-    assert(!dfs.empty);
-}
-
 alias buildDataStructures = buildRangeFromXml!(SDMX20KeyFamily, DataStructure, string);
-
-unittest
-{
-
-}

@@ -4,7 +4,7 @@ import std.typecons : Nullable, nullable;
 import std.traits : Unqual, ReturnType;
 import std.range : isInputRange, ElementType, InputRange;
 import vulpes.lib.xml : isForwardRangeOfChar, deserializeAsRangeOf;
-import vulpes.core.model : DefaultLanguage, Language, enumMember;
+import vulpes.core.model;
 
 enum bool isLabelizable(T) = is(typeof(T.init.lang) : string) && is(typeof(T.init.content) : string);
 
@@ -84,8 +84,10 @@ unittest
     assert(getIntlLabels(empty).isNull);
 }
 
+enum bool isConvertible(Source, Target) = is(Unqual!(ReturnType!(Source.init.convert)) == Nullable!Target);
+
 InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml)
-if(isForwardRangeOfChar!Range && is(Unqual!(ReturnType!(Source.init.convert)) == Nullable!Target))
+if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
 {
     import std.algorithm : map;
     import std.range : inputRangeObject;
@@ -122,4 +124,80 @@ unittest
     auto xml = "<Root><In>foo</In></Root>";
     auto r = buildRangeFromXml!(In, Out)(xml);
     assert(r.front.v == "foo");
+}
+
+Nullable!Target convertIdentifiableItem(Source, Target)(in ref Source item)
+{
+    auto cNames = item.names.dup;
+    auto name = getLabel(cNames);
+
+    if(name.isNull) return typeof(return).init;
+
+    auto cDescs = item.descriptions.dup;
+    Nullable!Target r = Target(
+        item.id,
+        name.get,
+        getIntlLabels(cNames),
+        getLabel(cDescs),
+        getIntlLabels(cDescs));
+
+    return r;
+}
+
+Nullable!Target convertListOfItems(Source, Target, alias listName)(in ref Source resource)
+if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme))
+{
+    import std.range : ElementType;
+    import std.algorithm : any;
+    import std.array : array;
+    import vulpes.lib.monadish : filterNull, fallbackMap, isNullable;
+
+    alias SourceItemT = Unqual!(ElementType!(typeof(__traits(getMember, Source, listName))));
+
+    static if(is(Unqual!Target == Codelist))
+    {
+        alias TargetItemT = Code;
+    }
+    else
+    {
+        alias TargetItemT = Concept;
+    }
+
+    static assert(isConvertible!(SourceItemT, TargetItemT),
+                  "Cannot find converter from " ~ SourceItemT.stringof ~ " to " ~ TargetItemT.stringof);
+
+    auto cNames = resource.names.dup;
+    auto name = getLabel(cNames);
+
+    if(name.isNull) return typeof(return).init;
+
+    auto items = fallbackMap!"a.convert"(__traits(getMember, resource, listName));
+
+    if(items.any!"a.isNull") return typeof(return).init;
+
+    auto cDescs = resource.descriptions.dup;
+
+    static if(isNullable!(typeof(Source.init.version_)))
+    {
+        auto v = resource.version_.get(DefaultVersion);
+    }
+    else
+    {
+        auto v = resource.version_;
+    }
+
+    Nullable!Target r = Target(
+        resource.id,
+        v,
+        resource.agencyId,
+        true,
+        true,
+        name.get,
+        getIntlLabels(cNames),
+        getLabel(cDescs),
+        getIntlLabels(cDescs),
+        false,
+        items.filterNull.array);
+
+    return r;
 }

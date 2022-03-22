@@ -522,12 +522,8 @@ InputRange!Dataflow dataflows(in ref Provider provider,
                               Fetcher fetcher = toDelegate(&doAsyncRequest))
 {
     import std.typecons : No;
-    import std.algorithm : map;
-    import std.range : inputRangeObject;
     import std.exception : enforce;
     import std.format : format;
-    import vulpes.lib.monadish : filterNull;
-    import vulpes.lib.xml : deserializeAsRangeOf, deserializeAs;
 
     enforce!ProviderException(!provider.formatType.isNull,
                               format!"Cannot deduce provider %s format type"(provider.id));
@@ -556,7 +552,6 @@ unittest
 {
     import std.file : readText;
     import std.typecons : nullable;
-    import std.functional : toDelegate;
     import vibe.core.concurrency : async, Future;
     import vulpes.requests : Response;
     import vulpes.datasources.providers : Resource, FormatType;

@@ -5,7 +5,7 @@ import std.traits : ReturnType;
 import std.range : InputRange;
 import vulpes.lib.xml;
 import vulpes.core.model;
-import vulpes.datasources.sdmxcommon : getIntlLabels, getLabel, buildRangeFromXml;
+import vulpes.datasources.sdmxcommon;
 
 package:
 
@@ -774,6 +774,11 @@ struct SDMX21Code
 
     @xmlElementList("Description")
     SDMX21Description[] descriptions;
+
+    Nullable!Code convert() pure @safe inout
+    {
+        return convertIdentifiableItem!(typeof(this), Code)(this);
+    }
 }
 
 @xmlRoot("Codelist")
@@ -799,6 +804,29 @@ struct SDMX21Codelist
 
     @xmlElementList("Code")
     SDMX21Code[] codes;
+
+    Nullable!Codelist convert() pure @safe inout
+    {
+        return convertListOfItems!(typeof(this), Codelist, "codes")(this);
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto sdmxCls = readText("./fixtures/sdmx21/structure_codelist.xml")
+        .deserializeAsRangeOf!SDMX21Codelist;
+
+    Codelist cl = sdmxCls.front.convert.get;
+    assert(cl.id == "CL_PERIODICITE");
+    assert(cl.name == "Frequency");
+    assert(cl.names.get[Language.en] == cl.name);
+    assert(cl.description.isNull);
+    assert(cl.descriptions.isNull);
+    assert(cl.codes.length == 5);
+    assert(cl.codes[0].id == "A");
+    assert(cl.codes[0].name == "Annual");
 }
 
 @xmlRoot("Concept")
@@ -815,6 +843,11 @@ struct SDMX21Concept
 
     @xmlElementList("Description")
     SDMX21Description[] descriptions;
+
+    Nullable!Concept convert() pure @safe inout
+    {
+        return convertIdentifiableItem!(typeof(this), Concept)(this);
+    }
 }
 
 @xmlRoot("ConceptScheme")
@@ -840,6 +873,25 @@ struct SDMX21ConceptScheme
 
     @xmlElementList("Concept")
     SDMX21Concept[] concepts;
+
+    Nullable!ConceptScheme convert() pure @safe inout
+    {
+        return convertListOfItems!(typeof(this), ConceptScheme, "concepts")(this);
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    auto sdmxCss = readText("./fixtures/sdmx21/structure_conceptscheme.xml")
+        .deserializeAsRangeOf!SDMX21ConceptScheme;
+
+    ConceptScheme cs = sdmxCss.front.convert.get;
+    assert(cs.id == "CONCEPTS_INSEE");
+    assert(cs.name == "Insee concepts");
+    assert(cs.concepts.length == 113);
+    assert(cs.concepts[0].id == "FREQ");
+    assert(cs.concepts[0].name == "Frequency");
 }
 
 @xmlRoot("Category")
