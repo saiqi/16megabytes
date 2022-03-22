@@ -145,7 +145,7 @@ Nullable!Target convertIdentifiableItem(Source, Target)(in ref Source item)
 }
 
 Nullable!Target convertListOfItems(Source, Target, alias listName)(in ref Source resource)
-if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme))
+if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unqual!Target == CategoryScheme))
 {
     import std.range : ElementType;
     import std.algorithm : any;
@@ -158,9 +158,14 @@ if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme))
     {
         alias TargetItemT = Code;
     }
-    else
+    else static if(is(Unqual!Target == ConceptScheme)) 
     {
         alias TargetItemT = Concept;
+    }
+    else
+    {
+        alias TargetItemT = Category;
+        
     }
 
     static assert(isConvertible!(SourceItemT, TargetItemT),

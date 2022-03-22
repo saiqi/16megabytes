@@ -898,7 +898,7 @@ unittest
 struct SDMX21Category
 {
     @attr("id")
-    Nullable!string id;
+    string id;
 
     @attr("urn")
     Nullable!string urn;
@@ -911,22 +911,51 @@ struct SDMX21Category
 
     @xmlElementList("Category")
     SDMX21Category[] children;
+
+    Nullable!Category convert() pure @safe inout
+    {
+        import std.array : array;
+        import vulpes.lib.monadish : fallbackMap, filterNull;
+
+        auto cNames = names.dup;
+
+        auto name = getLabel(cNames);
+
+        if(name.isNull) return typeof(return).init;
+
+        auto cs = children
+            .fallbackMap!"a.convert"
+            .filterNull
+            .array;
+
+        auto cDescs = descriptions.dup;
+
+        Nullable!Category r = Category(
+            id,
+            name.get,
+            getIntlLabels(cNames),
+            getLabel(cDescs),
+            getIntlLabels(cDescs),
+            cs);
+
+        return r;
+    }
 }
 
 @xmlRoot("CategoryScheme")
 struct SDMX21CategoryScheme
 {
     @attr("id")
-    Nullable!string id;
+    string id;
 
     @attr("urn")
     Nullable!string urn;
 
     @attr("agencyID")
-    Nullable!string agencyId;
+    string agencyId;
 
     @attr("version")
-    Nullable!string version_;
+    string version_;
 
     @xmlElementList("Name")
     SDMX21Name[] names;
@@ -936,6 +965,26 @@ struct SDMX21CategoryScheme
 
     @xmlElementList("Category")
     SDMX21Category[] categories;
+
+    Nullable!CategoryScheme convert() pure @safe inout
+    {
+        return convertListOfItems!(typeof(this), CategoryScheme, "categories")(this);
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto sdmxCss = readText("./fixtures/sdmx21/structure_category.xml")
+        .deserializeAsRangeOf!SDMX21CategoryScheme;
+
+    CategoryScheme cs = sdmxCss.front.convert.get;
+    assert(cs.id == "CLASSEMENT_DATAFLOWS");
+    assert(cs.name == "Dataflows categorisation");
+    assert(cs.categories[0].id == "ECO");
+    assert(cs.categories[0].name == "Economy – Economic outlook – National accounts");
+    assert(cs.categories[0].categories[0].id == "ECO_GENERALE");
 }
 
 @xmlRoot("Source")
@@ -978,6 +1027,45 @@ struct SDMX21Categorisation
 
     @xmlElement("Target")
     SDMX21Target target;
+
+    Nullable!Categorisation convert() pure @safe inout
+    {
+        auto sourceUrn = source.ref_.urn;
+        auto targetUrn = target.ref_.urn;
+
+        if(sourceUrn.isNull || targetUrn.isNull) return typeof(return).init;
+
+        auto cNames = names.dup; auto cDescs = descriptions.dup;
+
+        Nullable!Categorisation r = Categorisation(
+            id,
+            version_,
+            agencyId,
+            true,
+            true,
+            getLabel(cNames).get(Unknown),
+            getIntlLabels(cNames),
+            getLabel(cDescs),
+            getIntlLabels(cDescs),
+            sourceUrn.get,
+            targetUrn.get);
+
+        return r;
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+
+    auto sdmxCats = readText("./fixtures/sdmx21/structure_category_categorisation.xml")
+        .deserializeAsRangeOf!SDMX21Categorisation;
+
+    Categorisation cat = sdmxCats.front.convert.get;
+    assert(cat.id == "AGRI_IPAGRI");
+    assert(cat.name == "Association between category AGRI and dataflows IPAGRI");
+    assert(cat.source == Urn("urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=FR1:IPAGRI(1.0)"));
+    assert(cat.target == Urn("urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=FR1:CLASSEMENT_DATAFLOWS(1.0).AGRI"));
 }
 
 @xmlRoot("Categorisations")
@@ -1439,3 +1527,6 @@ unittest
 
 alias buildDataflows = buildRangeFromXml!(SDMX21Dataflow, Dataflow, string);
 alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructure, string);
+alias buildCodelists = buildRangeFromXml!(SDMX21Codelist, Codelist, string);
+alias buildConceptSchemes = buildRangeFromXml!(SDMX21ConceptScheme, ConceptScheme, string);
+alias buildCategorySchemes = buildRangeFromXml!(SDMX21CategoryScheme, CategoryScheme, string);

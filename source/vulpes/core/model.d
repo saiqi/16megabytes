@@ -720,8 +720,8 @@ struct Categorisation
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    string source;
-    string target;
+    Urn source;
+    Urn target;
 
     mixin(Generate);
     mixin GenerateLinks!(typeof(this));

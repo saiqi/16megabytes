@@ -876,3 +876,5 @@ unittest
 
 alias buildDataflows = buildRangeFromXml!(SDMX20Dataflow, Dataflow, string);
 alias buildDataStructures = buildRangeFromXml!(SDMX20KeyFamily, DataStructure, string);
+alias buildCodelists = buildRangeFromXml!(SDMX20Codelist, Codelist, string);
+alias buildConceptSchemes = buildRangeFromXml!(SDMX20ConceptScheme, ConceptScheme, string);
