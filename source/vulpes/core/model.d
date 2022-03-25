@@ -735,7 +735,7 @@ enum RoleType : string
 
 struct ConstraintAttachment
 {
-    string[] dataflows;
+    Urn[] dataflows;
 
     mixin(Generate);
 }
@@ -750,7 +750,7 @@ struct KeyValue
 
 struct CubeRegion
 {
-    bool include;
+    Nullable!bool include;
     KeyValue[] keyValues;
 
     mixin(Generate);

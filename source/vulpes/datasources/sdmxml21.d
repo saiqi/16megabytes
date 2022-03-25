@@ -1118,13 +1118,44 @@ struct SDMX21KeyValue
 
     @xmlElementList("Value")
     SDMX21Value[] values;
+
+    Nullable!KeyValue convert() pure @safe inout
+    {
+        import std.algorithm : any;
+        import std.array : array;
+        import vulpes.lib.monadish: fallbackMap, filterNull;
+
+        if(values.any!"a.content.isNull") return typeof(return).init;
+
+        Nullable!KeyValue r = KeyValue(id, values.fallbackMap!"a.content".filterNull.array);
+
+        return r;
+    }
 }
 
 @xmlRoot("ConstraintAttachment")
 struct SDMX21ConstraintAttachment
 {
-    @xmlElement("Dataflow")
-    Nullable!SDMX21Dataflow dataflow;
+    @xmlElementList("Dataflow")
+    SDMX21Dataflow[] dataflows;
+
+    Nullable!ConstraintAttachment convert() pure @safe inout
+    {
+        import std.typecons : apply;
+        import std.algorithm : any;
+        import std.array : array;
+        import vulpes.lib.monadish : fallbackMap, filterNull;
+
+        auto urns = dataflows
+            .fallbackMap!(a => a.ref_.apply!"a.urn");
+
+        if(urns.any!"a.isNull") return typeof(return).init;
+
+        Nullable!ConstraintAttachment r = ConstraintAttachment(urns.filterNull.array);
+
+        return r;
+
+    }
 }
 
 @xmlRoot("CubeRegion")
@@ -1135,6 +1166,21 @@ struct SDMX21CubeRegion
 
     @xmlElementList("KeyValue")
     SDMX21KeyValue[] keyValues;
+
+    Nullable!CubeRegion convert() pure @safe inout
+    {
+        import std.algorithm : any;
+        import std.array : array;
+        import vulpes.lib.monadish : fallbackMap, filterNull;
+
+        auto kvs = keyValues.fallbackMap!"a.convert";
+
+        if(kvs.any!"a.isNull") return typeof(return).init;
+
+        Nullable!CubeRegion r = CubeRegion(include, kvs.filterNull.array);
+
+        return r;
+    }
 }
 
 @xmlRoot("ContentConstraint")
@@ -1151,6 +1197,9 @@ struct SDMX21ContentConstraint
 
     @attr("agencyID")
     Nullable!string agencyId;
+
+    @attr("version")
+    Nullable!string version_;
 
     @attr("isFinal")
     Nullable!bool isFinal;
@@ -1169,6 +1218,53 @@ struct SDMX21ContentConstraint
 
     @xmlElement("CubeRegion")
     Nullable!SDMX21CubeRegion cubeRegion;
+
+    Nullable!DataConstraint convert() pure @safe inout
+    {
+        import std.typecons : apply;
+        import std.array : array;
+        import vulpes.lib.monadish : filterNull;
+
+        if(id.isNull || agencyId.isNull) return typeof(return).init;
+
+        auto cNames = names.dup; auto cDescs = descriptions.dup;
+
+        Nullable!DataConstraint r = DataConstraint(
+            id.get,
+            version_.get(DefaultVersion),
+            agencyId.get,
+            isExternalReference.get(true),
+            isFinal.get(true),
+            getLabel(cNames).get(Unknown),
+            getIntlLabels(cNames),
+            getLabel(cDescs),
+            getIntlLabels(cDescs),
+            type.apply!(a => a.enumMember!RoleType),
+            constraintAttachment.apply!(a => a.convert),
+            [cubeRegion.apply!(a => a.convert)].filterNull.array
+        );
+
+        return r;
+    }
+}
+
+unittest
+{
+    import std.file : readText;
+    auto sdmxCs = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
+        .deserializeAsRangeOf!SDMX21ContentConstraint;
+
+    DataConstraint dc = sdmxCs.front.convert.get;
+    assert(dc.id == "01R_CONSTRAINT");
+    assert(dc.role.get == RoleType.allowed);
+    assert(dc.name == "01R_CONSTRAINT");
+    assert(dc
+        .constraintAttachment
+        .get
+        .dataflows[0] == Urn("urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=IMF:01R(1.0)"));
+    assert(dc.cubeRegions[0].keyValues[0].id == "COUNTERPART_AREA");
+    assert(dc.cubeRegions[0].keyValues[0].values.length == 1);
+    assert(dc.cubeRegions[0].keyValues[0].values[0] == "_Z");
 }
 
 @xmlRoot("Constraints")
@@ -1325,8 +1421,7 @@ unittest
     assert(contentConstraint.names.length == 1);
     assert(contentConstraint.names[0] == SDMX21Name("en", "01R_CONSTRAINT"));
     assert(!contentConstraint.constraintAttachment.isNull);
-    assert(!contentConstraint.constraintAttachment.get.dataflow.isNull);
-    assert(contentConstraint.constraintAttachment.get.dataflow.get.ref_.get.id == "01R");
+    assert(contentConstraint.constraintAttachment.get.dataflows[0].ref_.get.id == "01R");
     assert(!contentConstraint.cubeRegion.isNull);
 
     const cubeRegion = contentConstraint.cubeRegion.get;
