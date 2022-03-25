@@ -1625,3 +1625,4 @@ alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructur
 alias buildCodelists = buildRangeFromXml!(SDMX21Codelist, Codelist, string);
 alias buildConceptSchemes = buildRangeFromXml!(SDMX21ConceptScheme, ConceptScheme, string);
 alias buildCategorySchemes = buildRangeFromXml!(SDMX21CategoryScheme, CategoryScheme, string);
+alias buildContentConstraints = buildRangeFromXml!(SDMX21ContentConstraint, DataConstraint, string);
