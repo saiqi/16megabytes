@@ -196,7 +196,7 @@ struct Link
     Nullable!string href;
     string rel;
     Nullable!string hreflang;
-    Nullable!string urn;
+    Nullable!Urn urn;
     Nullable!string type;
 
     mixin(Generate);
@@ -406,6 +406,11 @@ struct MeasureList
     mixin GenerateLinks!(typeof(this), DataStructure);
 }
 
+enum bool isDsdComponent(T) = is(Unqual!T == Dimension)
+    || is(Unqual!T == TimeDimension)
+    || is(Unqual!T == Attribute)
+    || is(Unqual!T == Measure);
+
 enum Language : string
 {
     en = "en",
@@ -462,53 +467,6 @@ struct Category
     mixin GenerateLinks!(typeof(this), CategoryScheme);
 }
 
-Category[] flattenCategory(Category category) pure @safe
-{
-    import std.range : chain;
-    import std.algorithm : joiner, map;
-    import std.array: array;
-
-    return [category]
-        .chain(category.categories.map!(c => flattenCategory(c)).joiner)
-        .array;
-}
-
-unittest
-{
-    import std.algorithm : equal, sort;
-
-    auto buildCategory(string id)
-    {
-        return Category(
-            id,
-            null,
-            Nullable!(string[Language]).init,
-            (Nullable!string).init,
-            Nullable!(string[Language]).init,
-            []);
-    }
-
-    auto child0 = buildCategory("0");
-    auto child00 = buildCategory("00");
-    auto child01 = buildCategory("01");
-    auto child010 = buildCategory("010");
-    auto child011 = buildCategory("011");
-    auto child012 = buildCategory("012");
-
-    child01.categories ~= child010;
-    child01.categories ~= child011;
-    child01.categories ~= child012;
-
-    child0.categories ~= child00;
-    child0.categories ~= child01;
-
-    auto categories = flattenCategory(child0);
-    assert(categories.length == 6);
-
-    auto expected = [child0, child00, child01, child010, child011, child012].sort!"a.id < b.id";
-    assert(equal(child0.flattenCategory.sort!"a.id < b.id", expected));
-}
-
 @Package(PackageType.categoryscheme)
 @Class(ClassType.CategoryScheme)
 @Type(ResourceType.categoryscheme)
@@ -528,90 +486,6 @@ struct CategoryScheme
 
     mixin(Generate);
     mixin GenerateLinks!(typeof(this));
-}
-
-alias CategoryHierarchy = Category[][Category];
-
-Nullable!CategoryHierarchy buildHierarchy(CategoryScheme categoryScheme) pure @safe
-{
-    CategoryHierarchy path;
-
-    void visit(Category category)
-    {
-        import std.container : DList;
-
-        DList!Category queue;
-        queue.insertFront(category);
-        bool[Category] visited = [category : true];
-
-        while(!queue.empty)
-        {
-            auto c = queue.front;
-            queue.removeFront;
-
-            visited[c] = true;
-
-            foreach(child; c.categories)
-            {
-                if(!(child in visited))
-                {
-                    visited[child] = true;
-                    queue.insertBack(child);
-                    foreach(u; path.get(c, []))
-                    {
-                        path[child] ~= u;
-                    }
-
-                    path[child] ~= c;
-                }
-            }
-        }
-    }
-
-    foreach(c; categoryScheme.categories)
-    {
-        visit(c);
-    }
-    return path.nullable;
-}
-
-unittest
-{
-    import std.algorithm : equal;
-
-    auto buildCategory(string id)
-    {
-        return Category(
-            id,
-            null,
-            Nullable!(string[Language]).init,
-            (Nullable!string).init,
-            Nullable!(string[Language]).init,
-            []);
-    }
-
-    auto cs = CategoryScheme();
-    auto child0 =   buildCategory("0");
-    auto child1 =   buildCategory("1");
-    auto child00 =  buildCategory("00");
-    auto child01 =  buildCategory("01");
-    auto child010 = buildCategory("010");
-    auto child011 = buildCategory("011");
-    auto child012 = buildCategory("012");
-
-    child01.categories ~= child010;
-    child01.categories ~= child011;
-    child01.categories ~= child012;
-
-    child0.categories ~= child00;
-    child0.categories ~= child01;
-
-    cs.categories ~= child0;
-    cs.categories ~= child1;
-
-    auto hierarchy = buildHierarchy(cs).get;
-    assert(hierarchy[child012].equal([child0, child01]));
-
 }
 
 @Package(PackageType.conceptscheme)
@@ -778,6 +652,37 @@ struct DataConstraint
     mixin GenerateLinks!(typeof(this));
 }
 
+struct StructureComponentValue
+{
+    string id;
+    string name;
+    Nullable!(string[Language]) names;
+}
+
+struct StructureComponent
+{
+    string id;
+    string name;
+    Nullable!(string[Language]) names;
+    Nullable!string description;
+    Nullable!(string[Language]) descriptions;
+    Nullable!int keyPositions;
+    string[] roles;
+    Nullable!bool isMandatory;
+    Nullable!AttributeRelationship relationship;
+    Nullable!Format format;
+    Nullable!string default_;
+    StructureComponentValue[] values;
+}
+
+struct Structure
+{
+    int[] dataSets;
+    StructureComponent[] dimensions;
+    StructureComponent[] measures;
+    StructureComponent[] attributes;
+}
+
 struct Data
 {
     DataStructure[] dataStructures;
@@ -916,19 +821,20 @@ private mixin template GenerateLinks(T, ParentType = void)
 
     static if(hasNoParentType && isRetrievable!T)
     {
-        string urn() pure @safe inout @property
+        Urn urn() pure @safe inout @property
         {
-            return Urn(getPackage(), getClass(), agencyId, id, version_).toString;
+            return Urn(getPackage(), getClass(), agencyId, id, version_);
         }
 
         Link[] links(in string rootUrl) pure @safe inout @property
         {
             const href = format!"%s/%s/%s/%s/%s"(rootUrl, getType(), agencyId, id, version_);
+            Nullable!Urn u = urn();
             auto s = Link(
                 href.nullable,
                 self,
                 DefaultLanguage.to!string.nullable,
-                urn.nullable,
+                u,
                 getType().nullable,
             );
 
@@ -937,9 +843,9 @@ private mixin template GenerateLinks(T, ParentType = void)
     }
     else static if(!hasNoParentType && isIdentifiable!T && isRetrievable!ParentType)
     {
-        string urn(inout ref ParentType parent) pure @safe inout @property
+        Urn urn(inout ref ParentType parent) pure @safe inout @property
         {
-            return Urn(getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id).toString;
+            return Urn(getPackage(), getClass(), parent.agencyId, parent.id, parent.version_, id);
         }
 
         static if(hasUDA!(T, Item))
@@ -948,11 +854,12 @@ private mixin template GenerateLinks(T, ParentType = void)
             {
                 const href = format!"%s/%s/%s/%s/%s/%s"
                     (rootUrl, getType(), parent.agencyId, parent.id, parent.version_, id);
+                Nullable!Urn u = urn(parent);
                 auto s = Link(
                     href.nullable,
                     self,
                     (Nullable!string).init,
-                    urn(parent).nullable,
+                    u,
                     getType().nullable,
                 );
                 return [s];
@@ -962,11 +869,12 @@ private mixin template GenerateLinks(T, ParentType = void)
         {
             Link[] links(inout ref ParentType parent) pure @safe inout @property
             {
+                Nullable!Urn u = urn(parent);
                 auto s = Link(
                     (Nullable!string).init,
                     self,
                     (Nullable!string).init,
-                    urn(parent).nullable,
+                    u,
                     getType().nullable,
                 );
                 return [s];
@@ -992,7 +900,7 @@ unittest
     }
 
     auto foo = Foo("FOO", "1.0", "BAR");
-    assert(foo.urn == "urn:sdmx:org.sdmx.infomodel.base.Codelist=BAR:FOO(1.0)");
+    assert(foo.urn == Urn("urn:sdmx:org.sdmx.infomodel.base.Codelist=BAR:FOO(1.0)"));
 
     assert(foo.links(rootUrl).length == 1);
 
@@ -1024,7 +932,7 @@ unittest
     const foo = Foo("foo", "1.0", "PROV");
     const bar = Bar("bar");
 
-    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.base.Codelist=PROV:foo(1.0).bar");
+    assert(bar.urn(foo) == Urn("urn:sdmx:org.sdmx.infomodel.base.Codelist=PROV:foo(1.0).bar"));
     assert(bar.links(foo).length == 1);
 
     auto link = bar.links(foo)[0];
@@ -1063,7 +971,7 @@ unittest
     const foo = Foo("foo", "1.0", "PROV");
     const bar = Bar("bar");
 
-    assert(bar.urn(foo) == "urn:sdmx:org.sdmx.infomodel.codelist.Code=PROV:foo(1.0).bar");
+    assert(bar.urn(foo) == Urn("urn:sdmx:org.sdmx.infomodel.codelist.Code=PROV:foo(1.0).bar"));
     assert(bar.links(rootUrl, foo).length == 1);
 
     auto link = bar.links(rootUrl, foo)[0];

@@ -1,4 +1,4 @@
-module vulpes.core.operations;
+module vulpes.lib.operations;
 import std.range;
 import std.typecons : Tuple, Nullable, nullable;
 import std.functional : binaryFun;
