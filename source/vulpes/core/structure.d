@@ -191,9 +191,68 @@ unittest
     Nullable!Urn u1 = Urn(PackageType.conceptscheme, ClassType.Concept, "FOO", "CS", "1.0", "C1");
 
     auto d0 = Dimension("D0", 0, u0, [], (Nullable!LocalRepresentation).init);
-    auto d1 = Dimension("D1", 0, u1, [], (Nullable!LocalRepresentation).init);
+    auto d1 = Dimension("D1", 1, u1, [], (Nullable!LocalRepresentation).init);
+    auto d2 = Dimension("D2", 2, (Nullable!Urn).init, [], (Nullable!LocalRepresentation).init);
 
     assert(!findConcept(d0, cs).isNull);
     assert(findConcept(d1, cs).isNull);
+    assert(findConcept(d2, cs).isNull);
 }
 
+Nullable!Codelist findCodelist(Resource, R)(Resource resource, R codelists) pure @safe
+if(isInputRange!R && is(Unqual!(ElementType!R) == Codelist) && isDsdComponent!Resource)
+{
+    import std.algorithm : find;
+    import std.typecons : nullable;
+    import std.range;
+
+    if(resource.localRepresentation.isNull || resource.localRepresentation.get.enumeration.isNull)
+        return typeof(return).init;
+
+    auto urn = resource.localRepresentation.get.enumeration.get.enumeration;
+
+    auto result = codelists.find!"a.urn == b"(urn);
+
+    if(result.empty) return typeof(return).init;
+
+    return result.front.nullable;
+}
+
+unittest
+{
+    auto codelists = [
+        Codelist(
+            "CL0",
+            "1.0",
+            "FOO",
+            true,
+            true,
+            "Codelist",
+            (Nullable!(string[Language])).init,
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init,
+            true,
+            []
+        )
+    ];
+
+    Urn u0 = Urn(PackageType.codelist, ClassType.Codelist, "FOO", "CL0", "1.0");
+    Urn u1 = Urn(PackageType.codelist, ClassType.Codelist, "FOO", "CL1", "1.0");
+
+    Nullable!Enumeration e0 = Enumeration(u0);
+    Nullable!Enumeration e1 = Enumeration(u1);
+
+    Nullable!LocalRepresentation lr0 = LocalRepresentation(e0, (Nullable!Format).init);
+    Nullable!LocalRepresentation lr1 = LocalRepresentation(e1, (Nullable!Format).init);
+    Nullable!LocalRepresentation lr2 = LocalRepresentation((Nullable!Enumeration).init, (Nullable!Format).init);
+
+    auto d0 = Dimension("D0", 0, (Nullable!Urn).init, [], lr0);
+    auto d1 = Dimension("D1", 1, (Nullable!Urn).init, [], lr1);
+    auto d2 = Dimension("D2", 2, (Nullable!Urn).init, [], lr2);
+    auto d3 = Dimension("D3", 3, (Nullable!Urn).init, [], (Nullable!LocalRepresentation).init);
+
+    assert(!findCodelist(d0, codelists).isNull);
+    assert(findCodelist(d1, codelists).isNull);
+    assert(findCodelist(d2, codelists).isNull);
+    assert(findCodelist(d3, codelists).isNull);
+}
