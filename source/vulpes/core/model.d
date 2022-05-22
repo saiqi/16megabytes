@@ -666,7 +666,7 @@ struct StructureComponent
     Nullable!(string[Language]) names;
     Nullable!string description;
     Nullable!(string[Language]) descriptions;
-    Nullable!int keyPositions;
+    Nullable!uint keyPosition;
     string[] roles;
     Nullable!bool isMandatory;
     Nullable!AttributeRelationship relationship;
