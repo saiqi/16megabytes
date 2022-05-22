@@ -137,3 +137,23 @@ pure @safe nothrow unittest
 
     assert(B([A(0), A(1), A(2), A(4)]).prop);
 }
+
+Nullable!ValueType convertLookup(ValueType, KeyType, AA)(AA aa, KeyType k)
+{
+    import std.conv : to;
+
+    Nullable!ValueType result;
+    auto v = (k in aa);
+    if(v is null) return result;
+    result = aa[k].to!ValueType;
+    return result;
+}
+
+unittest
+{
+    auto aa = ["a": "1", "b": "true", "c": "foo"];
+    assert(!convertLookup!(uint, string)(aa, "a").isNull);
+    assert(!convertLookup!(bool, string)(aa, "b").isNull);
+    assert(!convertLookup!(string, string)(aa, "c").isNull);
+    assert(convertLookup!(uint, string)(aa, "d").isNull);
+}

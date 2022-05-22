@@ -1,5 +1,7 @@
 module vulpes.core.query;
 
+import std.typecons : Nullable;
+import std.datetime.date : DateTime;
 import vulpes.lib.boilerplate : Generate;
 
 struct QueryComponent
@@ -116,7 +118,63 @@ struct DataQuery
 {
     QueryComponent[] components;
     CFilter[] filters;
+    Nullable!DateTime updatedAfter;
+    Nullable!uint firstNObservations;
+    Nullable!uint lastNObservations;
+    Nullable!string dimensionAtObservation;
+    Nullable!string attributes;
+    Nullable!string measures;
+    Nullable!bool includeHistory;
 
     mixin(Generate);
+}
+
+DataQuery build(T)(T params, in string key)
+{
+    import std.typecons : apply;
+    import vulpes.lib.monadish : convertLookup;
+
+    auto components = parse(key);
+    auto cFilters = parse(params);
+
+    Nullable!DateTime updatedAfter = params.convertLookup!(string, string)("updatedAfter")
+        .apply!(DateTime.fromISOExtString);
+
+    return DataQuery(
+        components,
+        cFilters,
+        updatedAfter,
+        params.convertLookup!(uint, string)("firstNObservations"),
+        params.convertLookup!(uint, string)("lastNObservations"),
+        params.convertLookup!(string, string)("dimensionAtObservation"),
+        params.convertLookup!(string, string)("attributes"),
+        params.convertLookup!(string, string)("measures"),
+        params.convertLookup!(bool, string)("includeHistory"));
+}
+
+unittest
+{
+    string[string] p1 = null;
+    auto dq1 = build(p1, "A.B.C");
+    assert(dq1.filters.length == 0);
+    assert(dq1.components.length == 3);
+
+    string[string] p2 = ["c[FOO]": "BAR", "updatedAfter": "2022-05-22T11:38:00"];
+    auto dq2 = build(p2, "A.B.C");
+    assert(!dq2.updatedAfter.isNull);
+    assert(dq2.filters.length == 1);
+
+    string[string] p3 = ["firstNObservations": "50", "measures": "all", "includeHistory": "false"];
+    auto dq3 = build(p3, "A.B.C");
+    assert(dq3.updatedAfter.isNull);
+    assert(dq3.components.length == 3);
+    assert(dq3.filters.length == 0);
+    assert(dq3.updatedAfter.isNull);
+    assert(!dq3.firstNObservations.isNull);
+    assert(dq3.lastNObservations.isNull);
+    assert(dq3.dimensionAtObservation.isNull);
+    assert(dq3.attributes.isNull);
+    assert(!dq3.measures.isNull);
+    assert(!dq3.includeHistory.isNull);
 }
 
