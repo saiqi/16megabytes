@@ -15,7 +15,11 @@ jobs:
     name: Test
     strategy:
       matrix:
-        dc: [dmd-2.098.1]
+        dc:
+          - dmd-2.098.1
+          - dmd-2.099.0
+          - dmd-2.099.1
+          - dmd-2.100.0
     runs-on: ubuntu-latest
 
     steps:
@@ -28,5 +32,5 @@ jobs:
 
     - name: 'Run application tests'
       run: dub test --build=unittest-cov --config=application
-    
+
     - uses: codecov/codecov-action@v1
