@@ -16,9 +16,6 @@ jobs:
     strategy:
       matrix:
         dc:
-          - dmd-2.098.1
-          - dmd-2.099.0
-          - dmd-2.099.1
           - dmd-2.100.0
     runs-on: ubuntu-latest
 
