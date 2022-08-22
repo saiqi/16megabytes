@@ -657,6 +657,8 @@ struct StructureComponentValue
     string id;
     string name;
     Nullable!(string[Language]) names;
+
+    mixin(Generate);
 }
 
 struct StructureComponent
@@ -673,6 +675,8 @@ struct StructureComponent
     Nullable!Format format;
     Nullable!string default_;
     StructureComponentValue[] values;
+
+    mixin(Generate);
 }
 
 struct Structure
@@ -681,6 +685,8 @@ struct Structure
     StructureComponent[] dimensions;
     StructureComponent[] measures;
     StructureComponent[] attributes;
+
+    mixin(Generate);
 }
 
 struct Data

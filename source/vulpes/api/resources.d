@@ -1,15 +1,17 @@
 module source.vulpes.api.resources;
 
 import std.typecons : Nullable;
+import vulpes.core.model;
 
 mixin template GenerateFromModel(Model, Resource)
 {
-    import std.traits : FieldNameTuple, hasMember, Unqual, isArray, isAssociativeArray, isSomeString;
+    import std.traits : FieldNameTuple, hasMember, Unqual, isArray, isAssociativeArray, isSomeString,
+        OriginalType, KeyType, ValueType;
     import std.range : ElementType, zip;
-    import std.algorithm : map;
     import std.array : array, assocArray;
     import std.conv : to;
-    import vulpes.lib.monadish : isNullable, NullableOf;
+    import std.algorithm : map;
+    import vulpes.lib.monadish : isNullable, NullableOf, fallbackMap;
 
     static Resource fromModel(in ref Model m)
     {
@@ -23,7 +25,7 @@ mixin template GenerateFromModel(Model, Resource)
             static assert(hasMember!(Model, member),
                           currentMember ~ " not found in " ~ Model.stringof);
 
-            alias ModelFieldT = Unqual!(typeof(__traits(getMember, Model, member)));
+            alias ModelFieldT = typeof(__traits(getMember, Model, member));
             static if(is(ResourceFieldT == struct))
             {
                 static assert(is(ModelFieldT == struct),
@@ -43,19 +45,30 @@ mixin template GenerateFromModel(Model, Resource)
                         Nullable!ResourceFieldST value;
                         static if(is(ResourceFieldST == struct))
                         {
-                            ModelFieldST model = __traits(getMember, m, member).get;
+                            ModelFieldST model = cast(ModelFieldST) __traits(getMember, m, member).get;
                             value = ResourceFieldST.fromModel(model);
                         }
                         else static if(isAssociativeArray!ResourceFieldST)
                         {
                             static assert(isAssociativeArray!ModelFieldST,
-                                currentMember ~ " is an associative array, the corresponding model field is not");
-                            value = zip(__traits(getMember, m, member).get.keys.dup,
-                                        __traits(getMember, m, member).get.values.dup).assocArray;
+                                currentMember ~ " is an associative array, corresponding model field is not");
+
+                            alias KeyT = KeyType!(typeof(__traits(getMember, r, member).get));
+                            alias ValueT = ValueType!(typeof(__traits(getMember, r, member).get));
+                            value = zip(__traits(getMember, m, member).get.keys.map!(a => a.to!KeyT),
+                                        __traits(getMember, m, member).get.values.map!(a => a.to!ValueT)
+                                        ).assocArray;
                         }
                         else
                         {
-                            value = __traits(getMember, m, member).get;
+                            static if(is(ModelFieldST == struct))
+                            {
+                                value = __traits(getMember, m, member).get.toString();
+                            }
+                            else
+                            {
+                                value = __traits(getMember, m, member).get;
+                            }
                         }
                         __traits(getMember, r, member) = value;
                     }
@@ -70,34 +83,67 @@ mixin template GenerateFromModel(Model, Resource)
                 static assert(isArray!ModelFieldT,
                              currentMember ~ " is an array, the corresponding model field is not");
                 alias ResourceFieldST = ElementType!ResourceFieldT;
+                alias ModelFieldST = ElementType!ModelFieldT;
                 static if(is(ResourceFieldST == struct))
                 {
                     __traits(getMember, r, member) = __traits(getMember, m, member)
-                        .dup
-                        .map!(a => ResourceFieldST.fromModel(a))
+                        .fallbackMap!(a => ResourceFieldST.fromModel(a))
                         .array;
                 }
                 else
                 {
-                    __traits(getMember, r, member) = __traits(getMember, m, member).dup;
+                    static if(is(ModelFieldST == struct))
+                    {
+                        __traits(getMember, r, member) = __traits(getMember, m, member)
+                            .fallbackMap!(a => a.toString())
+                            .array;
+                    }
+                    else
+                    {
+                        __traits(getMember, r, member) = __traits(getMember, m, member).dup;
+                    }
                 }
             }
             else static if(isAssociativeArray!ResourceFieldT)
             {
                 static assert(isAssociativeArray!ModelFieldT,
                              currentMember ~ " is an associative array, the corresponding model field is not");
-                __traits(getMember, r, member) = zip(__traits(getMember, m, member).keys.dup,
-                                                     __traits(getMember, m, member).values.dup).assocArray;
+                alias KeyT = KeyType!(typeof(__traits(getMember, r, member)));
+                alias ValueT = ValueType!(typeof(__traits(getMember, r, member)));
+                __traits(getMember, r, member) = zip(__traits(getMember, m, member).keys.map!(a => a.to!KeyT),
+                                                    __traits(getMember, m, member).values.map!(a => a.to!ValueT)
+                                                    ).assocArray;
             }
             else
             {
-                static if(is(ModelFieldT == struct) && isSomeString!ResourceFieldT)
+                static if(is(ModelFieldT == struct))
                 {
-                    __traits(getMember, r, member) = __traits(getMember, m, member).toString();
+                    static if(isNullable!ModelFieldT)
+                    {
+                        static assert(isNullable!ResourceFieldT,
+                                     currentMember ~ " must be Nullable");
+
+                        alias ResourceFieldST = NullableOf!ResourceFieldT;
+                        if(__traits(getMember, m, member).isNull)
+                        {
+                            __traits(getMember, r, member) = (Nullable!ResourceFieldST).init;
+                        }
+                        else
+                        {
+                            Nullable!ResourceFieldST value;
+                            static assert(isSomeString!ResourceFieldST, currentMember ~ " must be a string");
+                            value = __traits(getMember, m, member).toString();
+                            __traits(getMember, r, member) = value;
+                        }
+                    }
+                    else
+                    {
+                        __traits(getMember, r, member) = __traits(getMember, m, member).toString();
+                    }
                 }
                 else static if(is(ModelFieldT == enum))
                 {
-                    __traits(getMember, r, member) = __traits(getMember, m, member).to!string;
+                    __traits(getMember, r, member) = __traits(getMember, m, member).to!(OriginalType!ModelFieldT);
                 }
                 else
                 {
@@ -389,4 +435,415 @@ unittest
     auto m = MyModel(MyModelType.foo);
     auto r = MyResource.fromModel(m);
     assert(r.type == "foo");
+}
+
+struct SenderResponse
+{
+    string id;
+
+    mixin GenerateFromModel!(Sender, typeof(this));
+}
+
+struct ReceiverResponse
+{
+    string id;
+
+    mixin GenerateFromModel!(Receiver, typeof(this));
+}
+
+struct LinkResponse
+{
+    Nullable!string href;
+    string rel;
+    Nullable!string hreflang;
+    Nullable!string urn;
+    Nullable!string type;
+
+    mixin GenerateFromModel!(Link, typeof(this));
+}
+
+struct MetaResponse
+{
+    string schema;
+    string id;
+    bool test;
+    string prepared;
+    string[] contentLanguages;
+    SenderResponse sender;
+    ReceiverResponse[] receivers;
+    LinkResponse[] links;
+
+    mixin GenerateFromModel!(Meta, typeof(this));
+}
+
+struct EmptyResponse
+{
+    mixin GenerateFromModel!(Empty, typeof(this));
+}
+
+struct AttributeRelationshipResponse
+{
+    string[] dimensions;
+    Nullable!string group;
+    Nullable!EmptyResponse observation;
+    Nullable!EmptyResponse dataflow;
+
+    mixin GenerateFromModel!(AttributeRelationship, typeof(this));
+}
+
+struct EnumerationResponse
+{
+    string enumeration;
+
+    mixin GenerateFromModel!(Enumeration, typeof(this));
+}
+
+struct FormatResponse
+{
+    Nullable!uint maxLength;
+    Nullable!uint minLength;
+    string dataType;
+
+    mixin GenerateFromModel!(Format, typeof(this));
+}
+
+struct LocalRepresentationResponse
+{
+    Nullable!EnumerationResponse enumeration;
+    Nullable!FormatResponse format;
+
+    mixin GenerateFromModel!(LocalRepresentation, typeof(this));
+}
+
+struct AttributeResponse
+{
+    string id;
+    Nullable!string usage;
+    Nullable!AttributeRelationshipResponse attributeRelationship;
+    Nullable!string conceptIdentity;
+    string[] conceptRoles;
+    Nullable!LocalRepresentationResponse localRepresentation;
+
+    mixin GenerateFromModel!(Attribute, typeof(this));
+}
+
+struct AttributeListResponse
+{
+    string id;
+    AttributeResponse[] attributes;
+
+    mixin GenerateFromModel!(AttributeList, typeof(this));
+}
+
+struct DimensionResponse
+{
+    string id;
+    uint position;
+    Nullable!string conceptIdentity;
+    string[] conceptRoles;
+    Nullable!LocalRepresentationResponse localRepresentation;
+
+    mixin GenerateFromModel!(Dimension, typeof(this));
+}
+
+struct TimeDimensionResponse
+{
+    string id;
+    uint position;
+    Nullable!string conceptIdentity;
+    string[] conceptRoles;
+    Nullable!LocalRepresentationResponse localRepresentation;
+
+    mixin GenerateFromModel!(TimeDimension, typeof(this));
+}
+
+struct DimensionListResponse
+{
+    string id;
+    DimensionResponse[] dimensions;
+    TimeDimensionResponse timeDimension;
+
+    mixin GenerateFromModel!(DimensionList, typeof(this));
+}
+
+struct GroupResponse
+{
+    string id;
+    string[] groupDimensions;
+
+    mixin GenerateFromModel!(Group, typeof(this));
+}
+
+struct MeasureResponse
+{
+    string id;
+    Nullable!string conceptIdentity;
+    string[] conceptRoles;
+    Nullable!LocalRepresentationResponse localRepresentation;
+    Nullable!string usage;
+
+    mixin GenerateFromModel!(Measure, typeof(this));
+}
+
+struct MeasureListResponse
+{
+    string id;
+    MeasureResponse[] measures;
+
+    mixin GenerateFromModel!(MeasureList, typeof(this));
+}
+
+struct DataStructureComponentsResponse
+{
+    Nullable!AttributeListResponse attributeList;
+    DimensionListResponse dimensionList;
+    GroupResponse[] groups;
+    Nullable!MeasureListResponse measureList;
+
+    mixin GenerateFromModel!(DataStructureComponents, typeof(this));
+}
+
+struct DataStructureResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    DataStructureComponentsResponse dataStructureComponents;
+
+    mixin GenerateFromModel!(DataStructure, typeof(this));
+}
+
+struct CategoryResponse
+{
+    string id;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    CategoryResponse[] categories;
+
+    mixin GenerateFromModel!(Category, typeof(this));
+}
+
+struct CategorySchemeResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    bool isPartial;
+    CategoryResponse[] categories;
+
+    mixin GenerateFromModel!(CategoryScheme, typeof(this));
+}
+
+struct ConceptResponse
+{
+    string id;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+
+    mixin GenerateFromModel!(Concept, typeof(this));
+}
+
+struct ConceptSchemeResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    bool isPartial;
+    ConceptResponse[] concepts;
+
+    mixin GenerateFromModel!(ConceptScheme, typeof(this));
+}
+
+struct CodeResponse
+{
+    string id;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+
+    mixin GenerateFromModel!(Code, typeof(this));
+}
+
+struct CodelistResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    bool isPartial;
+    CodeResponse[] codes;
+
+    mixin GenerateFromModel!(Codelist, typeof(this));
+}
+
+struct DataflowResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    string structure;
+
+    mixin GenerateFromModel!(Dataflow, typeof(this));
+}
+
+struct CategorisationResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    string source;
+    string target;
+
+    mixin GenerateFromModel!(Categorisation, typeof(this));
+}
+
+struct ConstraintAttachmentResponse
+{
+    string[] dataflows;
+
+    mixin GenerateFromModel!(ConstraintAttachment, typeof(this));
+}
+
+struct KeyValueResponse
+{
+    string id;
+    string[] values;
+
+    mixin GenerateFromModel!(KeyValue, typeof(this));
+}
+
+struct CubeRegionResponse
+{
+    Nullable!bool include;
+    KeyValueResponse[] keyValues;
+
+    mixin GenerateFromModel!(CubeRegion, typeof(this));
+}
+
+struct DataConstraintResponse
+{
+    string id;
+    string version_;
+    string agencyId;
+    bool isExternalReference;
+    bool isFinal;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    Nullable!string role;
+    Nullable!ConstraintAttachmentResponse constraintAttachment;
+    CubeRegionResponse[] cubeRegions;
+
+    mixin GenerateFromModel!(DataConstraint, typeof(this));
+}
+
+struct StructureComponentValueResponse
+{
+    string id;
+    string name;
+    Nullable!(string[string]) names;
+
+    mixin GenerateFromModel!(StructureComponentValue, typeof(this));
+}
+
+struct StructureComponentResponse
+{
+    string id;
+    string name;
+    Nullable!(string[string]) names;
+    Nullable!string description;
+    Nullable!(string[string]) descriptions;
+    Nullable!uint keyPosition;
+    string[] roles;
+    Nullable!bool isMandatory;
+    Nullable!AttributeRelationshipResponse relationship;
+    Nullable!FormatResponse format;
+    Nullable!string default_;
+    StructureComponentValueResponse[] values;
+
+    mixin GenerateFromModel!(StructureComponent, typeof(this));
+}
+
+struct StructureResponse
+{
+    int[] dataSets;
+    StructureComponentResponse[] dimensions;
+    StructureComponentResponse[] measures;
+    StructureComponentResponse[] attributes;
+
+    mixin GenerateFromModel!(Structure, typeof(this));
+}
+
+struct DataResponse
+{
+    DataStructureResponse[] dataStructures;
+    CategorySchemeResponse[] categorySchemes;
+    ConceptSchemeResponse[] conceptSchemes;
+    CodelistResponse[] codelists;
+    DataflowResponse[] dataflows;
+    CategorisationResponse[] categorisations;
+    DataConstraintResponse[] contentConstraints;
+
+    mixin GenerateFromModel!(Data, typeof(this));
+}
+
+struct ErrorResponse
+{
+    uint code;
+    string title;
+    string[string] titles;
+    Nullable!string detail;
+    Nullable!(string[string]) details;
+
+    mixin GenerateFromModel!(Error_, typeof(this));
+}
+
+struct MessageResponse
+{
+    MetaResponse meta;
+    Nullable!DataResponse data;
+    ErrorResponse[] errors;
+
+    mixin GenerateFromModel!(Message, typeof(this));
 }

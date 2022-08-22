@@ -15,6 +15,7 @@ template NullableOf(T)
 unittest
 {
     static assert(is(NullableOf!(Nullable!int) == int));
+    static assert(is(NullableOf!(Nullable!(const int)) == const int));
 }
 
 auto filterNull(R)(R range)
