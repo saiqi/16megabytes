@@ -8,6 +8,7 @@ mixin template GenerateFromModel(Model, Resource)
     import std.range : ElementType, zip;
     import std.algorithm : map;
     import std.array : array, assocArray;
+    import std.conv : to;
     import vulpes.lib.monadish : isNullable, NullableOf;
 
     static Resource fromModel(in ref Model m)
@@ -93,6 +94,10 @@ mixin template GenerateFromModel(Model, Resource)
                 static if(is(ModelFieldT == struct) && isSomeString!ResourceFieldT)
                 {
                     __traits(getMember, r, member) = __traits(getMember, m, member).toString();
+                }
+                else static if(is(ModelFieldT == enum))
+                {
+                    __traits(getMember, r, member) = __traits(getMember, m, member).to!string;
                 }
                 else
                 {
@@ -361,4 +366,27 @@ unittest
     auto m = MyModel(MyNestedModel("foo"));
     auto r = MyResource.fromModel(m);
     assert(r.nested == "foo");
+}
+
+unittest
+{
+    static enum MyModelType : string
+    {
+        foo = "foo"
+    }
+
+    static struct MyModel
+    {
+        MyModelType type;
+    }
+
+    static struct MyResource
+    {
+        string type;
+        mixin GenerateFromModel!(MyModel, typeof(this));
+    }
+
+    auto m = MyModel(MyModelType.foo);
+    auto r = MyResource.fromModel(m);
+    assert(r.type == "foo");
 }
