@@ -496,6 +496,35 @@ unittest
     assert(r.nested == ["foo", "bar"]);
 }
 
+unittest
+{
+    static struct MyNestedModel
+    {
+        string field;
+
+        string toString() const
+        {
+            return field;
+        }
+    }
+
+    static struct MyModel
+    {
+        Nullable!MyNestedModel nested;
+    }
+
+    static struct MyResource
+    {
+        Nullable!string nested;
+        mixin GenerateFromModel!(MyModel, typeof(this));
+    }
+
+    Nullable!MyNestedModel nm = MyNestedModel("foo");
+    auto m = MyModel(nm);
+    auto r = MyResource.fromModel(m);
+    assert(r.nested.get == "foo");
+}
+
 struct SenderResponse
 {
     string id;
