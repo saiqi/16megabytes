@@ -437,6 +437,65 @@ unittest
     assert(r.type == "foo");
 }
 
+unittest
+{
+    static struct MyNestedModel
+    {
+        string field;
+    }
+
+    static struct MyModel
+    {
+        Nullable!MyNestedModel nested;
+    }
+
+    static struct MyNestedResource
+    {
+        string field;
+        mixin GenerateFromModel!(MyNestedModel, typeof(this));
+    }
+
+    static struct MyResource
+    {
+        Nullable!MyNestedResource nested;
+        mixin GenerateFromModel!(MyModel, typeof(this));
+    }
+
+    auto m = MyModel();
+    auto r = MyResource.fromModel(m);
+    assert(r.nested.isNull);
+}
+
+unittest
+{
+    import std.algorithm : equal;
+
+    static struct MyNestedModel
+    {
+        string field;
+
+        string toString() const
+        {
+            return field;
+        }
+    }
+
+    static struct MyModel
+    {
+        MyNestedModel[] nested;
+    }
+
+    static struct MyResource
+    {
+        string[] nested;
+        mixin GenerateFromModel!(MyModel, typeof(this));
+    }
+
+    auto m = MyModel([MyNestedModel("foo"), MyNestedModel("bar")]);
+    auto r = MyResource.fromModel(m);
+    assert(r.nested == ["foo", "bar"]);
+}
+
 struct SenderResponse
 {
     string id;
