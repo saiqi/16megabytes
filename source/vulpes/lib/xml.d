@@ -3,10 +3,10 @@ module vulpes.lib.xml;
 import std.exception : enforce;
 import std.traits : hasUDA, getUDAs, isArray;
 import std.range;
-import std.traits : isSomeChar, isSomeString, isArray, TemplateOf, TemplateArgsOf;
+import std.traits : isSomeChar, isSomeString, isArray;
 import std.typecons : Nullable, nullable;
 import dxml.parser : simpleXML, EntityRange, EntityType, isAttrRange;
-import vulpes.lib.monadish : isNullable;
+import vulpes.lib.monadish : isNullable, NullableOf;
 
 ///Dedicated module `Exception`
 class DeserializationException : Exception
@@ -144,7 +144,7 @@ private template handleNullable(T, alias pred, Args...)
     }
     else
     {
-        alias ST = TemplateArgsOf!T[0];
+        alias ST = NullableOf!T;
         enum handleNullable = pred!(ST, Args);
     }
 }
@@ -305,7 +305,7 @@ if(isForwardRangeOfChar!R)
                         static if(isNullable!CT)
                         {
                             if(__traits(getMember, source[$ - 1], m).isNull)
-                                __traits(getMember, source[$ - 1], m) = (TemplateArgsOf!CT)[0]();
+                                __traits(getMember, source[$ - 1], m) = NullableOf!CT();
                         }
                         setValue!(CT, Entity, R)
                             (__traits(getMember, source[$ - 1], m), path, entity, text_);
@@ -349,12 +349,12 @@ if(isForwardRangeOfChar!R)
                             static if(isNullable!S)
                             {
                                 if(__traits(getMember, source.get, m).isNull)
-                                    __traits(getMember, source.get, m) = (TemplateArgsOf!CT)[0]();
+                                    __traits(getMember, source.get, m) = NullableOf!CT();
                             }
                             else
                             {
                                 if(__traits(getMember, source, m).isNull)
-                                    __traits(getMember, source, m) = (TemplateArgsOf!CT)[0]();
+                                    __traits(getMember, source, m) = NullableOf!CT();
                             }
                         }
 

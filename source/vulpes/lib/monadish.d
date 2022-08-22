@@ -1,10 +1,21 @@
 module vulpes.lib.monadish;
 
 import std.typecons : Nullable;
-import std.traits : Unqual;
+import std.traits : Unqual, TemplateArgsOf;
 import std.range;
 
 enum bool isNullable(T) = is(T: Nullable!Arg, Arg);
+
+template NullableOf(T)
+{
+    static assert(isNullable!T, "NullableOf can only be called on Nullable type");
+    alias NullableOf = TemplateArgsOf!T[0];
+}
+
+unittest
+{
+    static assert(is(NullableOf!(Nullable!int) == int));
+}
 
 auto filterNull(R)(R range)
 if(isInputRange!(Unqual!R) && isNullable!(ElementType!(Unqual!R)))
