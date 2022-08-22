@@ -1,6 +1,0 @@
-name "compat_check"
-description "vulpes providers support matrix"
-authors "saiqi"
-copyright "Copyright © 2022, saiqi"
-license "GPL-3.0"
-dependency "vulpes" path="../"
