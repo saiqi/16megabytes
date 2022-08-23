@@ -1,4 +1,4 @@
-module source.vulpes.api.resources;
+module vulpes.api.resources;
 
 import std.typecons : Nullable;
 import vulpes.core.model;
