@@ -367,9 +367,9 @@ struct SDMX21DimensionList
 
     Nullable!DimensionList convert() pure @safe inout
     {
-        import std.algorithm : any;
+        import std.algorithm : any, joiner;
         import std.array : array;
-        import vulpes.lib.monadish : fallbackMap, filterNull;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto td = timeDimension.convert;
 
@@ -379,7 +379,7 @@ struct SDMX21DimensionList
 
         if(ds.any!"a.isNull") return typeof(return).init;
 
-        Nullable!DimensionList result = DimensionList(id, ds.filterNull.array, td.get);
+        Nullable!DimensionList result = DimensionList(id, ds.joiner.array, td.get);
 
         return result;
     }
@@ -396,9 +396,9 @@ struct SDMX21AttributeRelationship
 
     Nullable!AttributeRelationship convert() pure @safe inout
     {
-        import std.algorithm : any;
+        import std.algorithm : any, joiner;
         import std.array : array;
-        import vulpes.lib.monadish : filterNull, fallbackMap;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto hasNone = primaryMeasure.isNull && dimensions.length == 0;
         auto hasBoth = !primaryMeasure.isNull && dimensions.length > 0;
@@ -518,14 +518,14 @@ struct SDMX21AttributeList
     Nullable!AttributeList convert() pure @safe inout
     {
         import std.array : array;
-        import std.algorithm : any;
-        import vulpes.lib.monadish : filterNull, fallbackMap;
+        import std.algorithm : any, joiner;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto attrs = attributes.fallbackMap!"a.convert";
 
         if(attrs.any!"a.isNull") return typeof(return).init;
 
-        return AttributeList(id, attrs.filterNull.array).nullable;
+        return AttributeList(id, attrs.joiner.array).nullable;
     }
 }
 
@@ -649,7 +649,8 @@ struct SDMX21DataStructureComponents
     {
         import std.typecons : apply;
         import std.array : array;
-        import vulpes.lib.monadish : filterNull, fallbackMap;
+        import std.algorithm : joiner;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto dl = dimensionList.convert;
 
@@ -657,7 +658,7 @@ struct SDMX21DataStructureComponents
 
         Nullable!AttributeList al = attributeList.apply!"a.convert";
         Nullable!MeasureList ml = measureList.apply!"a.convert";
-        auto gs = groups.fallbackMap!"a.convert".filterNull.array;
+        auto gs = groups.fallbackMap!"a.convert".joiner.array;
 
         return DataStructureComponents(al, dl.get, gs, ml).nullable;
     }
@@ -918,7 +919,8 @@ struct SDMX21Category
     Nullable!Category convert() pure @safe inout
     {
         import std.array : array;
-        import vulpes.lib.monadish : fallbackMap, filterNull;
+        import std.algorithm : joiner;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto cNames = names.dup;
 
@@ -928,7 +930,7 @@ struct SDMX21Category
 
         auto cs = children
             .fallbackMap!"a.convert"
-            .filterNull
+            .joiner
             .array;
 
         auto cDescs = descriptions.dup;
@@ -1124,13 +1126,13 @@ struct SDMX21KeyValue
 
     Nullable!KeyValue convert() pure @safe inout
     {
-        import std.algorithm : any;
+        import std.algorithm : any, joiner;
         import std.array : array;
-        import vulpes.lib.monadish: fallbackMap, filterNull;
+        import vulpes.lib.monadish: fallbackMap;
 
         if(values.any!"a.content.isNull") return typeof(return).init;
 
-        Nullable!KeyValue r = KeyValue(id, values.fallbackMap!"a.content".filterNull.array);
+        Nullable!KeyValue r = KeyValue(id, values.fallbackMap!"a.content".joiner.array);
 
         return r;
     }
@@ -1145,16 +1147,16 @@ struct SDMX21ConstraintAttachment
     Nullable!ConstraintAttachment convert() pure @safe inout
     {
         import std.typecons : apply;
-        import std.algorithm : any;
+        import std.algorithm : any, joiner;
         import std.array : array;
-        import vulpes.lib.monadish : fallbackMap, filterNull;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto urns = dataflows
             .fallbackMap!(a => a.ref_.apply!"a.urn");
 
         if(urns.any!"a.isNull") return typeof(return).init;
 
-        Nullable!ConstraintAttachment r = ConstraintAttachment(urns.filterNull.array);
+        Nullable!ConstraintAttachment r = ConstraintAttachment(urns.joiner.array);
 
         return r;
 
@@ -1172,15 +1174,15 @@ struct SDMX21CubeRegion
 
     Nullable!CubeRegion convert() pure @safe inout
     {
-        import std.algorithm : any;
+        import std.algorithm : any, joiner;
         import std.array : array;
-        import vulpes.lib.monadish : fallbackMap, filterNull;
+        import vulpes.lib.monadish : fallbackMap;
 
         auto kvs = keyValues.fallbackMap!"a.convert";
 
         if(kvs.any!"a.isNull") return typeof(return).init;
 
-        Nullable!CubeRegion r = CubeRegion(include, kvs.filterNull.array);
+        Nullable!CubeRegion r = CubeRegion(include, kvs.joiner.array);
 
         return r;
     }
@@ -1225,8 +1227,8 @@ struct SDMX21ContentConstraint
     Nullable!DataConstraint convert() pure @safe inout
     {
         import std.typecons : apply;
+        import std.algorithm : joiner;
         import std.array : array;
-        import vulpes.lib.monadish : filterNull;
 
         if(id.isNull || agencyId.isNull) return typeof(return).init;
 
@@ -1244,7 +1246,7 @@ struct SDMX21ContentConstraint
             getIntlLabels(cDescs),
             type.apply!(a => a.enumMember!RoleType),
             constraintAttachment.apply!(a => a.convert),
-            [cubeRegion.apply!(a => a.convert)].filterNull.array
+            [cubeRegion.apply!(a => a.convert)].joiner.array
         );
 
         return r;
@@ -1647,18 +1649,12 @@ class SDMX21Datasource : Datasource
     import vulpes.datasources.providers : fetchResources;
 
     @safe:
-
     InputRange!Dataflow getDataflows(in ref Provider provider, Fetcher fetcher)
     {
         return provider
             .fetchResources(ResourceType.dataflow, fetcher)
             .enforceMessage(ResourceType.dataflow)
             .buildDataflows;
-    }
-
-    Nullable!Dataflow getDataflow(in ref Provider provider, in string id, Fetcher fetcher)
-    {
-        return (Nullable!Dataflow).init;
     }
 
     Nullable!DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher)

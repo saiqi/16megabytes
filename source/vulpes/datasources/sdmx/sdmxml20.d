@@ -371,10 +371,10 @@ struct SDMX20KeyFamily
     Nullable!DataStructure convert() pure @safe inout
     {
         import std.range : enumerate;
-        import std.algorithm : any, map;
+        import std.algorithm : any, map, joiner;
         import std.array : array;
         import std.typecons : tuple;
-        import vulpes.lib.monadish : fallbackMap, filterNull;
+        import vulpes.lib.monadish : fallbackMap;
 
         Nullable!Dimension handleDimension(in SDMX20Dimension dim, uint pos)
         {
@@ -408,6 +408,7 @@ struct SDMX20KeyFamily
         {
             import std.typecons : apply;
             import std.array : array;
+            import std.algorithm : joiner;
 
             if(attr.conceptRef.isNull) return typeof(return).init;
             Nullable!UsageType usage = attr.assignmentStatus.apply!(a => a.enumMember!UsageType);
@@ -417,7 +418,7 @@ struct SDMX20KeyFamily
                     auto dims = this.components
                         .dimensions
                         .fallbackMap!"a.conceptRef"
-                        .filterNull
+                        .joiner
                         .array;
                     return AttributeRelationship(
                         dims,
@@ -485,7 +486,7 @@ struct SDMX20KeyFamily
 
         uint lastPos = tDims[$ - 1][0];
 
-        auto dims = tDims.map!"a[1]".filterNull.array;
+        auto dims = tDims.map!"a[1]".joiner.array;
 
         auto timeDim = handleTimeDimension(this.components.timeDimension, lastPos + 1);
 
@@ -499,7 +500,7 @@ struct SDMX20KeyFamily
 
         Nullable!AttributeList attrList;
         if(attrs.any!"a.isNull") attrList = (Nullable!AttributeList).init;
-        else attrList = AttributeList("AttributeDescriptor", attrs.filterNull.array);
+        else attrList = AttributeList("AttributeDescriptor", attrs.joiner.array);
 
         Nullable!MeasureList measList;
         if(pMeasure.isNull) measList = (Nullable!MeasureList).init;

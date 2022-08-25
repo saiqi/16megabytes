@@ -22,7 +22,6 @@ interface Datasource
 {
     @safe:
     InputRange!Dataflow getDataflows(in ref Provider provider, Fetcher fetcher);
-    Nullable!Dataflow getDataflow(in ref Provider provider, in string id, Fetcher fetcher);
     Nullable!DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher);
     Nullable!Codelist getCodelist(in ref Provider provider, in string id, Fetcher fetcher);
     Nullable!ConceptScheme getConceptScheme(in ref Provider provider, in string id, Fetcher fetcher);

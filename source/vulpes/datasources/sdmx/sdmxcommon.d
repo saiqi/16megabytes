@@ -89,14 +89,13 @@ enum bool isConvertible(Source, Target) = is(Unqual!(ReturnType!(Source.init.con
 InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml) @trusted // TODO: check if deserializeAsRangeOf could be safe
 if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
 {
-    import std.algorithm : map;
+    import std.algorithm : map, joiner;
     import std.range : inputRangeObject;
-    import vulpes.lib.monadish : filterNull;
 
     return xml
         .deserializeAsRangeOf!Source
         .map!"a.convert"
-        .filterNull
+        .joiner
         .inputRangeObject;
 }
 
@@ -148,9 +147,9 @@ Nullable!Target convertListOfItems(Source, Target, alias listName)(in ref Source
 if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unqual!Target == CategoryScheme))
 {
     import std.range : ElementType;
-    import std.algorithm : any;
+    import std.algorithm : any, joiner;
     import std.array : array;
-    import vulpes.lib.monadish : filterNull, fallbackMap, isNullable;
+    import vulpes.lib.monadish : fallbackMap, isNullable;
 
     alias SourceItemT = Unqual!(ElementType!(typeof(__traits(getMember, Source, listName))));
 
@@ -202,7 +201,7 @@ if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unq
         getLabel(cDescs),
         getIntlLabels(cDescs),
         false,
-        items.filterNull.array);
+        items.joiner.array);
 
     return r;
 }
