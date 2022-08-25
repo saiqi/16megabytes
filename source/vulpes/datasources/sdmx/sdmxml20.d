@@ -1,11 +1,11 @@
-module vulpes.datasources.sdmxml20;
+module vulpes.datasources.sdmx.sdmxml20;
 
 import std.typecons : Nullable, nullable;
 import std.range: InputRange;
 import std.traits : Unqual;
 import vulpes.lib.xml;
 import vulpes.core.model;
-import vulpes.datasources.sdmxcommon;
+import vulpes.datasources.sdmx.sdmxcommon;
 
 private enum bool isDSDComponent(T) = is(Unqual!T == SDMX20Attribute)
     || is(Unqual!T == SDMX20Dimension)
@@ -874,6 +874,7 @@ unittest
     assert(!s.concepts.isNull);
 }
 
+public:
 alias buildDataflows = buildRangeFromXml!(SDMX20Dataflow, Dataflow, string);
 alias buildDataStructures = buildRangeFromXml!(SDMX20KeyFamily, DataStructure, string);
 alias buildCodelists = buildRangeFromXml!(SDMX20Codelist, Codelist, string);

@@ -1,4 +1,4 @@
-module vulpes.datasources.sdmxcommon;
+module vulpes.datasources.sdmx.sdmxcommon;
 
 import std.typecons : Nullable, nullable;
 import std.traits : Unqual, ReturnType;
@@ -86,7 +86,7 @@ unittest
 
 enum bool isConvertible(Source, Target) = is(Unqual!(ReturnType!(Source.init.convert)) == Nullable!Target);
 
-InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml)
+InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml) @trusted // TODO: check if deserializeAsRangeOf could be safe
 if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
 {
     import std.algorithm : map;
@@ -158,14 +158,14 @@ if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unq
     {
         alias TargetItemT = Code;
     }
-    else static if(is(Unqual!Target == ConceptScheme)) 
+    else static if(is(Unqual!Target == ConceptScheme))
     {
         alias TargetItemT = Concept;
     }
     else
     {
         alias TargetItemT = Category;
-        
+
     }
 
     static assert(isConvertible!(SourceItemT, TargetItemT),

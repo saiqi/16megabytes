@@ -1,11 +1,14 @@
-module vulpes.datasources.sdmxml21;
+module vulpes.datasources.sdmx.sdmxml21;
 
 import std.typecons : Nullable, nullable;
 import std.traits : ReturnType;
 import std.range : InputRange;
+import vibe.inet.url : URL;
 import vulpes.lib.xml;
 import vulpes.core.model;
-import vulpes.datasources.sdmxcommon;
+import vulpes.datasources.sdmx.sdmxcommon;
+import vulpes.datasources.datasource : Datasource, DatasourceException;
+import vulpes.datasources.providers : Provider, Fetcher;
 
 package:
 
@@ -1620,9 +1623,66 @@ unittest
     assert(dataset.series[2].observations[0].obsValue.isNull);
 }
 
+public:
 alias buildDataflows = buildRangeFromXml!(SDMX21Dataflow, Dataflow, string);
 alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructure, string);
 alias buildCodelists = buildRangeFromXml!(SDMX21Codelist, Codelist, string);
 alias buildConceptSchemes = buildRangeFromXml!(SDMX21ConceptScheme, ConceptScheme, string);
 alias buildCategorySchemes = buildRangeFromXml!(SDMX21CategoryScheme, CategoryScheme, string);
 alias buildContentConstraints = buildRangeFromXml!(SDMX21ContentConstraint, DataConstraint, string);
+
+private string enforceMessage(Nullable!string[string] messages, ResourceType type) @safe
+{
+    import std.conv : to;
+    import std.exception : enforce;
+    import std.format : format;
+
+    auto key = type.to!string;
+    enforce!DatasourceException(!messages[key].isNull, format!"%s is null"(key));
+    return messages[key].get;
+}
+
+class SDMX21Datasource : Datasource
+{
+    import vulpes.datasources.providers : fetchResources;
+
+    @safe:
+
+    InputRange!Dataflow getDataflows(in ref Provider provider, Fetcher fetcher)
+    {
+        return provider
+            .fetchResources(ResourceType.dataflow, fetcher)
+            .enforceMessage(ResourceType.dataflow)
+            .buildDataflows;
+    }
+
+    Nullable!Dataflow getDataflow(in ref Provider provider, in string id, Fetcher fetcher)
+    {
+        return (Nullable!Dataflow).init;
+    }
+
+    Nullable!DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher)
+    {
+        return (Nullable!DataStructure).init;
+    }
+
+    Nullable!Codelist getCodelist(in ref Provider provider, in string id, Fetcher fetcher)
+    {
+        return (Nullable!Codelist).init;
+    }
+
+    Nullable!ConceptScheme getConceptScheme(in ref Provider provider, in string id, Fetcher fetcher)
+    {
+        return (Nullable!ConceptScheme).init;
+    }
+
+    InputRange!CategoryScheme getCategorySchemes(in ref Provider provider, Fetcher fetcher)
+    {
+        return null;
+    }
+
+    InputRange!Categorisation getCategorisations(in ref Provider provider, Fetcher fetcher)
+    {
+        return null;
+    }
+}

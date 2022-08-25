@@ -364,12 +364,12 @@ unittest
     assert(loadProvidersFromConfig().length);
 }
 
-alias Fetcher = Future!Response delegate(in string, in string[string], in string[string]);
+alias Fetcher = Future!Response delegate(in string, in string[string], in string[string]) @safe;
 
 Nullable!string[string] fetchResources(in Provider provider,
                                        in ResourceType resourceType,
-                                       in string resourceId = null,
-                                       Fetcher fetcher = toDelegate(&doAsyncRequest))
+                                       Fetcher fetcher,
+                                       in string resourceId = null) @safe
 {
     import std.typecons : tuple, nullable, apply;
     import std.algorithm : sort;
@@ -381,7 +381,7 @@ Nullable!string[string] fetchResources(in Provider provider,
 
     auto reqItems = provider.requestItems(resourceType, resourceId);
 
-    auto gatherFuture(in ref RequestItems ri)
+    auto gatherFuture(in ref RequestItems ri) @safe
     {
         auto fut = fetcher(ri.url, ri.headers, ri.queryParams);
         return tuple(ri, fut);
@@ -416,14 +416,14 @@ version(unittest)
     import std.exception : enforce;
     import vibe.core.concurrency : async;
 
-    Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
+    Future!Response ok(in string url, in string[string] headers, in string[string] queryParams) @safe
     {
         return async({
             return Response(200, "ok");
         });
     }
 
-    Future!Response ko(in string url, in string[string] headers, in string[string] queryParams)
+    Future!Response ko(in string url, in string[string] headers, in string[string] queryParams) @safe
     {
         return async({
             enforce(false);
@@ -454,7 +454,7 @@ unittest
 
     auto provider = buildTestProvider(true, "dataflow");
 
-    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
+    auto r = fetchResources(provider, ResourceType.dataflow, toDelegate(&ok), "aResourceId");
     assert(!r["foo"].isNull);
 }
 
@@ -464,7 +464,7 @@ unittest
 
     auto provider = buildTestProvider(false, "dataflow");
 
-    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko));
+    auto r = fetchResources(provider, ResourceType.dataflow, toDelegate(&ko), "aResourceId");
     assert(r["foo"].isNull);
 }
 
@@ -474,7 +474,7 @@ unittest
     import std.exception : assertThrown;
     auto provider = buildTestProvider(true, "dataflow");
 
-    assertThrown(fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ko)));
+    assertThrown(fetchResources(provider, ResourceType.dataflow, toDelegate(&ko), "aResourceId"));
 }
 
 unittest
@@ -483,7 +483,7 @@ unittest
 
     auto provider = buildTestProvider(false, "dataflow");
 
-    auto r = fetchResources(provider, ResourceType.dataflow, "aResourceId", toDelegate(&ok));
+    auto r = fetchResources(provider, ResourceType.dataflow, toDelegate(&ok), "aResourceId");
     assert(!r["foo"].isNull);
 }
 
@@ -518,78 +518,79 @@ unittest
     assertThrown!ProviderException(enforceMessages!("bar", Yes.canBeNull)(valid));
 }
 
-InputRange!Dataflow dataflows(in ref Provider provider,
-                              Fetcher fetcher = toDelegate(&doAsyncRequest))
-{
-    import std.typecons : No;
-    import std.exception : enforce;
-    import std.format : format;
+// InputRange!Dataflow dataflows(in ref Provider provider,
+//                               Fetcher fetcher)
+// {
+//     import std.typecons : No;
+//     import std.exception : enforce;
+//     import std.format : format;
 
-    enforce!ProviderException(!provider.formatType.isNull,
-                              format!"Cannot deduce provider %s format type"(provider.id));
+//     enforce!ProviderException(!provider.formatType.isNull,
+//                               format!"Cannot deduce provider %s format type"(provider.id));
 
-    auto msgs = fetchResources(provider, ResourceType.dataflow, null, fetcher);
+//     auto msgs = fetchResources(provider, ResourceType.dataflow, fetcher);
 
-    auto ft = provider.formatType.get;
+//     auto ft = provider.formatType.get;
 
-    with(FormatType) final switch(ft)
-    {
-        case sdmxml21:
-        enforceMessages!("dataflow", No.canBeNull)(msgs);
 
-        import vulpes.datasources.sdmxml21: buildDataflows;
-        return msgs["dataflow"].get.buildDataflows;
+//     with(FormatType) final switch(ft)
+//     {
+//         case sdmxml21:
+//         enforceMessages!("dataflow", No.canBeNull)(msgs);
 
-        case sdmxml20:
-        enforceMessages!("dataflow", No.canBeNull)(msgs);
+//         import vulpes.datasources.sdmx.sdmxml21: buildDataflows;
+//         return msgs["dataflow"].get.buildDataflows;
 
-        import vulpes.datasources.sdmxml20 : buildDataflows;
-        return msgs["dataflow"].get.buildDataflows;
-    }
-}
+//         case sdmxml20:
+//         enforceMessages!("dataflow", No.canBeNull)(msgs);
 
-unittest
-{
-    import std.file : readText;
-    import std.typecons : nullable;
-    import vibe.core.concurrency : async, Future;
-    import vulpes.requests : Response;
-    import vulpes.datasources.providers : Resource, FormatType;
+//         import vulpes.datasources.sdmx.sdmxml20 : buildDataflows;
+//         return msgs["dataflow"].get.buildDataflows;
+//     }
+// }
 
-    Resource sdmx21 = Resource(
-        "dataflow",
-        "/sdmx21",
-        (Nullable!(string[string])).init,
-        ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.1"],
-        true,
-        FormatType.sdmxml21
-    );
+// unittest
+// {
+//     import std.file : readText;
+//     import std.typecons : nullable;
+//     import vibe.core.concurrency : async, Future;
+//     import vulpes.requests : Response;
+//     import vulpes.datasources.providers : Resource, FormatType;
 
-    Resource sdmx20 = Resource(
-        "dataflow",
-        "/sdmx20",
-        (Nullable!(string[string])).init,
-        ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.0"],
-        true,
-        FormatType.sdmxml20
-    );
+//     Resource sdmx21 = Resource(
+//         "dataflow",
+//         "/sdmx21",
+//         (Nullable!(string[string])).init,
+//         ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.1"],
+//         true,
+//         FormatType.sdmxml21
+//     );
 
-    Provider p21 = Provider("ID21", true, "", ["dataflow": [sdmx21]].nullable);
-    Provider p20 = Provider("ID20", true, "", ["dataflow": [sdmx20]].nullable);
+//     Resource sdmx20 = Resource(
+//         "dataflow",
+//         "/sdmx20",
+//         (Nullable!(string[string])).init,
+//         ["Content-Type": "application/vnd.sdmx.structure+xml;version=2.0"],
+//         true,
+//         FormatType.sdmxml20
+//     );
 
-    Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
-    {
-        if(url == "/sdmx21")
-            return async({
-                return Response(200, readText("./fixtures/sdmx21/structure_dataflow.xml"));
-            });
-        if(url == "/sdmx20")
-            return async({
-                return Response(200, readText("./fixtures/sdmx20/structure_dataflows.xml"));
-            });
-        assert(false);
-    }
+//     Provider p21 = Provider("ID21", true, "", ["dataflow": [sdmx21]].nullable);
+//     Provider p20 = Provider("ID20", true, "", ["dataflow": [sdmx20]].nullable);
 
-    assert(p21.dataflows(toDelegate(&ok)).front.id == "BALANCE-PAIEMENTS");
-    assert(p20.dataflows(toDelegate(&ok)).front.id == "DS-BOP_2017M06");
-}
+//     Future!Response ok(in string url, in string[string] headers, in string[string] queryParams)
+//     {
+//         if(url == "/sdmx21")
+//             return async({
+//                 return Response(200, readText("./fixtures/sdmx21/structure_dataflow.xml"));
+//             });
+//         if(url == "/sdmx20")
+//             return async({
+//                 return Response(200, readText("./fixtures/sdmx20/structure_dataflows.xml"));
+//             });
+//         assert(false);
+//     }
+
+//     assert(p21.dataflows(toDelegate(&ok)).front.id == "BALANCE-PAIEMENTS");
+//     assert(p20.dataflows(toDelegate(&ok)).front.id == "DS-BOP_2017M06");
+// }

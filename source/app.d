@@ -47,14 +47,16 @@ immutable(Provider) getProviderOrError(in string providerId)
 void handleDataflows(HTTPServerRequest req, HTTPServerResponse res)
 {
     import std.array : array;
+    import std.algorithm : map;
     import vulpes.datasources.providers : dataflows;
     import vulpes.core.search : search;
+    import vulpes.api.resources : DataflowResponse;
 
     auto provider = getProviderOrError(req.params["providerId"]);
     auto q = req.query.get("q");
 
-    if(q is null) res.writeJsonBody(provider.dataflows.array);
-    else res.writeJsonBody(provider.dataflows.search!1(q).array);
+    // if(q is null) res.writeJsonBody(provider.dataflows.map!(a => DataflowResponse.fromModel(a)).array);
+    // else res.writeJsonBody(provider.dataflows.map!(a => DataflowResponse.fromModel(a)).search!1(q).array);
 }
 
 void main()
