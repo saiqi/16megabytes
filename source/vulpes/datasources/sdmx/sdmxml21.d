@@ -1640,8 +1640,19 @@ private string enforceMessage(Nullable!string[string] messages, ResourceType typ
     import std.format : format;
 
     auto key = type.to!string;
-    enforce!DatasourceException(!messages[key].isNull, format!"%s is null"(key));
-    return messages[key].get;
+    auto value = messages.get(key, Nullable!string.init);
+    enforce!DatasourceException(!value.isNull, format!"%s is null"(key));
+    return value.get;
+}
+
+unittest
+{
+    import std.typecons : nullable;
+    import std.exception : assertThrown;
+
+    auto messages = ["dataflow": "A".nullable];
+    assert(enforceMessage(messages, ResourceType.dataflow) == "A");
+    assertThrown!DatasourceException(enforceMessage(messages, ResourceType.categorisation));
 }
 
 class SDMX21Datasource : Datasource
@@ -1681,4 +1692,9 @@ class SDMX21Datasource : Datasource
     {
         return null;
     }
+}
+
+unittest
+{
+    
 }
