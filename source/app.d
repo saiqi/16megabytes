@@ -4,76 +4,44 @@ import vibe.core.log;
 import vibe.core.core;
 import vibe.http.server;
 import vibe.http.router;
-import vulpes.datasources.providers : Provider;
+import vibe.web.rest : registerRestInterface, RestInterfaceSettings, RestErrorInformation;
+import vulpes.api.endpoints : StructureApiImpl;
 
-void handleError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) @safe
+void handleError(HTTPServerRequest req, HTTPServerResponse res, RestErrorInformation error) @safe
 {
-    import vulpes.core.model : Error_, ErrorStatusCode;
-    auto msg = (error.exception !is null) ? error.exception.msg : error.message;
+    import vulpes.api.resources : ErrorMessageResponse, buildMeta, ErrorResponse, ErrorStatusCode;
 
-    Error_ err;
-    with(ErrorStatusCode) switch(error.code)
+    ErrorResponse err;
+    with(ErrorStatusCode) switch(error.statusCode)
     {
-        case 404:
-        err = Error_.build(notFound, msg);
+        case HTTPStatus.notFound:
+        err = ErrorResponse.build(notFound, error.exception.msg);
         break;
 
         default:
-        err = Error_.build(internalServerError, msg);
+        err = ErrorResponse.build(internalServerError, error.exception.msg);
     }
 
-    res.writeJsonBody(err);
-}
+    auto resp = ErrorMessageResponse(buildMeta(), [err]);
 
-void handleGreetings(HTTPServerRequest req, HTTPServerResponse res)
-{
-    res.writeJsonBody(["message": "Welcome to Vulpes API"]);
-}
-
-immutable(Provider) getProviderOrError(in string providerId)
-{
-    import std.algorithm : find;
-    import std.format : format;
-    import vulpes.datasources.providers : loadProvidersFromConfig;
-
-    auto ps = loadProvidersFromConfig()
-        .find!(a => a.id == providerId);
-
-    enforceHTTP(ps.length > 0, HTTPStatus.notFound, format!"%s not found"(providerId));
-
-    return ps[0];
-}
-
-void handleDataflows(HTTPServerRequest req, HTTPServerResponse res)
-{
-    import std.array : array;
-    import std.algorithm : map;
-    import vulpes.datasources.providers : dataflows;
-    import vulpes.core.search : search;
-    import vulpes.api.resources : DataflowResponse;
-
-    auto provider = getProviderOrError(req.params["providerId"]);
-    auto q = req.query.get("q");
-
-    // if(q is null) res.writeJsonBody(provider.dataflows.map!(a => DataflowResponse.fromModel(a)).array);
-    // else res.writeJsonBody(provider.dataflows.map!(a => DataflowResponse.fromModel(a)).search!1(q).array);
+    res.writeJsonBody(resp, error.statusCode);
 }
 
 void main()
 {
     setLogFormat(FileLogger.Format.threadTime, FileLogger.Format.threadTime);
     setLogLevel(LogLevel.debug_);
-    auto settings = new HTTPServerSettings;
-    settings.port = 8080;
-    settings.bindAddresses = ["::1", "127.0.0.1"];
-    settings.errorPageHandler = toDelegate(&handleError);
+    auto server = new HTTPServerSettings;
+    server.port = 8080;
+    server.bindAddresses = ["::1", "127.0.0.1"];
 
     auto router = new URLRouter;
-    router
-        .get("/", &handleGreetings)
-        .get("/dataflow/:providerId/all/latest", &handleDataflows);
+    auto settings = new RestInterfaceSettings();
+    settings.errorHandler = toDelegate(&handleError);
 
-    auto l = listenHTTP(settings, router);
+    router.registerRestInterface(new StructureApiImpl, settings);
+
+    auto l = listenHTTP(server, router);
     scope(exit) l.stopListening();
     runApplication();
 }

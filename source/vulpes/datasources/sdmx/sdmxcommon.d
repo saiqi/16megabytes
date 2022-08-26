@@ -3,7 +3,7 @@ module vulpes.datasources.sdmx.sdmxcommon;
 import std.typecons : Nullable, nullable;
 import std.traits : Unqual, ReturnType;
 import std.range : isInputRange, ElementType, InputRange;
-import vulpes.lib.xml : isForwardRangeOfChar, deserializeAsRangeOf;
+import vulpes.lib.xml : isForwardRangeOfChar;
 import vulpes.core.model;
 
 enum bool isLabelizable(T) = is(typeof(T.init.lang) : string) && is(typeof(T.init.content) : string);
@@ -91,6 +91,7 @@ if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
 {
     import std.algorithm : map;
     import std.range : inputRangeObject;
+    import vulpes.lib.xml : deserializeAsRangeOf;
 
     return xml
         .deserializeAsRangeOf!Source
@@ -122,6 +123,40 @@ unittest
     auto xml = "<Root><In>foo</In></Root>";
     auto r = buildRangeFromXml!(In, Out)(xml);
     assert(r.front.v == "foo");
+}
+
+Target buildResourceFromXml(Source, Target, Range)(in Range xml) @trusted
+if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
+{
+    import vulpes.lib.xml : deserializeAs;
+
+    return xml.deserializeAs!Source.convert;
+}
+
+unittest
+{
+    import vulpes.lib.xml : text, xmlRoot;
+
+    static struct Out
+    {
+        string v;
+    }
+
+    @xmlRoot("In")
+    static struct In
+    {
+        @text
+        string value;
+
+        Out convert()
+        {
+            return Out(value);
+        }
+    }
+
+    auto xml = "<Root><In>foo</In></Root>";
+    auto r = buildResourceFromXml!(In, Out)(xml);
+    assert(r.v == "foo");
 }
 
 Target convertIdentifiableItem(Source, Target, string key = "id", string nameField = "names")(in ref Source item)

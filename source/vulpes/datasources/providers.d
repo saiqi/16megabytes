@@ -350,7 +350,7 @@ unittest
     assert(provider.formatType.isNull);
 }
 
-immutable(Provider[]) loadProvidersFromConfig(in string path = "conf/providers.json")
+immutable(Provider[]) loadProvidersFromConfig(in string path = "conf/providers.json") @safe
 {
     import vibe.core.file : readFileUTF8;
     import vibe.data.json : deserializeJson;

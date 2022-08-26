@@ -177,20 +177,6 @@ struct Type
     string name;
 }
 
-struct Sender
-{
-    string id;
-
-    mixin(Generate);
-}
-
-struct Receiver
-{
-    string id;
-
-    mixin(Generate);
-}
-
 struct Link
 {
     Nullable!string href;
@@ -198,20 +184,6 @@ struct Link
     Nullable!string hreflang;
     Nullable!Urn urn;
     Nullable!string type;
-
-    mixin(Generate);
-}
-
-struct Meta
-{
-    string schema;
-    string id;
-    bool test;
-    string prepared;
-    string[] contentLanguages;
-    Sender sender;
-    Receiver[] receivers;
-    Link[] links;
 
     mixin(Generate);
 }
@@ -685,71 +657,6 @@ struct Structure
     StructureComponent[] dimensions;
     StructureComponent[] measures;
     StructureComponent[] attributes;
-
-    mixin(Generate);
-}
-
-struct Data
-{
-    DataStructure[] dataStructures;
-    CategoryScheme[] categorySchemes;
-    ConceptScheme[] conceptSchemes;
-    Codelist[] codelists;
-    Dataflow[] dataflows;
-    Categorisation[] categorisations;
-    DataConstraint[] contentConstraints;
-
-    mixin(Generate);
-}
-
-enum ErrorStatusCode
-{
-    notFound = 100u,
-    unauthorized = 110u,
-    responseTooLarge = 130u,
-    syntaxError = 140u,
-    semanticError = 150u,
-    internalServerError = 500u,
-    notImplemented = 501u,
-    serviceNotAvailable = 503u,
-    responseSizeExceedsServiceLimit = 510u
-}
-
-struct Error_
-{
-    ErrorStatusCode code;
-    string title;
-    string[Language] titles;
-    Nullable!string detail;
-    Nullable!(string[Language]) details;
-
-    static Error_ build(in ErrorStatusCode code, in string message) pure @safe nothrow
-    {
-        return Error_(
-            code,
-            message,
-            [DefaultLanguage : message],
-            (Nullable!string).init,
-            (Nullable!(string[Language])).init
-        );
-    }
-
-    mixin(Generate);
-}
-
-unittest
-{
-    auto err = Error_.build(ErrorStatusCode.notFound, "Not found");
-    assert(err.code == ErrorStatusCode.notFound);
-    assert(err.title == "Not found");
-    assert(err.titles[DefaultLanguage] == "Not found");
-}
-
-struct Message
-{
-    Meta meta;
-    Nullable!Data data;
-    Error_[] errors;
 
     mixin(Generate);
 }

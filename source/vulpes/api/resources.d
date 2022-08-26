@@ -1,6 +1,7 @@
 module vulpes.api.resources;
 
 import std.typecons : Nullable;
+import vibe.data.serialization : embedNullable;
 import vulpes.core.model;
 
 mixin template GenerateFromModel(Model, Resource)
@@ -528,15 +529,11 @@ unittest
 struct SenderResponse
 {
     string id;
-
-    mixin GenerateFromModel!(Sender, typeof(this));
 }
 
 struct ReceiverResponse
 {
     string id;
-
-    mixin GenerateFromModel!(Receiver, typeof(this));
 }
 
 struct LinkResponse
@@ -552,16 +549,14 @@ struct LinkResponse
 
 struct MetaResponse
 {
-    string schema;
     string id;
-    bool test;
     string prepared;
-    string[] contentLanguages;
     SenderResponse sender;
-    ReceiverResponse[] receivers;
-    LinkResponse[] links;
-
-    mixin GenerateFromModel!(Meta, typeof(this));
+    @embedNullable Nullable!string schema;
+    @embedNullable Nullable!bool test;
+    @embedNullable Nullable!(string[]) contentLanguages;
+    @embedNullable Nullable!(ReceiverResponse[]) receivers;
+    @embedNullable Nullable!(LinkResponse[]) links;
 }
 
 struct EmptyResponse
@@ -905,33 +900,92 @@ struct StructureResponse
 
 struct DataResponse
 {
-    DataStructureResponse[] dataStructures;
-    CategorySchemeResponse[] categorySchemes;
-    ConceptSchemeResponse[] conceptSchemes;
-    CodelistResponse[] codelists;
-    DataflowResponse[] dataflows;
-    CategorisationResponse[] categorisations;
-    DataConstraintResponse[] contentConstraints;
+    @embedNullable Nullable!(DataStructureResponse[]) dataStructures;
+    @embedNullable Nullable!(CategorySchemeResponse[]) categorySchemes;
+    @embedNullable Nullable!(ConceptSchemeResponse[]) conceptSchemes;
+    @embedNullable Nullable!(CodelistResponse[]) codelists;
+    @embedNullable Nullable!(DataflowResponse[]) dataflows;
+    @embedNullable Nullable!(CategorisationResponse[]) categorisations;
+    @embedNullable Nullable!(DataConstraintResponse[]) contentConstraints;
+}
 
-    mixin GenerateFromModel!(Data, typeof(this));
+struct StructureMessageResponse
+{
+    MetaResponse meta;
+    DataResponse data;
+}
+
+enum ErrorStatusCode
+{
+    notFound = 100u,
+    unauthorized = 110u,
+    responseTooLarge = 130u,
+    syntaxError = 140u,
+    semanticError = 150u,
+    internalServerError = 500u,
+    notImplemented = 501u,
+    serviceNotAvailable = 503u,
+    responseSizeExceedsServiceLimit = 510u
 }
 
 struct ErrorResponse
 {
-    uint code;
+    ErrorStatusCode code;
     string title;
-    string[string] titles;
+    string[Language] titles;
     Nullable!string detail;
-    Nullable!(string[string]) details;
+    Nullable!(string[Language]) details;
 
-    mixin GenerateFromModel!(Error_, typeof(this));
+    static ErrorResponse build(in ErrorStatusCode code, in string message) pure @safe nothrow
+    {
+        return ErrorResponse(
+            code,
+            message,
+            [DefaultLanguage : message],
+            (Nullable!string).init,
+            (Nullable!(string[Language])).init
+        );
+    }
 }
 
-struct MessageResponse
+unittest
+{
+    auto err = ErrorResponse.build(ErrorStatusCode.notFound, "Not found");
+    assert(err.code == ErrorStatusCode.notFound);
+    assert(err.title == "Not found");
+    assert(err.titles[DefaultLanguage] == "Not found");
+}
+
+
+struct ErrorMessageResponse
 {
     MetaResponse meta;
-    Nullable!DataResponse data;
     ErrorResponse[] errors;
-
-    mixin GenerateFromModel!(Message, typeof(this));
 }
+
+MetaResponse buildMeta() @safe
+{
+    import std.uuid : randomUUID;
+    import std.datetime : Clock;
+    MetaResponse meta = MetaResponse();
+    meta.id = randomUUID().toString();
+    meta.prepared = Clock.currTime().toISOExtString();
+
+    SenderResponse sender = SenderResponse();
+    sender.id = "vulpes";
+
+    meta.sender = sender;
+
+    return meta;
+}
+
+unittest
+{
+    import std.datetime.systime : SysTime;
+    auto m = buildMeta();
+
+    SysTime.fromISOExtString(m.prepared);
+    assert(m.id.length > 0);
+    assert(m.sender.id == "vulpes");
+}
+

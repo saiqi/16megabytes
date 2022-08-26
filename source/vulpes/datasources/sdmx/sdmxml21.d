@@ -1587,12 +1587,6 @@ unittest
 }
 
 public:
-alias buildDataflows = buildRangeFromXml!(SDMX21Dataflow, Dataflow, string);
-alias buildDataStructures = buildRangeFromXml!(SDMX21DataStructure, DataStructure, string);
-alias buildCodelists = buildRangeFromXml!(SDMX21Codelist, Codelist, string);
-alias buildConceptSchemes = buildRangeFromXml!(SDMX21ConceptScheme, ConceptScheme, string);
-alias buildCategorySchemes = buildRangeFromXml!(SDMX21CategoryScheme, CategoryScheme, string);
-alias buildContentConstraints = buildRangeFromXml!(SDMX21ContentConstraint, DataConstraint, string);
 
 private string enforceMessage(Nullable!string[string] messages, ResourceType type) @safe
 {
@@ -1626,32 +1620,47 @@ class SDMX21Datasource : Datasource
         return provider
             .fetchResources(ResourceType.dataflow, fetcher)
             .enforceMessage(ResourceType.dataflow)
-            .buildDataflows;
+            .buildRangeFromXml!(SDMX21Dataflow, Dataflow);
     }
 
     DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return DataStructure.init;
+        return provider
+            .fetchResources(ResourceType.datastructure, fetcher, id)
+            .enforceMessage(ResourceType.datastructure)
+            .buildResourceFromXml!(SDMX21DataStructure, DataStructure);
     }
 
     Codelist getCodelist(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return Codelist.init;
+        return provider
+            .fetchResources(ResourceType.codelist, fetcher, id)
+            .enforceMessage(ResourceType.codelist)
+            .buildResourceFromXml!(SDMX21Codelist, Codelist);
     }
 
     ConceptScheme getConceptScheme(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return ConceptScheme.init;
+        return provider
+            .fetchResources(ResourceType.conceptscheme, fetcher, id)
+            .enforceMessage(ResourceType.conceptscheme)
+            .buildResourceFromXml!(SDMX21ConceptScheme, ConceptScheme);
     }
 
     InputRange!CategoryScheme getCategorySchemes(in ref Provider provider, Fetcher fetcher)
     {
-        return null;
+        return provider
+            .fetchResources(ResourceType.categoryscheme, fetcher)
+            .enforceMessage(ResourceType.categoryscheme)
+            .buildRangeFromXml!(SDMX21CategoryScheme, CategoryScheme);
     }
 
     InputRange!Categorisation getCategorisations(in ref Provider provider, Fetcher fetcher)
     {
-        return null;
+        return provider
+            .fetchResources(ResourceType.categorisation, fetcher)
+            .enforceMessage(ResourceType.categorisation)
+            .buildRangeFromXml!(SDMX21Categorisation, Categorisation);
     }
 }
 
