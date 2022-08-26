@@ -84,18 +84,17 @@ unittest
     assert(getIntlLabels(empty).isNull);
 }
 
-enum bool isConvertible(Source, Target) = is(Unqual!(ReturnType!(Source.init.convert)) == Nullable!Target);
+enum bool isConvertible(Source, Target) = is(Unqual!(ReturnType!(Source.init.convert)) == Target);
 
 InputRange!Target buildRangeFromXml(Source, Target, Range)(in Range xml) @trusted // TODO: check if deserializeAsRangeOf could be safe
 if(isForwardRangeOfChar!Range && isConvertible!(Source, Target))
 {
-    import std.algorithm : map, joiner;
+    import std.algorithm : map;
     import std.range : inputRangeObject;
 
     return xml
         .deserializeAsRangeOf!Source
         .map!"a.convert"
-        .joiner
         .inputRangeObject;
 }
 
@@ -114,9 +113,9 @@ unittest
         @text
         string value;
 
-        Nullable!Out convert()
+        Out convert()
         {
-            return Out(value).nullable;
+            return Out(value);
         }
     }
 
@@ -125,31 +124,38 @@ unittest
     assert(r.front.v == "foo");
 }
 
-Nullable!Target convertIdentifiableItem(Source, Target)(in ref Source item)
+Target convertIdentifiableItem(Source, Target, string key = "id", string nameField = "names")(in ref Source item)
 {
-    auto cNames = item.names.dup;
+    import std.exception : enforce;
+    import vulpes.datasources.datasource : DatasourceException;
+
+    static if(nameField == "names")
+        enum descField = "descriptions";
+    else
+        enum descField = "names";
+
+    auto cNames = __traits(getMember, item, nameField).dup;
     auto name = getLabel(cNames);
 
-    if(name.isNull) return typeof(return).init;
+    enforce!DatasourceException(!name.isNull, "name is null");
 
-    auto cDescs = item.descriptions.dup;
-    Nullable!Target r = Target(
-        item.id,
+    auto cDescs = __traits(getMember, item, descField).dup;
+    return Target(
+        __traits(getMember, item, key),
         name.get,
         getIntlLabels(cNames),
         getLabel(cDescs),
         getIntlLabels(cDescs));
-
-    return r;
 }
 
-Nullable!Target convertListOfItems(Source, Target, alias listName)(in ref Source resource)
+Target convertListOfItems(Source, Target, alias listName)(in ref Source resource)
 if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unqual!Target == CategoryScheme))
 {
     import std.range : ElementType;
-    import std.algorithm : any, joiner;
     import std.array : array;
+    import std.exception : enforce;
     import vulpes.lib.monadish : fallbackMap, isNullable;
+    import vulpes.datasources.datasource : DatasourceException;
 
     alias SourceItemT = Unqual!(ElementType!(typeof(__traits(getMember, Source, listName))));
 
@@ -171,13 +177,7 @@ if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unq
                   "Cannot find converter from " ~ SourceItemT.stringof ~ " to " ~ TargetItemT.stringof);
 
     auto cNames = resource.names.dup;
-    auto name = getLabel(cNames);
-
-    if(name.isNull) return typeof(return).init;
-
     auto items = fallbackMap!"a.convert"(__traits(getMember, resource, listName));
-
-    if(items.any!"a.isNull") return typeof(return).init;
 
     auto cDescs = resource.descriptions.dup;
 
@@ -190,18 +190,16 @@ if(is(Unqual!Target == Codelist) || is(Unqual!Target == ConceptScheme) || is(Unq
         auto v = resource.version_;
     }
 
-    Nullable!Target r = Target(
+    return Target(
         resource.id,
         v,
         resource.agencyId,
         true,
         true,
-        name.get,
+        getLabel(cNames).get(Unknown),
         getIntlLabels(cNames),
         getLabel(cDescs),
         getIntlLabels(cDescs),
         false,
-        items.joiner.array);
-
-    return r;
+        items.array);
 }

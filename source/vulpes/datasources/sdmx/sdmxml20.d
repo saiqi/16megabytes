@@ -6,6 +6,7 @@ import std.traits : Unqual;
 import vulpes.lib.xml;
 import vulpes.core.model;
 import vulpes.datasources.sdmx.sdmxcommon;
+import vulpes.datasources.datasource : Datasource, DatasourceException;
 
 private enum bool isDSDComponent(T) = is(Unqual!T == SDMX20Attribute)
     || is(Unqual!T == SDMX20Dimension)
@@ -17,15 +18,13 @@ if(isDSDComponent!T)
 {
     if(resource.conceptRef.isNull) return typeof(return).init;
 
-    Nullable!Urn urn = Urn(
+    return Urn(
         PackageType.conceptscheme,
         ClassType.Concept,
         resource.conceptSchemeAgency.get(agency),
         resource.conceptSchemeRef.get(Unknown),
         resource.conceptVersion.get(DefaultVersion),
-        resource.conceptRef.get);
-
-    return urn;
+        resource.conceptRef.get).nullable;
 }
 
 private Nullable!Enumeration enumeration(T)(in ref T resource, string agency)
@@ -74,7 +73,7 @@ if(isDSDComponent!T)
             (Nullable!uint).init,
             (Nullable!uint).init,
             type.get);
-        
+
         rep = LocalRepresentation(e, f);
     }
     else
@@ -110,7 +109,7 @@ struct SDMX20KeyFamilyRef
     @xmlElement("KeyFamilyAgencyID")
     SDMX20KeyFamilyAgencyID keyFamilyAgencyId;
 
-    inout(Urn) urn() pure @safe inout nothrow
+    inout(Urn) urn()  @safe inout nothrow
     {
         return Urn(
             PackageType.datastructure,
@@ -153,13 +152,15 @@ struct SDMX20Dataflow
     @xmlElementList("Name")
     SDMX20Name[] names;
 
-    Nullable!Dataflow convert() pure @safe inout
+    Dataflow convert()  @safe inout
     {
+        import std.exception : enforce;
+
         auto cNames = names.dup;
 
         auto name = getLabel(cNames);
 
-        if(name.isNull) return typeof(return).init;
+        enforce!DatasourceException(!name.isNull, "name is null");
 
         return Dataflow(
             id,
@@ -172,7 +173,7 @@ struct SDMX20Dataflow
             (Nullable!string).init,
             (Nullable!(string[Language])).init,
             keyFamilyRef.urn
-        ).nullable;
+        );
 
     }
 }
@@ -183,14 +184,13 @@ unittest
     const str = readText("fixtures/sdmx20/structure_dataflows.xml");
     const SDMX20Dataflow sdmxDf = str.deserializeAs!SDMX20Dataflows.dataflows[0];
     const df = sdmxDf.convert;
-    assert(!df.isNull);
-    assert(df.get.id == "DS-BOP_2017M06");
-    assert(df.get.agencyId == "IMF");
-    assert(df.get.version_ == "1.0");
-    assert(df.get.name == "Balance of Payments (BOP), 2017 M06");
-    assert(!df.get.names.isNull);
-    assert(df.get.name == df.get.names.get[Language.en]);
-    assert(df.get.structure == sdmxDf.keyFamilyRef.urn);
+    assert(df.id == "DS-BOP_2017M06");
+    assert(df.agencyId == "IMF");
+    assert(df.version_ == "1.0");
+    assert(df.name == "Balance of Payments (BOP), 2017 M06");
+    assert(!df.names.isNull);
+    assert(df.name == df.names.get[Language.en]);
+    assert(df.structure == sdmxDf.keyFamilyRef.urn);
 }
 
 @xmlRoot("Dataflows")
@@ -368,49 +368,48 @@ struct SDMX20KeyFamily
     @xmlElement("Components")
     SDMX20Components components;
 
-    Nullable!DataStructure convert() pure @safe inout
+    DataStructure convert()  @safe inout
     {
         import std.range : enumerate;
         import std.algorithm : any, map, joiner;
         import std.array : array;
         import std.typecons : tuple;
+        import std.exception : enforce;
         import vulpes.lib.monadish : fallbackMap;
 
-        Nullable!Dimension handleDimension(in SDMX20Dimension dim, uint pos)
+        Dimension handleDimension(in SDMX20Dimension dim, uint pos)
         {
-            if(dim.conceptRef.isNull) return typeof(return).init;
+            enforce!DatasourceException(!dim.conceptRef.isNull,
+                                       "dimension's conceptRef is null");
 
-            Nullable!Dimension r = Dimension(
+            return Dimension(
                 dim.conceptRef.get,
                 pos,
                 conceptId(dim, this.agencyId),
                 [],
                 localRepresentation(dim, this.agencyId));
-
-            return r;
         }
 
-        Nullable!TimeDimension handleTimeDimension(in SDMX20TimeDimension dim, uint pos)
+        TimeDimension handleTimeDimension(in SDMX20TimeDimension dim, uint pos)
         {
-            if(dim.conceptRef.isNull) return typeof(return).init;
+            enforce!DatasourceException(!dim.conceptRef.isNull,
+                                       "dimension's conceptRef is null");
 
-            Nullable!TimeDimension r = TimeDimension(
+            return TimeDimension(
                 dim.conceptRef.get,
                 pos,
                 conceptId(dim, this.agencyId),
                 [],
                 localRepresentation(dim, this.agencyId));
-
-            return r;
         }
 
-        Nullable!Attribute handleAttribute(in SDMX20Attribute attr)
+        Attribute handleAttribute(in SDMX20Attribute attr)
         {
             import std.typecons : apply;
             import std.array : array;
-            import std.algorithm : joiner;
 
-            if(attr.conceptRef.isNull) return typeof(return).init;
+            enforce!DatasourceException(!attr.conceptRef.isNull,
+                                       "attribute's conceptRef is null");
             Nullable!UsageType usage = attr.assignmentStatus.apply!(a => a.enumMember!UsageType);
             Nullable!AttributeRelationship rel = attr.attachmentLevel.apply!((a) {
                 if(a == "Series")
@@ -446,34 +445,33 @@ struct SDMX20KeyFamily
                 }
             });
 
-            Nullable!Attribute r = Attribute(
+            return Attribute(
                 attr.conceptRef.get,
                 usage,
                 rel,
                 conceptId(attr, this.agencyId),
                 [],
                 localRepresentation(attr, this.agencyId));
-            return r;
         }
 
-        Nullable!Measure handleMeasure(in SDMX20PrimaryMeasure mes)
+        Measure handleMeasure(in SDMX20PrimaryMeasure mes)
         {
-            if(mes.conceptRef.isNull) return typeof(return).init;
+            enforce!DatasourceException(!mes.conceptRef.isNull,
+                                       "measure's conceptRef is null");
 
-            Nullable!Measure r = Measure(
+            return Measure(
                 mes.conceptRef.get,
                 conceptId(mes, agencyId),
                 [],
                 localRepresentation(mes, agencyId),
                 (Nullable!UsageType).init);
-            return r;
         }
 
         auto cNames = names.dup;
 
         auto name = getLabel(cNames);
 
-        if(name.isNull) return typeof(return).init;
+        enforce!DatasourceException(!name.isNull, "name is null");
 
         auto tDims = this.components
             .dimensions
@@ -482,15 +480,11 @@ struct SDMX20KeyFamily
             .fallbackMap!(a => tuple(a[0], handleDimension(a[1], a[0])))
             .array;
 
-        if(tDims.length == 0 || tDims.any!"a[1].isNull") return typeof(return).init;
-
         uint lastPos = tDims[$ - 1][0];
 
-        auto dims = tDims.map!"a[1]".joiner.array;
+        auto dims = tDims.map!"a[1]".array;
 
         auto timeDim = handleTimeDimension(this.components.timeDimension, lastPos + 1);
-
-        if(timeDim.isNull) return typeof(return).init;
 
         auto attrs = this.components
             .attributes
@@ -498,19 +492,13 @@ struct SDMX20KeyFamily
 
         auto pMeasure = handleMeasure(this.components.primaryMeasure);
 
-        Nullable!AttributeList attrList;
-        if(attrs.any!"a.isNull") attrList = (Nullable!AttributeList).init;
-        else attrList = AttributeList("AttributeDescriptor", attrs.joiner.array);
-
-        Nullable!MeasureList measList;
-        if(pMeasure.isNull) measList = (Nullable!MeasureList).init;
-        else measList = MeasureList("MeasureDescriptor", [pMeasure.get]);
-
-        DimensionList dimList = DimensionList("DimensionDescriptor", dims, timeDim.get);
+        Nullable!AttributeList attrList = AttributeList("AttributeDescriptor", attrs.array);
+        Nullable!MeasureList measList = MeasureList("MeasureDescriptor", [pMeasure]);
+        DimensionList dimList = DimensionList("DimensionDescriptor", dims, timeDim);
 
         auto comps = DataStructureComponents(attrList, dimList, [], measList);
 
-        Nullable!DataStructure dsd = DataStructure(
+        return DataStructure(
             id,
             version_.get(DefaultVersion),
             agencyId,
@@ -522,8 +510,6 @@ struct SDMX20KeyFamily
             (Nullable!(string[Language])).init,
             comps
         );
-
-        return dsd;
     }
 }
 
@@ -534,7 +520,7 @@ unittest
 
     auto sdmxDsd = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
         .deserializeAsRangeOf!SDMX20KeyFamily;
-    DataStructure dsd = sdmxDsd.front.convert.get;
+    DataStructure dsd = sdmxDsd.front.convert;
     assert(dsd.id == "GFSMAB2015");
     assert(dsd.agencyId == "IMF");
     assert(dsd.version_ == "1.0");
@@ -597,7 +583,7 @@ unittest
 
     auto sdmxDsd = readText("./fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml")
         .deserializeAsRangeOf!SDMX20KeyFamily;
-    DataStructure dsd = sdmxDsd.front.convert.get;
+    DataStructure dsd = sdmxDsd.front.convert;
     DataStructureComponents components = dsd.dataStructureComponents;
     assert(components.dimensionList.id == "DimensionDescriptor");
     assert(components.attributeList.get.id == "AttributeDescriptor");
@@ -669,22 +655,9 @@ struct SDMX20Code
     @xmlElementList("Description")
     SDMX20Description[] descriptions;
 
-    Nullable!Code convert() pure @safe inout
+    Code convert()  @safe inout
     {
-        auto cDescs = descriptions.dup;
-
-        auto name = getLabel(cDescs);
-
-        if(name.isNull) return typeof(return).init;
-
-        Nullable!Code r = Code(
-            value,
-            name.get,
-            getIntlLabels(cDescs),
-            (Nullable!string).init,
-            (Nullable!(string[Language])).init);
-
-        return r;
+        return convertIdentifiableItem!(typeof(this), Code, "value", "descriptions")(this);
     }
 }
 
@@ -709,7 +682,7 @@ struct SDMX20Codelist
     @attr("version")
     Nullable!string version_;
 
-    Nullable!Codelist convert() pure @safe inout
+    Codelist convert()  @safe inout
     {
         return convertListOfItems!(typeof(this), Codelist, "codes")(this);
     }
@@ -722,7 +695,7 @@ unittest
     auto sdmxCls = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
         .deserializeAsRangeOf!SDMX20Codelist;
 
-    Codelist cl = sdmxCls.front.convert.get;
+    Codelist cl = sdmxCls.front.convert;
     assert(cl.id == "CL_UNIT_MULT");
     assert(cl.name == "Scale");
     assert(cl.codes[0].id == "0");
@@ -736,7 +709,7 @@ unittest
     auto sdmxCls = readText("./fixtures/sdmx20/structure_keyfamily_concepts_codelists.xml")
         .deserializeAsRangeOf!SDMX20Codelist;
 
-    Codelist cl = sdmxCls.front.convert.get;
+    Codelist cl = sdmxCls.front.convert;
     assert(cl.id == "CL_QNA_LOCATION");
     assert(cl.name == "Country");
     assert(cl.codes[0].id == "AUS");
@@ -783,7 +756,7 @@ struct SDMX20Concept
     @xmlElementList("Description")
     SDMX20Description[] descriptions;
 
-    Nullable!Concept convert() pure @safe inout
+    Concept convert()  @safe inout
     {
         return convertIdentifiableItem!(typeof(this), Concept)(this);
     }
@@ -810,7 +783,7 @@ struct SDMX20ConceptScheme
     @xmlElementList("Concept")
     SDMX20Concept[] concepts;
 
-    Nullable!ConceptScheme convert() pure @safe inout
+    ConceptScheme convert()  @safe inout
     {
         return convertListOfItems!(typeof(this), ConceptScheme, "concepts")(this);
     }
@@ -822,7 +795,7 @@ unittest
     auto sdmxCss = readText("./fixtures/sdmx20/structure_alt_keyfamily_concepts_codelists.xml")
         .deserializeAsRangeOf!SDMX20ConceptScheme;
 
-    ConceptScheme cs = sdmxCss.front.convert.get;
+    ConceptScheme cs = sdmxCss.front.convert;
     assert(cs.id == "GFSMAB2015");
     assert(cs.name == "Government Finance Statistics Yearbook (GFSY 2015), Main Aggregates and Balances");
     assert(cs.concepts[0].id == "OBS_VALUE");

@@ -1,9 +1,7 @@
 module vulpes.datasources.sdmx.sdmxml21;
 
 import std.typecons : Nullable, nullable;
-import std.traits : ReturnType;
 import std.range : InputRange;
-import vibe.inet.url : URL;
 import vulpes.lib.xml;
 import vulpes.core.model;
 import vulpes.datasources.sdmx.sdmxcommon;
@@ -67,20 +65,21 @@ struct SDMX21Dataflow
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
 
-    Nullable!Dataflow convert() pure @safe inout
+    Dataflow convert()  @safe inout
     {
-        if(id.isNull || agencyId.isNull || structure.isNull || structure.get.ref_.urn.isNull)
-            return typeof(return).init;
+        import std.exception : enforce;
 
-        auto structureUrn = structure.get.ref_.urn.get;
+        enforce!DatasourceException(!id.isNull && !agencyId.isNull && !structure.isNull,
+                                   "id or agencyId or structure is null");
+
+        auto structureUrn = structure.get.ref_.urn;
 
         auto cNames = names.dup;
         auto cDescriptions = descriptions.dup;
 
         auto name = getLabel(cNames);
 
-        if(name.isNull)
-            return typeof(return).init;
+        enforce!DatasourceException(!name.isNull, "name is null");
 
         return Dataflow(
             id.get,
@@ -93,7 +92,7 @@ struct SDMX21Dataflow
             getLabel(cDescriptions),
             getIntlLabels(cDescriptions),
             structureUrn
-        ).nullable;
+        );
     }
 }
 
@@ -103,15 +102,14 @@ unittest
     const xmlStr = readText("fixtures/sdmx21/structure_dataflow.xml");
     const sdmxDf = xmlStr.deserializeAs!SDMX21Structures.dataflows.get.dataflows[0];
     const df = sdmxDf.convert();
-    assert(!df.isNull);
-    assert(df.get.id == "BALANCE-PAIEMENTS");
-    assert(df.get.version_ == "1.0");
-    assert(df.get.agencyId == "FR1");
-    assert(df.get.name == "Balance of payments");
-    assert(df.get.names.get[Language.fr] == "Balance des paiements");
-    assert(df.get.description.isNull);
-    assert(df.get.descriptions.isNull);
-    assert(df.get.structure == sdmxDf.structure.get.ref_.urn);
+    assert(df.id == "BALANCE-PAIEMENTS");
+    assert(df.version_ == "1.0");
+    assert(df.agencyId == "FR1");
+    assert(df.name == "Balance of payments");
+    assert(df.names.get[Language.fr] == "Balance des paiements");
+    assert(df.description.isNull);
+    assert(df.descriptions.isNull);
+    assert(df.structure == sdmxDf.structure.get.ref_.urn);
 }
 
 @xmlRoot("Name")
@@ -165,26 +163,25 @@ struct SDMX21Ref
     @attr("class")
     Nullable!string class_;
 
-    inout(Nullable!Urn) urn() pure @safe inout
+    Urn urn()  @safe inout
     {
-        if(package_.isNull || class_.isNull || agencyId.isNull)
-            return typeof(return).init;
+        import std.exception : enforce;
 
-        if(version_.isNull && maintainableParentVersion.isNull)
-            return typeof(return).init;
-
-        if(!maintainableParentId.isNull && maintainableParentVersion.isNull)
-            return typeof(return).init;
+        enforce!DatasourceException(!package_.isNull && !class_.isNull && !agencyId.isNull,
+                                   "package or class or agencyId is null");
+        enforce!DatasourceException(!version_.isNull || !maintainableParentVersion.isNull,
+                                   "version and maintainableParentVersion are null");
+        enforce!DatasourceException(maintainableParentId.isNull || !maintainableParentVersion.isNull,
+                                   "maintainableParentId provided but maintainableParentVersion is null");
 
         auto pkg = package_.get.enumMember!PackageType;
+        enforce!DatasourceException(!pkg.isNull, "unsupported package " ~ package_.get);
         auto cls = class_.get.enumMember!ClassType;
+        enforce!DatasourceException(!cls.isNull, "unsupported class " ~ class_.get);
 
-        if(pkg.isNull || cls.isNull) return typeof(return).init;
-
-        Nullable!Urn urn = maintainableParentId.isNull
+        return maintainableParentId.isNull
             ? Urn(pkg.get, cls.get, agencyId.get, id, version_.get)
             : Urn(pkg.get, cls.get, agencyId.get, maintainableParentId.get, maintainableParentVersion.get, id);
-        return urn;
     }
 }
 
@@ -210,24 +207,23 @@ struct SDMX21TextFormat
     @attr("pattern")
     Nullable!string pattern;
 
-    Nullable!Format convert() pure @safe inout
+    Format convert()  @safe inout
     {
         import std.conv : to;
         import std.typecons : apply;
+        import std.exception : enforce;
 
-        if(textType.isNull) return typeof(return).init;
+        enforce!DatasourceException(!textType.isNull, "textType is null");
 
         auto b = textType.get.enumMember!BasicDataType;
 
-        if(b.isNull) return typeof(return).init;
+        enforce!DatasourceException(!b.isNull, "unsupported BasicDataType " ~ textType.get);
 
-        Nullable!Format fmt = Format(
+        return Format(
             maxLength.apply!(to!uint),
             minLength.apply!(to!uint),
             b.get
         );
-
-        return fmt;
     }
 }
 
@@ -237,11 +233,9 @@ struct SDMX21Enumeration
     @xmlElement("Ref")
     SDMX21Ref ref_;
 
-    Nullable!Enumeration convert() @safe pure inout
+    Enumeration convert() @safe  inout
     {
-        if(ref_.urn.isNull) return typeof(return).init;
-        Nullable!Enumeration e = Enumeration(ref_.urn.get);
-        return e;
+        return Enumeration(ref_.urn);
     }
 }
 
@@ -254,16 +248,17 @@ struct SDMX21LocalRepresentation
     @xmlElement("Enumeration")
     Nullable!SDMX21Enumeration enumeration;
 
-    Nullable!LocalRepresentation convert() pure @safe inout
+    LocalRepresentation convert()  @safe inout
     {
-        if(enumeration.isNull && textFormat.isNull) return typeof(return).init;
-        if(!enumeration.isNull && !textFormat.isNull) return typeof(return).init;
+        import std.exception : enforce;
 
-        Nullable!LocalRepresentation r = enumeration.isNull
-            ? LocalRepresentation((Nullable!Enumeration).init, textFormat.get.convert)
-            : LocalRepresentation(enumeration.get.convert, (Nullable!Format).init);
-
-        return r;
+        enforce!DatasourceException(!enumeration.isNull || !textFormat.isNull,
+                                   "enumeration or textFormat is null");
+        enforce!DatasourceException(enumeration.isNull || textFormat.isNull,
+                                   "enumeration and textFormat are not null");
+        return enumeration.isNull
+            ? LocalRepresentation((Nullable!Enumeration).init, textFormat.get.convert.nullable)
+            : LocalRepresentation(enumeration.get.convert.nullable, (Nullable!Format).init);
     }
 }
 
@@ -285,17 +280,18 @@ struct SDMX21TimeDimension
     @xmlElement("LocalRepresentation")
     Nullable!SDMX21LocalRepresentation localRepresentation;
 
-    Nullable!TimeDimension convert() pure @safe inout
+    TimeDimension convert()  @safe inout
     {
         import std.typecons : apply;
+        import std.exception : enforce;
 
-        if(id.isNull || position.isNull) return typeof(return).init;
+        enforce!DatasourceException(!id.isNull && !position.isNull,
+                                   "id or position is null");
 
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
 
-        Nullable!Urn conceptId = conceptIdentity
-            .apply!(a => a.ref_.urn);
+        Nullable!Urn conceptId = conceptIdentity.apply!(a => a.ref_.urn);
 
         return TimeDimension(
             id.get,
@@ -303,7 +299,7 @@ struct SDMX21TimeDimension
             conceptId,
             [],
             rep
-        ).nullable;
+        );
     }
 }
 
@@ -328,11 +324,13 @@ struct SDMX21Dimension
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
 
-    Nullable!Dimension convert() pure @safe inout
+    Dimension convert()  @safe inout
     {
         import std.typecons : apply;
+        import std.exception : enforce;
 
-        if(id.isNull || position.isNull) return typeof(return).init;
+        enforce!DatasourceException(!id.isNull && !position.isNull,
+                                   "id or position is null");
 
         Nullable!LocalRepresentation rep = localRepresentation
             .apply!"a.convert";
@@ -346,7 +344,7 @@ struct SDMX21Dimension
             conceptId,
             [],
             rep
-        ).nullable;
+        );
     }
 }
 
@@ -365,23 +363,14 @@ struct SDMX21DimensionList
     @xmlElementList("Dimension")
     SDMX21Dimension[] dimensions;
 
-    Nullable!DimensionList convert() pure @safe inout
+    DimensionList convert()  @safe inout
     {
-        import std.algorithm : any, joiner;
         import std.array : array;
         import vulpes.lib.monadish : fallbackMap;
 
         auto td = timeDimension.convert;
-
-        if(td.isNull) return typeof(return).init;
-
         auto ds = dimensions.fallbackMap!"a.convert";
-
-        if(ds.any!"a.isNull") return typeof(return).init;
-
-        Nullable!DimensionList result = DimensionList(id, ds.joiner.array, td.get);
-
-        return result;
+        return DimensionList(id, ds.array, td);
     }
 }
 
@@ -394,20 +383,18 @@ struct SDMX21AttributeRelationship
     @xmlElement("PrimaryMeasure")
     Nullable!SDMX21PrimaryMeasure primaryMeasure;
 
-    Nullable!AttributeRelationship convert() pure @safe inout
+    AttributeRelationship convert()  @safe inout
     {
-        import std.algorithm : any, joiner;
+        import std.algorithm : any, joiner, all;
         import std.array : array;
+        import std.exception : enforce;
         import vulpes.lib.monadish : fallbackMap;
 
         auto hasNone = primaryMeasure.isNull && dimensions.length == 0;
         auto hasBoth = !primaryMeasure.isNull && dimensions.length > 0;
 
-        if(hasNone || hasBoth)
-        {
-            return typeof(return).init;
-        }
-
+        enforce!DatasourceException(!hasNone && !hasBoth,
+                                   "relationship must refer to either dimensions or measure");
         if(!primaryMeasure.isNull)
         {
             return AttributeRelationship(
@@ -415,17 +402,18 @@ struct SDMX21AttributeRelationship
                 (Nullable!string).init,
                 Empty().nullable,
                 (Nullable!Empty).init
-            ).nullable;
+            );
         }
 
-        if(dimensions.any!"a.ref_.isNull") return typeof(return).init;
+        enforce!DatasourceException(dimensions.all!"!a.ref_.isNull",
+                                   "some dimension have no ref");
 
         return AttributeRelationship(
             dimensions.fallbackMap!"a.ref_.get.id".array,
             (Nullable!string).init,
             (Nullable!Empty).init,
             (Nullable!Empty).init
-        ).nullable;
+        );
     }
 }
 
@@ -450,10 +438,12 @@ struct SDMX21Attribute
     @xmlElement("AttributeRelationship")
     Nullable!SDMX21AttributeRelationship attributeRelationship;
 
-    Nullable!Attribute convert() pure @safe inout
+    Attribute convert()  @safe inout
     {
         import std.typecons : apply;
-        if(id.isNull) return typeof(return).init;
+        import std.exception : enforce;
+
+        enforce!DatasourceException(!id.isNull, "id is null");
 
         Nullable!UsageType usage = assignementStatus
             .apply!(enumMember!UsageType);
@@ -474,12 +464,13 @@ struct SDMX21Attribute
             conceptId,
             [],
             rep
-        ).nullable;
+        );
     }
 }
 
 unittest
 {
+    import std.exception : assertThrown;
     auto attrWithId = SDMX21Attribute(
         "0".nullable,
         (Nullable!string).init,
@@ -489,7 +480,7 @@ unittest
         (Nullable!SDMX21AttributeRelationship).init
     );
 
-    assert(!attrWithId.convert.isNull);
+    assert(attrWithId.convert.id == "0");
 
     auto attrWithoutId = SDMX21Attribute(
         (Nullable!string).init,
@@ -500,7 +491,7 @@ unittest
         (Nullable!SDMX21AttributeRelationship).init
     );
 
-    assert(attrWithoutId.convert.isNull);
+    assertThrown!DatasourceException(attrWithoutId.convert);
 }
 
 @xmlRoot("AttributeList")
@@ -515,17 +506,14 @@ struct SDMX21AttributeList
     @xmlElementList("Attribute")
     SDMX21Attribute[] attributes;
 
-    Nullable!AttributeList convert() pure @safe inout
+    AttributeList convert()  @safe inout
     {
         import std.array : array;
-        import std.algorithm : any, joiner;
+        import std.algorithm : any;
         import vulpes.lib.monadish : fallbackMap;
 
         auto attrs = attributes.fallbackMap!"a.convert";
-
-        if(attrs.any!"a.isNull") return typeof(return).init;
-
-        return AttributeList(id, attrs.joiner.array).nullable;
+        return AttributeList(id, attrs.array);
     }
 }
 
@@ -555,16 +543,13 @@ struct SDMX21Group
     @xmlElementList("GroupDimension")
     SDMX21GroupDimension[] groupDimesions;
 
-    Nullable!Group convert() pure @safe inout
+    Group convert()  @safe inout
     {
-        import std.algorithm : map;
         import std.array : array;
         import vulpes.lib.monadish : fallbackMap;
 
         auto gds = groupDimesions.fallbackMap!(a => a.dimensionReference.ref_.id);
-
-        Nullable!Group g = Group(id, gds);
-        return g;
+        return Group(id, gds);
     }
 }
 
@@ -586,11 +571,12 @@ struct SDMX21PrimaryMeasure
     @xmlElement("Ref")
     Nullable!SDMX21Ref ref_;
 
-    Nullable!Measure convert() pure @safe inout
+    Measure convert()  @safe inout
     {
         import std.typecons : apply;
+        import std.exception : enforce;
 
-        if(id.isNull) return typeof(return).init;
+        enforce!DatasourceException(!id.isNull, "id is null");
 
         Nullable!Urn conceptId = conceptIdentity
             .apply!(a => a.ref_.urn);
@@ -604,7 +590,7 @@ struct SDMX21PrimaryMeasure
             [],
             rep,
             (Nullable!UsageType).init
-        ).nullable;
+        );
     }
 }
 
@@ -620,13 +606,10 @@ struct SDMX21MeasureList
     @xmlElement("PrimaryMeasure")
     SDMX21PrimaryMeasure primaryMeasure;
 
-    Nullable!MeasureList convert() pure @safe inout
+    MeasureList convert()  @safe inout
     {
         auto pm = primaryMeasure.convert;
-
-        if(pm.isNull) return typeof(return).init;
-
-        return MeasureList(id, [pm.get]).nullable;
+        return MeasureList(id, [pm]);
     }
 }
 
@@ -645,22 +628,19 @@ struct SDMX21DataStructureComponents
     @xmlElementList("Group")
     SDMX21Group[] groups;
 
-    Nullable!DataStructureComponents convert() pure @safe inout
+    DataStructureComponents convert()  @safe inout
     {
         import std.typecons : apply;
         import std.array : array;
-        import std.algorithm : joiner;
         import vulpes.lib.monadish : fallbackMap;
 
         auto dl = dimensionList.convert;
 
-        if(dl.isNull) return typeof(return).init;
-
         Nullable!AttributeList al = attributeList.apply!"a.convert";
         Nullable!MeasureList ml = measureList.apply!"a.convert";
-        auto gs = groups.fallbackMap!"a.convert".joiner.array;
+        auto gs = groups.fallbackMap!"a.convert".array;
 
-        return DataStructureComponents(al, dl.get, gs, ml).nullable;
+        return DataStructureComponents(al, dl, gs, ml);
     }
 }
 
@@ -688,17 +668,17 @@ struct SDMX21DataStructure
     @xmlElement("DataStructureComponents")
     SDMX21DataStructureComponents dataStructureComponents;
 
-    Nullable!DataStructure convert() pure @safe inout
+    DataStructure convert()  @safe inout
     {
-        auto comp = dataStructureComponents.convert;
-        if(comp.isNull) return typeof(return).init;
+        import std.exception : enforce;
 
+        auto comp = dataStructureComponents.convert;
         auto cNames = names.dup;
         auto cDescs = descriptions.dup;
 
         auto name = getLabel(cNames);
 
-        if(name.isNull) return typeof(return).init;
+        enforce!DatasourceException(!name.isNull, "name is null");
 
         return DataStructure(
             id,
@@ -710,8 +690,8 @@ struct SDMX21DataStructure
             getIntlLabels(cNames),
             getLabel(cDescs),
             getIntlLabels(cDescs),
-            comp.get
-        ).nullable;
+            comp
+        );
     }
 }
 
@@ -720,7 +700,7 @@ unittest
     import std.file : readText;
 
     auto msg = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist.xml");
-    DataStructure dsd = msg.deserializeAs!SDMX21DataStructure.convert.get;
+    DataStructure dsd = msg.deserializeAs!SDMX21DataStructure.convert;
     assert(dsd.name == "AMECO");
     assert(dsd.names.get[Language.en] == "AMECO");
     assert(dsd.description.isNull);
@@ -779,7 +759,7 @@ struct SDMX21Code
     @xmlElementList("Description")
     SDMX21Description[] descriptions;
 
-    Nullable!Code convert() pure @safe inout
+    Code convert()  @safe inout
     {
         return convertIdentifiableItem!(typeof(this), Code)(this);
     }
@@ -809,7 +789,7 @@ struct SDMX21Codelist
     @xmlElementList("Code")
     SDMX21Code[] codes;
 
-    Nullable!Codelist convert() pure @safe inout
+    Codelist convert()  @safe inout
     {
         return convertListOfItems!(typeof(this), Codelist, "codes")(this);
     }
@@ -822,7 +802,7 @@ unittest
     auto sdmxCls = readText("./fixtures/sdmx21/structure_codelist.xml")
         .deserializeAsRangeOf!SDMX21Codelist;
 
-    Codelist cl = sdmxCls.front.convert.get;
+    Codelist cl = sdmxCls.front.convert;
     assert(cl.id == "CL_PERIODICITE");
     assert(cl.name == "Frequency");
     assert(cl.names.get[Language.en] == cl.name);
@@ -848,7 +828,7 @@ struct SDMX21Concept
     @xmlElementList("Description")
     SDMX21Description[] descriptions;
 
-    Nullable!Concept convert() pure @safe inout
+    Concept convert()  @safe inout
     {
         return convertIdentifiableItem!(typeof(this), Concept)(this);
     }
@@ -878,7 +858,7 @@ struct SDMX21ConceptScheme
     @xmlElementList("Concept")
     SDMX21Concept[] concepts;
 
-    Nullable!ConceptScheme convert() pure @safe inout
+    ConceptScheme convert()  @safe inout
     {
         return convertListOfItems!(typeof(this), ConceptScheme, "concepts")(this);
     }
@@ -890,7 +870,7 @@ unittest
     auto sdmxCss = readText("./fixtures/sdmx21/structure_conceptscheme.xml")
         .deserializeAsRangeOf!SDMX21ConceptScheme;
 
-    ConceptScheme cs = sdmxCss.front.convert.get;
+    ConceptScheme cs = sdmxCss.front.convert;
     assert(cs.id == "CONCEPTS_INSEE");
     assert(cs.name == "Insee concepts");
     assert(cs.concepts.length == 113);
@@ -916,34 +896,31 @@ struct SDMX21Category
     @xmlElementList("Category")
     SDMX21Category[] children;
 
-    Nullable!Category convert() pure @safe inout
+    Category convert()  @safe inout
     {
         import std.array : array;
-        import std.algorithm : joiner;
+        import std.exception : enforce;
         import vulpes.lib.monadish : fallbackMap;
 
         auto cNames = names.dup;
 
         auto name = getLabel(cNames);
 
-        if(name.isNull) return typeof(return).init;
+        enforce!DatasourceException(!name.isNull, "name is null");
 
         auto cs = children
             .fallbackMap!"a.convert"
-            .joiner
             .array;
 
         auto cDescs = descriptions.dup;
 
-        Nullable!Category r = Category(
+        return Category(
             id,
             name.get,
             getIntlLabels(cNames),
             getLabel(cDescs),
             getIntlLabels(cDescs),
             cs);
-
-        return r;
     }
 }
 
@@ -971,7 +948,7 @@ struct SDMX21CategoryScheme
     @xmlElementList("Category")
     SDMX21Category[] categories;
 
-    Nullable!CategoryScheme convert() pure @safe inout
+    CategoryScheme convert()  @safe inout
     {
         return convertListOfItems!(typeof(this), CategoryScheme, "categories")(this);
     }
@@ -984,7 +961,7 @@ unittest
     auto sdmxCss = readText("./fixtures/sdmx21/structure_category.xml")
         .deserializeAsRangeOf!SDMX21CategoryScheme;
 
-    CategoryScheme cs = sdmxCss.front.convert.get;
+    CategoryScheme cs = sdmxCss.front.convert;
     assert(cs.id == "CLASSEMENT_DATAFLOWS");
     assert(cs.name == "Dataflows categorisation");
     assert(cs.categories[0].id == "ECO");
@@ -1033,16 +1010,15 @@ struct SDMX21Categorisation
     @xmlElement("Target")
     SDMX21Target target;
 
-    Nullable!Categorisation convert() pure @safe inout
+    Categorisation convert()  @safe inout
     {
         auto sourceUrn = source.ref_.urn;
         auto targetUrn = target.ref_.urn;
 
-        if(sourceUrn.isNull || targetUrn.isNull) return typeof(return).init;
+        auto cNames = names.dup;
+        auto cDescs = descriptions.dup;
 
-        auto cNames = names.dup; auto cDescs = descriptions.dup;
-
-        Nullable!Categorisation r = Categorisation(
+        return Categorisation(
             id,
             version_,
             agencyId,
@@ -1052,10 +1028,8 @@ struct SDMX21Categorisation
             getIntlLabels(cNames),
             getLabel(cDescs),
             getIntlLabels(cDescs),
-            sourceUrn.get,
-            targetUrn.get);
-
-        return r;
+            sourceUrn,
+            targetUrn);
     }
 }
 
@@ -1066,7 +1040,7 @@ unittest
     auto sdmxCats = readText("./fixtures/sdmx21/structure_category_categorisation.xml")
         .deserializeAsRangeOf!SDMX21Categorisation;
 
-    Categorisation cat = sdmxCats.front.convert.get;
+    Categorisation cat = sdmxCats.front.convert;
     assert(cat.id == "AGRI_IPAGRI");
     assert(cat.name == "Association between category AGRI and dataflows IPAGRI");
     assert(cat.source == Urn("urn:sdmx:org.sdmx.infomodel.datastructure.Dataflow=FR1:IPAGRI(1.0)"));
@@ -1124,17 +1098,16 @@ struct SDMX21KeyValue
     @xmlElementList("Value")
     SDMX21Value[] values;
 
-    Nullable!KeyValue convert() pure @safe inout
+    KeyValue convert()  @safe inout
     {
-        import std.algorithm : any, joiner;
+        import std.algorithm : all;
         import std.array : array;
+        import std.exception : enforce;
         import vulpes.lib.monadish: fallbackMap;
 
-        if(values.any!"a.content.isNull") return typeof(return).init;
-
-        Nullable!KeyValue r = KeyValue(id, values.fallbackMap!"a.content".joiner.array);
-
-        return r;
+        enforce!DatasourceException(values.all!"!a.content.isNull",
+                                   "some content are null");
+        return KeyValue(id, values.fallbackMap!"a.content.get".array);
     }
 }
 
@@ -1144,22 +1117,17 @@ struct SDMX21ConstraintAttachment
     @xmlElementList("Dataflow")
     SDMX21Dataflow[] dataflows;
 
-    Nullable!ConstraintAttachment convert() pure @safe inout
+    ConstraintAttachment convert()  @safe inout
     {
         import std.typecons : apply;
-        import std.algorithm : any, joiner;
         import std.array : array;
+        import std.algorithm : joiner;
         import vulpes.lib.monadish : fallbackMap;
 
         auto urns = dataflows
             .fallbackMap!(a => a.ref_.apply!"a.urn");
 
-        if(urns.any!"a.isNull") return typeof(return).init;
-
-        Nullable!ConstraintAttachment r = ConstraintAttachment(urns.joiner.array);
-
-        return r;
-
+        return ConstraintAttachment(urns.joiner.array);
     }
 }
 
@@ -1172,19 +1140,13 @@ struct SDMX21CubeRegion
     @xmlElementList("KeyValue")
     SDMX21KeyValue[] keyValues;
 
-    Nullable!CubeRegion convert() pure @safe inout
+    CubeRegion convert()  @safe inout
     {
-        import std.algorithm : any, joiner;
         import std.array : array;
         import vulpes.lib.monadish : fallbackMap;
 
         auto kvs = keyValues.fallbackMap!"a.convert";
-
-        if(kvs.any!"a.isNull") return typeof(return).init;
-
-        Nullable!CubeRegion r = CubeRegion(include, kvs.joiner.array);
-
-        return r;
+        return CubeRegion(include, kvs.array);
     }
 }
 
@@ -1224,17 +1186,18 @@ struct SDMX21ContentConstraint
     @xmlElement("CubeRegion")
     Nullable!SDMX21CubeRegion cubeRegion;
 
-    Nullable!DataConstraint convert() pure @safe inout
+    DataConstraint convert()  @safe inout
     {
         import std.typecons : apply;
-        import std.algorithm : joiner;
         import std.array : array;
+        import std.exception : enforce;
+        import std.algorithm : joiner;
 
-        if(id.isNull || agencyId.isNull) return typeof(return).init;
-
+        enforce!DatasourceException(!id.isNull && !agencyId.isNull,
+                                   "id or agencyId is null");
         auto cNames = names.dup; auto cDescs = descriptions.dup;
 
-        Nullable!DataConstraint r = DataConstraint(
+        return DataConstraint(
             id.get,
             version_.get(DefaultVersion),
             agencyId.get,
@@ -1248,8 +1211,6 @@ struct SDMX21ContentConstraint
             constraintAttachment.apply!(a => a.convert),
             [cubeRegion.apply!(a => a.convert)].joiner.array
         );
-
-        return r;
     }
 }
 
@@ -1259,7 +1220,7 @@ unittest
     auto sdmxCs = readText("./fixtures/sdmx21/structure_dsd_dataflow_constraint_codelist_conceptscheme.xml")
         .deserializeAsRangeOf!SDMX21ContentConstraint;
 
-    DataConstraint dc = sdmxCs.front.convert.get;
+    DataConstraint dc = sdmxCs.front.convert;
     assert(dc.id == "01R_CONSTRAINT");
     assert(dc.role.get == RoleType.allowed);
     assert(dc.name == "01R_CONSTRAINT");
@@ -1668,19 +1629,19 @@ class SDMX21Datasource : Datasource
             .buildDataflows;
     }
 
-    Nullable!DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher)
+    DataStructure getDataStructure(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return (Nullable!DataStructure).init;
+        return DataStructure.init;
     }
 
-    Nullable!Codelist getCodelist(in ref Provider provider, in string id, Fetcher fetcher)
+    Codelist getCodelist(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return (Nullable!Codelist).init;
+        return Codelist.init;
     }
 
-    Nullable!ConceptScheme getConceptScheme(in ref Provider provider, in string id, Fetcher fetcher)
+    ConceptScheme getConceptScheme(in ref Provider provider, in string id, Fetcher fetcher)
     {
-        return (Nullable!ConceptScheme).init;
+        return ConceptScheme.init;
     }
 
     InputRange!CategoryScheme getCategorySchemes(in ref Provider provider, Fetcher fetcher)
@@ -1696,5 +1657,5 @@ class SDMX21Datasource : Datasource
 
 unittest
 {
-    
+
 }
